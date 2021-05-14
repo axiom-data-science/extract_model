@@ -11,3 +11,21 @@ Facilitates read-in fand extraction for ocean model output.
 --------
 
 <p><small>Project based on the <a target="_blank" href="https://github.com/jbusecke/cookiecutter-science-project">cookiecutter science project template</a>.</small></p>
+
+## Installation
+
+To install conda environment:
+``` bash
+$ conda env create -f environment.yml
+```
+
+There are additional packages you need but they depend on your operating system:
+* For Mac:
+  ``` bash
+  $ conda install --file requirements-mac.txt
+  ```
+* For Linux:
+  ``` bash
+  $ conda install --file requirements-linux.txt
+  ```
+  
