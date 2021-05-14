@@ -2,6 +2,7 @@ name: extract_model
 channels:
   - conda-forge
 dependencies:
+  - python=3.8
   # Required for full project functionality (dont remove)
   - pytest
   # Examples (remove and add as needed)
@@ -17,3 +18,5 @@ dependencies:
   - cf_xarray
   - xcmocean
   - cmocean
+  - pip:
+    - git+https://github.com/pangeo-data/xESMF.git#egg=xESMF
