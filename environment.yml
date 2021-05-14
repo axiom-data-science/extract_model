@@ -14,3 +14,6 @@ dependencies:
   - netcdf4
   - pandas
   - matplotlib
+  - cf_xarray
+  - xcmocean
+  - cmocean
