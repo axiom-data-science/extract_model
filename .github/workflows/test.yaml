@@ -8,8 +8,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-latest"]
-        python-version: ["3.7", "3.8"]
+        os: ["macos-latest", "ubuntu-latest"]
+        python-version: ["3.8"]
     steps:
       - uses: actions/checkout@v2
       - name: Cache conda
@@ -19,12 +19,12 @@ jobs:
           CACHE_NUMBER: 0
         with:
           path: ~/conda_pkgs_dir
-          key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('ci/environment-py${{ matrix.python-version }}.yml') }}
+          key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('ci/environment-${{ runner.os }}-py${{ matrix.python-version }}.yml') }}
       - uses: conda-incubator/setup-miniconda@v2
         with:
-          # mamba-version: "*" # activate this to build with mamba.
-          # channels: conda-forge, defaults # These need to be specified to use mamba
-          # channel-priority: true
+          mamba-version: "*" # activate this to build with mamba.
+          channels: conda-forge, defaults # These need to be specified to use mamba
+          channel-priority: true
           environment-file: ci/environment-py${{ matrix.python-version }}.yml
 
           activate-environment: test_env_extract_model

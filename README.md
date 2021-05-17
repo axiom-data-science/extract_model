@@ -7,7 +7,7 @@ extract_model
 [![Documentation Status](https://readthedocs.org/projects/extract_model/badge/?version=latest)](https://extract_model.readthedocs.io/en/latest/?badge=latest)
 
 
-Facilitates read-in fand extraction for ocean model output.
+Facilitates read-in and extraction for ocean model output.
 
 --------
 
