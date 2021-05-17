@@ -3,22 +3,15 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to extract_model's documentation!
-=======================================
+`extract_model`
+===============
 
-This is an awesome description of extract_model, written in `reStructuredText`_.
-
-You can contribute new sections by either adding a new file (see ``new_section.rst``) or just putting a jupyter notebook
-in the ``docs`` folder (see ``new_section_notebook.ipynb``).
-
-In either case, make sure to add an entry in the ``.. toctree::``. Check out ``index.rst`` how it was done for the above examples.
+Use `extract_model` to read select output from model output files by time and/or space. Output will be selected using `xarray` by a combination of interpolation and index selection. Horizontal interpolation is accomplished using `xESMF` and time interpolation is done with `xarray`'s native 1D interpolation. Currently vertical interpolation is only possible using `xarray`'s 1D interpolation too and is not set up to interpolate in 4D as would be required for ROMS output if not simply selecting the surface layer.
 
 .. toctree::
    :maxdepth: 2
 
-   new_section
-   new_section_notebook
-   api
+   models
 
 
 
@@ -28,5 +21,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
-.. _reStructuredText: https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html

@@ -6,13 +6,8 @@ from pathlib import Path
 
 models = []
 
-# base_path = Path.home() / "tests/"
-# Path(em.__file__).parent.parent / 'tests' / 'test_mom6.nc'
-
 # MOM6 inputs
-# url = base_path / "test_mom6.nc"
 url = Path(__file__).parent / 'test_mom6.nc'
-# url = 'tests/test_mom6.nc'
 ds = xr.open_dataset(url)
 varname = 'u'
 cf_var = em.get_var_cf(ds, varname)
@@ -30,8 +25,6 @@ models += [mom6]
 
 # HYCOM inputs
 url = Path(__file__).parent / 'test_hycom.nc'
-# url = base_path / "test_hycom.nc"
-# url = 'test_hycom.nc'
 ds = xr.open_dataset(url)
 varname = 'u'
 cf_var = em.get_var_cf(ds, varname)
@@ -49,8 +42,6 @@ models += [hycom]
 
 # Second HYCOM example inputs, from Heather
 url = Path(__file__).parent / 'test_hycom2.nc'
-# url = base_path / "test_hycom2.nc"
-# url = 'test_hycom2.nc'
 ds = xr.open_dataset(url)
 varname = 'u'
 cf_var = em.get_var_cf(ds, varname)
@@ -67,9 +58,7 @@ hycom2 = dict(ds=ds, varname=varname, cf_var=cf_var,
 models += [hycom2]
 
 # ROMS inputs
-# url = base_path / "test_roms.nc"
 url = Path(__file__).parent / 'test_roms.nc'
-# url = 'test_roms.nc'
 ds = xr.open_dataset(url)
 varname = 'ssh'
 cf_var = em.get_var_cf(ds, varname)

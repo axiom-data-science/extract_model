@@ -4,6 +4,12 @@ dependencies:
    # If your docs code examples depend on other packages add them here
    - numpy
    - xarray
+   - cf_xarray
+   - matplotlib
+   - cmocean
+   # use mac dependencies
+   - esmf=8.1.1=mpi_openmpi_h047fafc_0
+   - esmpy=8.1.1=mpi_openmpi_py38hf504846_0
    # These are needed for the docs themselves
    - numpydoc
    - sphinx
@@ -13,8 +19,12 @@ dependencies:
    - nbformat
    - ipykernel
    - pandoc
+   - recommonmark
    - pip
    - pip:
+     - git+https://github.com/axiom-data-science/extract_model.git#egg=extract_model
+     - git+https://github.com/pangeo-data/xESMF.git#egg=xESMF
+     - xcmocean
      - docrep<=0.2.7
      - nbsphinx
      - jupyter_client
