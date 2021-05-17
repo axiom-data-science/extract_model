@@ -1,0 +1,25 @@
+name: extract_model
+channels:
+  - conda-forge
+dependencies:
+  - python=3.8
+  # Required for full project functionality (dont remove)
+  - pytest
+  # Examples (remove and add as needed)
+  - pip
+  - jupyter
+  - jupyterlab
+  - xarray
+  - numpy
+  - scipy
+  - dask
+  - netcdf4
+  - pandas
+  - matplotlib
+  - cf_xarray
+  - cmocean
+  - esmf=8.1.1=mpi_openmpi_h047fafc_0
+  - esmpy=8.1.1=mpi_openmpi_py38hf504846_0
+  - pip:
+    - git+https://github.com/pangeo-data/xESMF.git#egg=xESMF
+    - xcmocean
