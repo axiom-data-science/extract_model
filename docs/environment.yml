@@ -9,7 +9,8 @@ dependencies:
    - cf_xarray
    - matplotlib
    - cmocean
-   # Linus dependencies:
+   - shapely
+   # Linux dependencies:
    - esmf=8.1.1=mpi_openmpi_h852a670_0
    - esmpy=8.1.1=mpi_openmpi_py38h9ab444c_0
    # Uncomment Mac dependencies for local compilation:
