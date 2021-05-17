@@ -4,7 +4,7 @@ dependencies:
    # If your docs code examples depend on other packages add them here
    - numpy
    - xarray
-   - cf_xarray
+   - cf-xarray
    - matplotlib
    - cmocean
    # use mac dependencies
