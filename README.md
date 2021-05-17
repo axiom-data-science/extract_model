@@ -16,17 +16,11 @@ Facilitates read-in fand extraction for ocean model output.
 ## Installation
 
 To install conda environment:
+* for Mac:
 ``` bash
-$ conda env create -f environment.yml
+$ conda env create -f environment-mac.yml
 ```
-
-There are additional packages you need but they depend on your operating system:
-* For Mac:
-  ``` bash
-  $ conda install --file requirements-mac.txt
-  ```
-* For Linux:
-  ``` bash
-  $ conda install --file requirements-linux.txt
-  ```
-  
+* for Linux:
+``` bash
+$ conda env create -f environment-linux.yml
+```

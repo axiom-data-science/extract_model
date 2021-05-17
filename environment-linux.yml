@@ -6,6 +6,7 @@ dependencies:
   # Required for full project functionality (dont remove)
   - pytest
   # Examples (remove and add as needed)
+  - pip
   - jupyter
   - jupyterlab
   - xarray
@@ -16,7 +17,9 @@ dependencies:
   - pandas
   - matplotlib
   - cf_xarray
-  - xcmocean
   - cmocean
+  - esmf=8.1.1=mpi_openmpi_h852a670_0
+  - esmpy=8.1.1=mpi_openmpi_py38h9ab444c_0
   - pip:
     - git+https://github.com/pangeo-data/xESMF.git#egg=xESMF
+    - xcmocean

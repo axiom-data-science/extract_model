@@ -1,2 +1,0 @@
-esmf=8.1.1=mpi_openmpi_h047fafc_0
-esmpy=8.1.1=mpi_openmpi_py38hf504846_0
