@@ -30,31 +30,31 @@ def get_var_cf(ds, varname):
         try:
             cf_var = [standard_name for standard_name in standard_names_ssh if standard_name in ds.cf.standard_names.keys()][0]
         except:
-            None
+            cf_var = None
 
     elif varname == 'u':
         try:
             cf_var = [standard_name for standard_name in standard_names_u if standard_name in ds.cf.standard_names.keys()][0]
         except:
-            None
+            cf_var = None
 
     elif varname == 'v':
         try:
             cf_var = [standard_name for standard_name in standard_names_v if standard_name in ds.cf.standard_names.keys()][0]
         except:
-            None
+            cf_var = None
 
     elif varname == 'salt':
         try:
             cf_var = [standard_name for standard_name in standard_names_salt if standard_name in ds.cf.standard_names.keys()][0]
         except:
-            None
+            cf_var = None
 
     elif varname == 'temp':
         try:
             cf_var = [standard_name for standard_name in standard_names_temp if standard_name in ds.cf.standard_names.keys()][0]
         except:
-            None
+            cf_var = None
 
     return cf_var
 
