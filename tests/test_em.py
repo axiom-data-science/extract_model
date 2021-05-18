@@ -1,8 +1,10 @@
-from extract_model import extract_model as em
+import extract_model as em
 import xarray as xr
 import numpy as np
 import pytest
 from pathlib import Path
+
+varnames = ['ssh', 'u', 'v', 'salt', 'temp']
 
 models = []
 
@@ -17,9 +19,10 @@ lon1, lat1 = -166, 48
 lon2, lat2 = -149, 56
 lonslice = slice(None,5)
 latslice = slice(None,5)
+model_names = [None, 'sea_water_x_velocity', None, None, None]
 mom6 = dict(ds=ds, varname=varname, cf_var=cf_var,
               i=i, j=j, Z=Z, T=T, lon1=lon1, lat1=lat1, lon2=lon2, lat2=lat2,
-              lonslice=lonslice, latslice=latslice
+              lonslice=lonslice, latslice=latslice, model_names=model_names
 )
 models += [mom6]
 
@@ -34,9 +37,10 @@ lon1, lat1 = -166, 48
 lon2, lat2 = 149, -10.1
 lonslice = slice(10,15)
 latslice = slice(10,15)
+model_names = [None, 'eastward_sea_water_velocity', None, None, None]
 hycom = dict(ds=ds, varname=varname, cf_var=cf_var,
               i=i, j=j, Z=Z, T=T, lon1=lon1, lat1=lat1, lon2=lon2, lat2=lat2,
-              lonslice=lonslice, latslice=latslice
+              lonslice=lonslice, latslice=latslice, model_names=model_names
 )
 models += [hycom]
 
@@ -51,9 +55,10 @@ lon1, lat1 = -166, 48
 lon2, lat2 = -91, 29.5
 lonslice = slice(10,15)
 latslice = slice(10,15)
+model_names = [None, 'eastward_sea_water_velocity', None, None, None]
 hycom2 = dict(ds=ds, varname=varname, cf_var=cf_var,
               i=i, j=j, Z=Z, T=T, lon1=lon1, lat1=lat1, lon2=lon2, lat2=lat2,
-              lonslice=lonslice, latslice=latslice
+              lonslice=lonslice, latslice=latslice, model_names=model_names
 )
 models += [hycom2]
 
@@ -68,14 +73,23 @@ lon1, lat1 = -166, 48
 lon2, lat2 = -91, 29.5
 lonslice = slice(10,15)
 latslice = slice(10,15)
+model_names = ['sea_surface_elevation', None, None, None, None]
 roms = dict(ds=ds, varname=varname, cf_var=cf_var,
               i=i, j=j, Z=Z, T=T, lon1=lon1, lat1=lat1, lon2=lon2, lat2=lat2,
-              lonslice=lonslice, latslice=latslice
+              lonslice=lonslice, latslice=latslice, model_names=model_names
 )
 models += [roms]
 
 @pytest.mark.parametrize("model", models)
 class TestModel:
+    def test_names(self, model):
+        ds = model['ds']
+        model_names = model['model_names']
+        
+        for name, model_name in zip(varnames, model_names):
+            assert em.get_var_cf(ds, name) == model_name
+
+        
     def test_grid_point_isel_Z(self, model):
         """Select and return a grid point."""
 
