@@ -5,8 +5,6 @@ extract_model
 [![License:MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 [![Documentation Status](https://img.shields.io/readthedocs/extract_model/latest.svg?style=for-the-badge)](https://extract_model.readthedocs.io/en/latest/?badge=latest)
 [![Code Style Status](https://img.shields.io/github/workflow/status/axiom-data-science/extract_model/linting%20with%20pre-commit?label=Code%20Style&style=for-the-badge)](https://github.com/axiom-data-science/extract_model/actions)
-#[![pypi](https://img.shields.io/pypi/v/extract_model.svg?style=for-the-badge)](https://pypi.org/project/extract_model)
-
 
 Facilitates read-in and extraction for ocean model output.
 
