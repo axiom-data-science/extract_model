@@ -1,11 +1,11 @@
 extract_model
 ==============================
-[![Build Status](https://github.com/axiom-data-science/extract_model/workflows/Tests/badge.svg)](https://github.com/axiom-data-science/extract_model/actions)
-[![codecov](https://codecov.io/gh/axiom-data-science/extract_model/branch/main/graph/badge.svg)](https://codecov.io/gh/axiom-data-science/extract_model)
-[![License:MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flt-square)](https://opensource.org/licenses/MIT)
-[![pypi](https://img.shields.io/pypi/v/extract_model.svg)](https://pypi.org/project/extract_model)
-[![Documentation Status](https://readthedocs.org/projects/extract_model/badge/?version=latest)](https://extract_model.readthedocs.io/en/latest/?badge=latest)
-<!-- [![conda-forge](https://img.shields.io/conda/dn/conda-forge/extract_model?label=conda-forge)](https://anaconda.org/conda-forge/extract_model) -->
+[![Build Status](https://img.shields.io/github/workflow/status/axiom-data-science/extract_model/Tests?logo=github&style=for-the-badge)](https://github.com/axiom-data-science/extract_model/actions)
+[![Code Coverage](https://img.shields.io/codecov/c/github/axiom-data-science/extract_model.svg?style=for-the-badge)](https://codecov.io/gh/axiom-data-science/extract_model)
+[![License:MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![pypi](https://img.shields.io/pypi/v/extract_model.svg?style=for-the-badge)](https://pypi.org/project/extract_model)
+[![Documentation Status](https://img.shields.io/readthedocs/extract_model/latest.svg?style=for-the-badge)](https://extract_model.readthedocs.io/en/latest/?badge=latest)
+[![Code Style Status](https://img.shields.io/github/workflow/status/axiom-data-science/extract_model/linting%20with%20pre-commit?label=Code%20Style&style=for-the-badge)](https://github.com/axiom-data-science/extract_model/actions)
 
 
 Facilitates read-in and extraction for ocean model output.
