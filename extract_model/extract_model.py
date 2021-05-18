@@ -59,7 +59,7 @@ def get_var_cf(ds, varname):
     return cf_var
 
 
-def select(ds, longitude, latitude, varname, T=None, Z=None, 
+def select(ds, longitude=None, latitude=None, varname=None, T=None, Z=None, 
            iT=None, iZ=None, extrap=False, extrap_val=None, locstream=False):
     """Extract output from ds at location(s).
     
@@ -67,11 +67,11 @@ def select(ds, longitude, latitude, varname, T=None, Z=None,
     ------
     ds: Dataset
         Property to take gradients of.
-    longitude, latitude: int, float, list, array (1D or 2D), DataArray
+    longitude, latitude: int, float, list, array (1D or 2D), DataArray, optional
         longitude(s), latitude(s) at which to return model output. 
         Package `xESMF` will be used to interpolate with "bilinear" to 
         these horizontal locations.
-    varname: string
+    varname: string, optional
         Name of variable in ds to interpolate.
     T: datetime-like string, list of datetime-like strings, optional
         Datetime or datetimes at which to return model output. 
@@ -125,27 +125,31 @@ def select(ds, longitude, latitude, varname, T=None, Z=None,
     ```
     """
     
+    # can't run in both Z and iZ mode, same for T/iT
     assert not ((Z is not None) and (iZ is not None))
     assert not ((T is not None) and (iT is not None))
     
-    if (isinstance(longitude, int)) or (isinstance(longitude, float)):
-        longitude = [longitude]
-    if (isinstance(latitude, int)) or (isinstance(latitude, float)):
-        latitude = [latitude]
-    latitude = np.asarray(latitude)
-    longitude = np.asarray(longitude)
+    if (longitude is not None) and (latitude is not None):
+        if (isinstance(longitude, int)) or (isinstance(longitude, float)):
+            longitude = [longitude]
+        if (isinstance(latitude, int)) or (isinstance(latitude, float)):
+            latitude = [latitude]
+        latitude = np.asarray(latitude)
+        longitude = np.asarray(longitude)
 
     if extrap:
         extrap_method = "nearest_s2d"
     else:
         extrap_method = None
         
-    
-    cf_var = get_var_cf(ds, varname)
-    
-    dr = ds.cf[cf_var]
+    if varname is not None:
+        cf_var = get_var_cf(ds, varname)
+
+        dr = ds.cf[cf_var]
+    else:
+        dr = ds
         
-    if not extrap:
+    if (not extrap) and ((longitude is not None) and (latitude is not None)):
         assertion = 'the input longitude range is outside the model domain'
         assert (longitude.min() >= dr.cf['longitude'].min()) and (longitude.max() <= dr.cf['longitude'].max()), assertion
         assertion = 'the input latitude range is outside the model domain'
@@ -154,49 +158,50 @@ def select(ds, longitude, latitude, varname, T=None, Z=None,
     ## Horizontal interpolation ##
     
     # grid of lon/lat to interpolate to, with desired ending attributes
-    if latitude.ndim == 1:
-        ds_out = xr.Dataset(
-            {
-                "lat": (["lat"], latitude, dict(axis="Y", units='degrees_north', standard_name="latitude")),
-                "lon": (["lon"], longitude, dict(axis="X", units='degrees_east', standard_name="longitude")),
-            }
-        )
-    elif latitude.ndim == 2:
-        ds_out = xr.Dataset(
-            {
-                "lat": (["Y","X"], latitude, dict(units='degrees_north', standard_name="latitude")),
-                "lon": (["Y","X"], longitude, dict(units='degrees_east', standard_name="longitude")),
-            }
-        )
+    if (longitude is not None) and (latitude is not None):
+        if latitude.ndim == 1:
+            ds_out = xr.Dataset(
+                {
+                    "lat": (["lat"], latitude, dict(axis="Y", units='degrees_north', standard_name="latitude")),
+                    "lon": (["lon"], longitude, dict(axis="X", units='degrees_east', standard_name="longitude")),
+                }
+            )
+        elif latitude.ndim == 2:
+            ds_out = xr.Dataset(
+                {
+                    "lat": (["Y","X"], latitude, dict(units='degrees_north', standard_name="latitude")),
+                    "lon": (["Y","X"], longitude, dict(units='degrees_east', standard_name="longitude")),
+                }
+            )
         
 
-    # set up regridder, which would work for multiple interpolations if desired
-    regridder = xe.Regridder(dr, ds_out, "bilinear", extrap_method=extrap_method, locstream_out=locstream)
+        # set up regridder, which would work for multiple interpolations if desired
+        regridder = xe.Regridder(dr, ds_out, "bilinear", extrap_method=extrap_method, locstream_out=locstream)
 
-    # do regridding
-    dr_out = regridder(dr, keep_attrs=True)
+        # do regridding
+        dr = regridder(dr, keep_attrs=True)
     
     
     ## Time and depth interpolation or iselection ##
     if iZ is not None:
         with xr.set_options(keep_attrs=True):
-            dr_out = dr_out.cf.isel(Z=iZ)
+            dr = dr.cf.isel(Z=iZ)
     
-    if Z is not None:
+    elif Z is not None:
         with xr.set_options(keep_attrs=True):
-            dr_out = dr_out.cf.interp(Z=Z)
+            dr = dr.cf.interp(Z=Z)
 
     if iT is not None:
         with xr.set_options(keep_attrs=True):
-            dr_out = dr_out.cf.isel(T=iT)
+            dr = dr.cf.isel(T=iT)
     
-    if T is not None:
+    elif T is not None:
         with xr.set_options(keep_attrs=True):
-            dr_out = dr_out.cf.interp(T=T)
+            dr = dr.cf.interp(T=T)
     
     if extrap_val is not None:
         # returns 0 outside the domain by default. Assumes that no other values are exactly 0
         # and replaces all 0's with extrap_val if chosen.
-        dr_out = dr_out.where(dr_out != 0, extrap_val)
+        dr = dr.where(dr != 0, extrap_val)
             
-    return dr_out
+    return dr
