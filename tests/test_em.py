@@ -80,6 +80,25 @@ roms = dict(ds=ds, varname=varname, cf_var=cf_var,
 )
 models += [roms]
 
+
+def test_T_interp():
+    """Test interpolation in time for one model."""
+    
+    url = Path(__file__).parent / 'test_roms.nc'
+    ds = xr.open_dataset(url)
+    dr = em.select(ds=ds, T=0.5)
+    assert np.allclose(dr['zeta'][0,0], -0.12584045)
+
+
+def test_Z_interp():
+    """Test interpolation in depth for one model."""
+    
+    url = Path(__file__).parent / 'test_hycom.nc'
+    ds = xr.open_dataset(url)
+    dr = em.select(ds=ds, Z=1.0)
+    assert np.allclose(dr['water_u'][-1,-1], -0.1365)
+
+
 @pytest.mark.parametrize("model", models)
 class TestModel:
     def test_names(self, model):
