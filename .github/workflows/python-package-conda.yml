@@ -5,11 +5,11 @@ on: [push]
 jobs:
   build:
     name: Build (${{ matrix.python-version }} | ${{ matrix.os }})
-    runs-on: ${{ matrix.os }}-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       max-parallel: 5
       matrix:
-        os: ["macos", "ubuntu"]
+        os: ["macos-latest", "ubuntu-latest"]
         python-version: ["3.8"]
     steps:
     - uses: actions/checkout@v2
@@ -23,7 +23,7 @@ jobs:
         echo $CONDA/bin >> $GITHUB_PATH
     - name: Install dependencies
       run: |
-       conda env update --file environment-${{ matrix.os }}.yml --name base
+       conda env update --file ci/environment-${{ matrix.os }}-py${{ matrix.python-version }}.yml --name base
     - name: Lint with flake8
       run: |
         conda install flake8
