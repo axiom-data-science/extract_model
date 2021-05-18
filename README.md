@@ -25,3 +25,8 @@ $ conda env create -f environment-mac.yml
 ``` bash
 $ conda env create -f environment-linux.yml
 ```
+
+To also develop this package, install additional packages with:
+``` bash
+$ conda install --file requirements-dev.txt
+```
