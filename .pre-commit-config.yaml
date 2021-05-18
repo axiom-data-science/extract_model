@@ -53,9 +53,10 @@ repos:
     exclude: docs/source/conf.py
     args: [--ignore-missing-imports]
 
-- repo: https://github.com/codespell-project/codespell
-  rev: v1.16.0
-  hooks:
-    - id: codespell
-      args:
-        - --quiet-level=2
+# too annoying with notebooks
+# - repo: https://github.com/codespell-project/codespell
+#   rev: v1.16.0
+#   hooks:
+#     - id: codespell
+#       args:
+#         - --quiet-level=2
