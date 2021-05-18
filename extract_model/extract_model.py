@@ -1,3 +1,7 @@
+"""
+Main file for this code. The main code is in `select`, and the rest is to help with variable name management.
+"""
+
 import xarray as xr
 import numpy as np
 import cf_xarray
