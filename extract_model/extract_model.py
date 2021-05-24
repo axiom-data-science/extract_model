@@ -18,12 +18,15 @@ standard_names_temp = ["sea_water_temperature", "sea_water_potential_temperature
 def get_var_cf(ds, varname):
     """Match colloquial name to model name.
 
-    Inputs
-    ------
+    Parameters
+    ----------
     ds: Dataset
+        Dataset containing variable.
     varname: str
         Options: 'ssh', 'u', 'v', 'salt', 'temp'
 
+    Notes
+    -----
     The standard_names used for variables in model output are not the same.
     This function with the lists above connect colloquial names to the list of
     possible variable names above. Then, the name found in the dataset ds is
@@ -99,8 +102,8 @@ def select(
 ):
     """Extract output from ds at location(s).
 
-    Inputs
-    ------
+    Parameters
+    ----------
     ds: Dataset
         Property to take gradients of.
     longitude, latitude: int, float, list, array (1D or 2D), DataArray, optional
@@ -137,28 +140,27 @@ def select(
         or as `extra_value` if input.
     locstream: boolean, optional
         Which type of interpolation to do:
-        * False: 2D array of points with 1 dimension the lons and
-          the other dimension the lats.
-        * True: lons/lats as unstructured coordinate pairs
-          (in xESMF language, LocStream).
+
+        * False: 2D array of points with 1 dimension the lons and the other dimension the lats.
+        * True: lons/lats as unstructured coordinate pairs (in xESMF language, LocStream).
 
 
     Returns
     -------
     DataArray of interpolated and/or selected values from ds.
 
-    Example usage
-    -------------
+    Example
+    -------
+
     Select a single grid point.
-    ```
-    longitude = 100
-    latitude = 10
-    iZ = 0
-    iT = 0
-    varname = 'u'
-    kwargs = dict(ds=ds, longitude=longitude, latitude=latitude, iT=T, iz=Z, varname=varname)
-    dr = select(**kwargs)
-    ```
+
+    >>> longitude = 100
+    >>> latitude = 10
+    >>> iZ = 0
+    >>> iT = 0
+    >>> varname = 'u'
+    >>> kwargs = dict(ds=ds, longitude=longitude, latitude=latitude, iT=T, iz=Z, varname=varname)
+    >>> dr = select(**kwargs)
     """
 
     # can't run in both Z and iZ mode, same for T/iT
