@@ -12,7 +12,7 @@ Use `extract_model` to read select output from model output files by time and/or
    :maxdepth: 2
 
    models
-
+   api
 
 
 Indices and tables
