@@ -159,8 +159,8 @@ def select(
     >>> iZ = 0
     >>> iT = 0
     >>> varname = 'u'
-    >>> kwargs = dict(ds=ds, longitude=longitude, latitude=latitude, iT=T, iz=Z, varname=varname)
-    >>> dr = select(**kwargs)
+    >>> kwargs = dict(ds=ds, longitude=longitude, latitude=latitude, iT=iT, iZ=iZ, varname=varname)
+    >>> dr = em.select(**kwargs)
     """
 
     # can't run in both Z and iZ mode, same for T/iT

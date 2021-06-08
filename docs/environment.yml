@@ -4,19 +4,19 @@ channels:
 dependencies:
    - python=3.8
    # If your docs code examples depend on other packages add them here
-   - numpy
-   - scipy
-   - xarray
    - cf_xarray
-   - matplotlib
    - cmocean
-   - shapely
-   # Linux dependencies:
-   - esmf=8.1.1=mpi_openmpi_h852a670_0
-   - esmpy=8.1.1=mpi_openmpi_py38h9ab444c_0
-   # Uncomment Mac dependencies for local compilation:
-#   - esmf=8.1.1=mpi_openmpi_h047fafc_0
-#   - esmpy=8.1.1=mpi_openmpi_py38hf504846_0
+   - dask
+   - extract_model
+   - jupyter
+   - jupyterlab
+   - matplotlib
+   - netcdf4
+   - numpy
+   - pandas
+   - pip
+   - xarray
+   - xesmf
    # These are needed for the docs themselves
    - numpydoc
    - sphinx
@@ -29,12 +29,10 @@ dependencies:
    - recommonmark
    - pip
    - pip:
-     - git+https://github.com/axiom-data-science/extract_model.git#egg=extract_model
-     - git+https://github.com/pangeo-data/xESMF.git#egg=xESMF
-     - xcmocean
      - docrep<=0.2.7
      - nbsphinx
      - jupyter_client
      - sphinx_pangeo_theme
      - sphinx-copybutton
      - sphinxcontrib-srclinks
+     - xcmocean

@@ -8,7 +8,7 @@ from .extract_model import get_var_cf, select
 
 
 try:
-    __version__ = get_distribution("cf_xarray").version
+    __version__ = get_distribution("extract_model").version
 except DistributionNotFound:
     # package is not installed
     __version__ = "unknown"
