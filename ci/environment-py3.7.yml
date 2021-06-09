@@ -15,6 +15,7 @@ dependencies:
   - pandas
   - pip
   - xarray
+  - xcmocean
   - xesmf
   ##############
   - pytest
@@ -22,4 +23,3 @@ dependencies:
     - codecov
     - pytest-cov
     - coverage[toml]
-    - xcmocean
