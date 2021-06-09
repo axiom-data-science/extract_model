@@ -16,6 +16,5 @@ dependencies:
   - pandas
   - pip
   - xarray
+  - xcmocean
   - xesmf
-  - pip:
-    - xcmocean

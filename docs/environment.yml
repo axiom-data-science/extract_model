@@ -16,6 +16,7 @@ dependencies:
    - pandas
    - pip
    - xarray
+   - xcmocean
    - xesmf
    # These are needed for the docs themselves
    - numpydoc
@@ -35,4 +36,3 @@ dependencies:
      - sphinx_pangeo_theme
      - sphinx-copybutton
      - sphinxcontrib-srclinks
-     - xcmocean
