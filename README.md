@@ -34,7 +34,7 @@ In the `extract_model` directory, install conda environment:
 $ conda env create -f environment.yml
 ```
 
-### Local 
+### Local
 
 For local package install, after cloning the repository, in the `extract_model` directory:
 ``` bash
