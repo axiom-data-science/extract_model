@@ -7,15 +7,13 @@ import xarray as xr
 import extract_model as em
 
 
-varnames = ["ssh", "u", "v", "salt", "temp"]
-
 models = []
 
 # MOM6 inputs
 url = Path(__file__).parent / "test_mom6.nc"
 ds = xr.open_dataset(url)
+ds = ds.cf.guess_coord_axis()
 varname = "u"
-cf_var = em.get_var_cf(ds, varname)
 i, j = 0, 0
 Z, T = 0, None
 lon1, lat1 = -166, 48
@@ -26,7 +24,6 @@ model_names = [None, "sea_water_x_velocity", None, None, None]
 mom6 = dict(
     ds=ds,
     varname=varname,
-    cf_var=cf_var,
     i=i,
     j=j,
     Z=Z,
@@ -45,7 +42,6 @@ models += [mom6]
 url = Path(__file__).parent / "test_hycom.nc"
 ds = xr.open_dataset(url)
 varname = "u"
-cf_var = em.get_var_cf(ds, varname)
 i, j = 0, 30
 Z, T = 0, None
 lon1, lat1 = -166, 48
@@ -56,7 +52,6 @@ model_names = [None, "eastward_sea_water_velocity", None, None, None]
 hycom = dict(
     ds=ds,
     varname=varname,
-    cf_var=cf_var,
     i=i,
     j=j,
     Z=Z,
@@ -75,7 +70,6 @@ models += [hycom]
 url = Path(__file__).parent / "test_hycom2.nc"
 ds = xr.open_dataset(url)
 varname = "u"
-cf_var = em.get_var_cf(ds, varname)
 j, i = 30, 0
 Z, T = 0, None
 lon1, lat1 = -166, 48
@@ -86,7 +80,6 @@ model_names = [None, "eastward_sea_water_velocity", None, None, None]
 hycom2 = dict(
     ds=ds,
     varname=varname,
-    cf_var=cf_var,
     i=i,
     j=j,
     Z=Z,
@@ -105,7 +98,6 @@ models += [hycom2]
 url = Path(__file__).parent / "test_roms.nc"
 ds = xr.open_dataset(url)
 varname = "ssh"
-cf_var = em.get_var_cf(ds, varname)
 j, i = 50, 10
 Z1, T = None, 0
 lon1, lat1 = -166, 48
@@ -116,7 +108,6 @@ model_names = ["sea_surface_elevation", None, None, None, None]
 roms = dict(
     ds=ds,
     varname=varname,
-    cf_var=cf_var,
     i=i,
     j=j,
     Z=Z1,
@@ -152,40 +143,32 @@ def test_Z_interp():
 
 @pytest.mark.parametrize("model", models)
 class TestModel:
-    def test_names(self, model):
-        ds = model["ds"]
-        model_names = model["model_names"]
-
-        for name, model_name in zip(varnames, model_names):
-            assert em.get_var_cf(ds, name) == model_name
-
     def test_grid_point_isel_Z(self, model):
         """Select and return a grid point."""
 
         ds = model["ds"]
         varname = model["varname"]
-        cf_var = model["cf_var"]
         i, j = model["i"], model["j"]
         Z, T = model["Z"], model["T"]
 
         if ds.cf["longitude"].ndim == 1:
-            longitude = float(ds.cf[cf_var].cf["X"][i])
-            latitude = float(ds.cf[cf_var].cf["Y"][j])
+            longitude = float(ds.cf[varname].cf["X"][i])
+            latitude = float(ds.cf[varname].cf["Y"][j])
             sel = dict(longitude=longitude, latitude=latitude)
 
             # isel
             isel = dict(Z=Z)
 
             # check
-            dr_check = ds.cf[cf_var].cf.sel(sel).cf.isel(isel)
+            dr_check = ds.cf[varname].cf.sel(sel).cf.isel(isel)
         elif ds.cf["longitude"].ndim == 2:
-            longitude = float(ds.cf[cf_var].cf["longitude"][j, i])
-            latitude = float(ds.cf[cf_var].cf["latitude"][j, i])
+            longitude = float(ds.cf[varname].cf["longitude"][j, i])
+            latitude = float(ds.cf[varname].cf["latitude"][j, i])
 
             isel = dict(T=T, X=i, Y=j)
 
             # check
-            dr_check = ds.cf[cf_var].cf.isel(isel)
+            dr_check = ds.cf[varname].cf.isel(isel)
 
         kwargs = dict(
             ds=ds, longitude=longitude, latitude=latitude, iZ=Z, iT=T, varname=varname
@@ -230,29 +213,28 @@ class TestModel:
 
         ds = model["ds"]
         varname = model["varname"]
-        cf_var = model["cf_var"]
         i, j = model["i"], model["j"]
         Z, T = model["Z"], model["T"]
 
         if ds.cf["longitude"].ndim == 1:
-            longitude_check = float(ds.cf[cf_var].cf["X"][i])
+            longitude_check = float(ds.cf[varname].cf["X"][i])
             longitude = longitude_check - 0.1
-            latitude = float(ds.cf[cf_var].cf["Y"][j])
+            latitude = float(ds.cf[varname].cf["Y"][j])
             sel = dict(longitude=longitude_check, latitude=latitude)
 
             # isel
             isel = dict(Z=Z)
 
             # check
-            dr_check = ds.cf[cf_var].cf.sel(sel).cf.isel(isel)
+            dr_check = ds.cf[varname].cf.sel(sel).cf.isel(isel)
         elif ds.cf["longitude"].ndim == 2:
-            longitude = float(ds.cf[cf_var].cf["longitude"][j, i])
-            latitude = float(ds.cf[cf_var].cf["latitude"][j, i])
+            longitude = float(ds.cf[varname].cf["longitude"][j, i])
+            latitude = float(ds.cf[varname].cf["latitude"][j, i])
 
             isel = dict(T=T, X=i, Y=j)
 
             # check
-            dr_check = ds.cf[cf_var].cf.isel(isel)
+            dr_check = ds.cf[varname].cf.isel(isel)
 
         kwargs = dict(
             ds=ds,
@@ -306,11 +288,9 @@ class TestModel:
         lonslice, latslice = model["lonslice"], model["latslice"]
         Z, T = model["Z"], model["T"]
 
-        cf_var = em.get_var_cf(ds, varname)
-
         if ds.cf["longitude"].ndim == 1:
-            longitude = ds.cf[cf_var].cf["X"][lonslice].values
-            latitude = ds.cf[cf_var].cf["Y"][latslice].values
+            longitude = ds.cf[varname].cf["X"][lonslice].values
+            latitude = ds.cf[varname].cf["Y"][latslice].values
             sel = dict(
                 longitude=xr.DataArray(longitude, dims="pts"),
                 latitude=xr.DataArray(latitude, dims="pts"),
@@ -318,8 +298,8 @@ class TestModel:
             isel = dict(Z=Z)
 
         elif ds.cf["longitude"].ndim == 2:
-            longitude = ds.cf[cf_var].cf["longitude"].cf.isel(Y=50, X=lonslice)
-            latitude = ds.cf[cf_var].cf["latitude"].cf.isel(Y=50, X=lonslice)
+            longitude = ds.cf[varname].cf["longitude"].cf.isel(Y=50, X=lonslice)
+            latitude = ds.cf[varname].cf["latitude"].cf.isel(Y=50, X=lonslice)
             isel = dict(T=T)
             sel = dict(X=longitude.cf["X"], Y=longitude.cf["Y"])
 
@@ -336,7 +316,7 @@ class TestModel:
         dr = em.select(**kwargs)
 
         # check
-        dr_check = ds.cf[cf_var].cf.sel(sel).cf.isel(isel)
+        dr_check = ds.cf[varname].cf.sel(sel).cf.isel(isel)
 
         assert np.allclose(dr, dr_check, equal_nan=True)
 
@@ -347,26 +327,24 @@ class TestModel:
         lonslice, latslice = model["lonslice"], model["latslice"]
         Z, T = model["Z"], model["T"]
 
-        cf_var = em.get_var_cf(ds, varname)
-
         if ds.cf["longitude"].ndim == 1:
-            longitude = ds.cf[cf_var].cf["X"][lonslice]
-            latitude = ds.cf[cf_var].cf["Y"][latslice]
+            longitude = ds.cf[varname].cf["X"][lonslice]
+            latitude = ds.cf[varname].cf["Y"][latslice]
             sel = dict(longitude=longitude, latitude=latitude)
 
             isel = dict(Z=Z)
 
             # check
-            dr_check = ds.cf[cf_var].cf.sel(sel).cf.isel(isel)
+            dr_check = ds.cf[varname].cf.sel(sel).cf.isel(isel)
 
         elif ds.cf["longitude"].ndim == 2:
-            longitude = ds.cf[cf_var].cf["longitude"][latslice, lonslice].values
-            latitude = ds.cf[cf_var].cf["latitude"][latslice, lonslice].values
+            longitude = ds.cf[varname].cf["longitude"][latslice, lonslice].values
+            latitude = ds.cf[varname].cf["latitude"][latslice, lonslice].values
 
             isel = dict(T=T, X=lonslice, Y=latslice)
 
             # check
-            dr_check = ds.cf[cf_var].cf.isel(isel)
+            dr_check = ds.cf[varname].cf.isel(isel)
 
         kwargs = dict(
             ds=ds, longitude=longitude, latitude=latitude, iZ=Z, iT=T, varname=varname
