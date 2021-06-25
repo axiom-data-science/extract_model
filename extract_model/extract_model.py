@@ -8,85 +8,6 @@ import xarray as xr
 import xesmf as xe
 
 
-standard_names_ssh = ["sea_surface_elevation"]
-standard_names_u = ["eastward_sea_water_velocity", "sea_water_x_velocity"]
-standard_names_v = ["northward_sea_water_velocity", "sea_water_y_velocity"]
-standard_names_salt = ["sea_water_salinity"]
-standard_names_temp = ["sea_water_temperature", "sea_water_potential_temperature"]
-
-
-def get_var_cf(ds, varname):
-    """Match colloquial name to model name.
-
-    Parameters
-    ----------
-    ds: Dataset
-        Dataset containing variable.
-    varname: str
-        Options: 'ssh', 'u', 'v', 'salt', 'temp'
-
-    Notes
-    -----
-    The standard_names used for variables in model output are not the same.
-    This function with the lists above connect colloquial names to the list of
-    possible variable names above. Then, the name found in the dataset ds is
-    returned for the varname. The standard_name has to be in the attributes of
-    the variables and recognizable by `cf-xarray` for this to work.
-    """
-
-    if varname == "ssh":
-        try:
-            cf_var = [
-                standard_name
-                for standard_name in standard_names_ssh
-                if standard_name in ds.cf.standard_names.keys()
-            ][0]
-        except:
-            cf_var = None
-
-    elif varname == "u":
-        try:
-            cf_var = [
-                standard_name
-                for standard_name in standard_names_u
-                if standard_name in ds.cf.standard_names.keys()
-            ][0]
-        except:
-            cf_var = None
-
-    elif varname == "v":
-        try:
-            cf_var = [
-                standard_name
-                for standard_name in standard_names_v
-                if standard_name in ds.cf.standard_names.keys()
-            ][0]
-        except:
-            cf_var = None
-
-    elif varname == "salt":
-        try:
-            cf_var = [
-                standard_name
-                for standard_name in standard_names_salt
-                if standard_name in ds.cf.standard_names.keys()
-            ][0]
-        except:
-            cf_var = None
-
-    elif varname == "temp":
-        try:
-            cf_var = [
-                standard_name
-                for standard_name in standard_names_temp
-                if standard_name in ds.cf.standard_names.keys()
-            ][0]
-        except:
-            cf_var = None
-
-    return cf_var
-
-
 def select(
     ds,
     longitude=None,
@@ -181,9 +102,8 @@ def select(
         extrap_method = None
 
     if varname is not None:
-        cf_var = get_var_cf(ds, varname)
 
-        dr = ds.cf[cf_var]
+        dr = ds.cf[varname]
     else:
         dr = ds
 
