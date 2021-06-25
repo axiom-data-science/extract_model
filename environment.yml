@@ -20,4 +20,4 @@ dependencies:
   - xesmf
   - pip:
     # use cf-xarray from github to include recent variable naming work
-    - git+ssh://git@github.com/xarray-contrib/cf-xarray.git
+    - git+git://github.com/xarray-contrib/cf-xarray#egg=cf-xarray
