@@ -4,7 +4,7 @@ channels:
 dependencies:
   - python=3.8
   ############## These will have to be adjusted to your specific project
-  # - cf_xarray
+  - cf_xarray
   - cmocean
   - dask
   - jupyter
@@ -13,14 +13,13 @@ dependencies:
   - netcdf4
   - numpy
   - pip
+  - requests
   - xarray
   - xcmocean
   - xesmf
   ##############
   - pytest
   - pip:
-    # use cf-xarray from github to include recent variable naming work
-    - git+git://github.com/xarray-contrib/cf-xarray#egg=cf-xarray
     - codecov
     - pytest-cov
     - coverage[toml]
