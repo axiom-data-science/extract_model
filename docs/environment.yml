@@ -4,7 +4,7 @@ channels:
 dependencies:
    - python=3.8
    # If your docs code examples depend on other packages add them here
-   # - cf_xarray
+   - cf_xarray
    - cmocean
    - dask
    - extract_model
@@ -31,7 +31,6 @@ dependencies:
    - recommonmark
    - pip
    - pip:
-     - cf_xarray
      - docrep<=0.2.7
      - nbsphinx
      - jupyter_client

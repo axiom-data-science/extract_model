@@ -4,7 +4,7 @@ channels:
 dependencies:
   - python=3.8
   ############## These will have to be adjusted to your specific project
-  # - cf_xarray
+  - cf_xarray
   - cmocean
   - dask
   - jupyter
@@ -20,7 +20,6 @@ dependencies:
   ##############
   - pytest
   - pip:
-    - cf_xarray
     - codecov
     - pytest-cov
     - coverage[toml]
