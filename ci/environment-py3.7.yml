@@ -13,14 +13,14 @@ dependencies:
   - netcdf4
   - numpy
   - pip
+  - requests
   - xarray
   - xcmocean
   - xesmf
   ##############
   - pytest
   - pip:
-    # use cf-xarray from github to include recent variable naming work
-    - git+git://github.com/xarray-contrib/cf-xarray#egg=cf-xarray
+    - cf_xarray
     - codecov
     - pytest-cov
     - coverage[toml]

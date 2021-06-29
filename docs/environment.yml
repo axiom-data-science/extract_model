@@ -15,6 +15,7 @@ dependencies:
    - numpy
    - pip
    - pooch
+   - requests
    - xarray
    - xcmocean
    - xesmf
@@ -30,8 +31,7 @@ dependencies:
    - recommonmark
    - pip
    - pip:
-     # use cf-xarray from github to include recent variable naming work
-     - git+git://github.com/xarray-contrib/cf-xarray#egg=cf-xarray
+     - cf_xarray
      - docrep<=0.2.7
      - nbsphinx
      - jupyter_client
