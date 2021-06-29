@@ -18,7 +18,7 @@ from .extract_model import select
 my_custom_criteria_gist = "https://gist.githubusercontent.com/kthyng/c3cc27de6b4449e1776ce79215d5e732/raw/55317e92be367f7d6d66e6142d5219a5d272afce/my_custom_criteria.py"
 response = requests.get(my_custom_criteria_gist)
 my_custom_criteria = ast.literal_eval(response.text)
-cfxr.set_options(my_custom_criteria)
+cfxr.set_options(custom_criteria=my_custom_criteria)
 
 
 try:
