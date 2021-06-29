@@ -5,7 +5,7 @@ dependencies:
   # Required for full project functionality (dont remove)
   - pytest
   # Examples (remove and add as needed)
-  - cf_xarray
+  # - cf_xarray
   - cmocean
   - dask
   - jupyter
@@ -18,3 +18,5 @@ dependencies:
   - xarray
   - xcmocean
   - xesmf
+  - pip:
+      cf_xarray
