@@ -13,7 +13,7 @@ models = []
 url = Path(__file__).parent / "test_mom6.nc"
 ds = xr.open_dataset(url)
 ds = ds.cf.guess_coord_axis()
-da = ds['uo']
+da = ds["uo"]
 i, j = 0, 0
 Z, T = 0, None
 lon1, lat1 = -166, 48
@@ -40,7 +40,7 @@ models += [mom6]
 # HYCOM inputs
 url = Path(__file__).parent / "test_hycom.nc"
 ds = xr.open_dataset(url)
-da = ds['water_u']
+da = ds["water_u"]
 i, j = 0, 30
 Z, T = 0, None
 lon1, lat1 = -166, 48
@@ -67,7 +67,7 @@ models += [hycom]
 # Second HYCOM example inputs, from Heather
 url = Path(__file__).parent / "test_hycom2.nc"
 ds = xr.open_dataset(url)
-da = ds['u']
+da = ds["u"]
 j, i = 30, 0
 Z, T = 0, None
 lon1, lat1 = -166, 48
@@ -94,7 +94,7 @@ models += [hycom2]
 # ROMS inputs
 url = Path(__file__).parent / "test_roms.nc"
 ds = xr.open_dataset(url)
-da = ds['zeta']
+da = ds["zeta"]
 j, i = 50, 10
 Z1, T = None, 0
 lon1, lat1 = -166, 48
@@ -124,7 +124,7 @@ def test_T_interp():
 
     url = Path(__file__).parent / "test_roms.nc"
     ds = xr.open_dataset(url)
-    da_out = em.select(da=ds['zeta'], T=0.5)
+    da_out = em.select(da=ds["zeta"], T=0.5)
     assert np.allclose(da_out[0, 0], -0.12584045)
 
 
@@ -165,9 +165,7 @@ class TestModel:
             # check
             da_check = da.cf.isel(isel)
 
-        kwargs = dict(
-            da=da, longitude=longitude, latitude=latitude, iZ=Z, iT=T
-        )
+        kwargs = dict(da=da, longitude=longitude, latitude=latitude, iZ=Z, iT=T)
 
         da_out = em.select(**kwargs)
 
@@ -326,9 +324,7 @@ class TestModel:
             # check
             da_check = da.cf.isel(isel)
 
-        kwargs = dict(
-            da=da, longitude=longitude, latitude=latitude, iZ=Z, iT=T
-        )
+        kwargs = dict(da=da, longitude=longitude, latitude=latitude, iZ=Z, iT=T)
 
         da_out = em.select(**kwargs)
 
