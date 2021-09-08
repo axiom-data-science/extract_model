@@ -1,15 +1,18 @@
 version: 2
 
-# Build PDF & ePub
-formats:
-  - epub
-  - pdf
 conda:
     file: docs/environment.yml
+
 python:
    version: 3.8
    install:
       - method: setuptools
         path: package
+
 sphinx:
   fail_on_warning: true
+
+# Build PDF & ePub
+formats:
+  - epub
+  - pdf
