@@ -67,8 +67,8 @@ def select(
     -------
     DataArray of interpolated and/or selected values from da.
 
-    Example
-    -------
+    Examples
+    --------
 
     Select a single grid point.
 
