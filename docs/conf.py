@@ -62,8 +62,21 @@ extensions = [
 ]
 
 # packages that I don't want to install for docs but package depends on
-autodoc_mock_imports = ['cf_xarray', 'cmocean', 'dask', 'jupyter', 'jupyterlab',
-                        'matplotlib', 'netcdf4', 'numpy', 'pip', 'requests', 'xarray', 'xcmocean', 'xesmf']
+autodoc_mock_imports = [
+    "cf_xarray",
+    "cmocean",
+    "dask",
+    "jupyter",
+    "jupyterlab",
+    "matplotlib",
+    "netcdf4",
+    "numpy",
+    "pip",
+    "requests",
+    "xarray",
+    "xcmocean",
+    "xesmf",
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
