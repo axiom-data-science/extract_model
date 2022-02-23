@@ -8,13 +8,12 @@ dependencies:
   - cf_xarray>=0.6
   - cmocean
   - dask
-  - jupyter
-  - jupyterlab
   - matplotlib
   - netcdf4
   - numpy
   - pip
   - requests
+  - scipy
   - xarray
   - xcmocean
   - xesmf

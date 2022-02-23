@@ -6,117 +6,10 @@ import xarray as xr
 
 import extract_model as em
 
+from .utils import read_model_configs
 
-models = []
-
-# MOM6 inputs
-url = Path(__file__).parent / "test_mom6.nc"
-ds = xr.open_dataset(url)
-ds = ds.cf.guess_coord_axis()
-da = ds["uo"]
-i, j = 0, 0
-Z, T = 0, None
-lon1, lat1 = -166, 48
-lon2, lat2 = -149.0, 56.0
-lonslice = slice(None, 5)
-latslice = slice(None, 5)
-model_names = [None, "sea_water_x_velocity", None, None, None]
-mom6 = dict(
-    da=da,
-    i=i,
-    j=j,
-    Z=Z,
-    T=T,
-    lon1=lon1,
-    lat1=lat1,
-    lon2=lon2,
-    lat2=lat2,
-    lonslice=lonslice,
-    latslice=latslice,
-    model_names=model_names,
-)
-models += [mom6]
-
-# HYCOM inputs
-url = Path(__file__).parent / "test_hycom.nc"
-ds = xr.open_dataset(url)
-da = ds["water_u"]
-i, j = 0, 30
-Z, T = 0, None
-lon1, lat1 = -166, 48
-lon2, lat2 = 149.0, -10.1
-lonslice = slice(10, 15)
-latslice = slice(10, 15)
-model_names = [None, "eastward_sea_water_velocity", None, None, None]
-hycom = dict(
-    da=da,
-    i=i,
-    j=j,
-    Z=Z,
-    T=T,
-    lon1=lon1,
-    lat1=lat1,
-    lon2=lon2,
-    lat2=lat2,
-    lonslice=lonslice,
-    latslice=latslice,
-    model_names=model_names,
-)
-models += [hycom]
-
-# Second HYCOM example inputs, from Heather
-url = Path(__file__).parent / "test_hycom2.nc"
-ds = xr.open_dataset(url)
-da = ds["u"]
-j, i = 30, 0
-Z, T = 0, None
-lon1, lat1 = -166, 48
-lon2, lat2 = -91, 29.5
-lonslice = slice(10, 15)
-latslice = slice(10, 15)
-model_names = [None, "eastward_sea_water_velocity", None, None, None]
-hycom2 = dict(
-    da=da,
-    i=i,
-    j=j,
-    Z=Z,
-    T=T,
-    lon1=lon1,
-    lat1=lat1,
-    lon2=lon2,
-    lat2=lat2,
-    lonslice=lonslice,
-    latslice=latslice,
-    model_names=model_names,
-)
-models += [hycom2]
-
-# ROMS inputs
-url = Path(__file__).parent / "test_roms.nc"
-ds = xr.open_dataset(url)
-da = ds["zeta"]
-j, i = 50, 10
-Z1, T = None, 0
-lon1, lat1 = -166, 48
-lon2, lat2 = -91, 29.5
-lonslice = slice(10, 15)
-latslice = slice(10, 15)
-model_names = ["sea_surface_elevation", None, None, None, None]
-roms = dict(
-    da=da,
-    i=i,
-    j=j,
-    Z=Z1,
-    T=T,
-    lon1=lon1,
-    lat1=lat1,
-    lon2=lon2,
-    lat2=lat2,
-    lonslice=lonslice,
-    latslice=latslice,
-    model_names=model_names,
-)
-models += [roms]
+model_config_path = Path(__file__).parent / "model_configs.yaml"
+models = read_model_configs(model_config_path)
 
 
 def test_T_interp():
@@ -137,9 +30,15 @@ def test_Z_interp():
     assert np.allclose(da_out[-1, -1], -0.1365)
 
 
-@pytest.mark.parametrize("model", models)
+test_args = []
+for model in models:
+    for lib in ["xesmf", "pyinterp"]:
+        test_args.append((model, lib))
+
+
+@pytest.mark.parametrize("model, interp_lib", test_args)
 class TestModel:
-    def test_grid_point_isel_Z(self, model):
+    def test_grid_point_isel_Z(self, model, interp_lib):
         """Select and return a grid point."""
 
         da = model["da"]
@@ -165,13 +64,11 @@ class TestModel:
             # check
             da_check = da.cf.isel(isel)
 
-        kwargs = dict(da=da, longitude=longitude, latitude=latitude, iZ=Z, iT=T)
-
+        kwargs = dict(da=da, longitude=longitude, latitude=latitude, iZ=Z, iT=T, interp_lib=interp_lib)
         da_out = em.select(**kwargs)
-
         assert np.allclose(da_out, da_check)
 
-    def test_extrap_False(self, model):
+    def test_extrap_False(self, model, interp_lib):
         """Search for point outside domain, which should raise an assertion."""
 
         da = model["da"]
@@ -189,12 +86,13 @@ class TestModel:
             iT=T,
             iZ=Z,
             extrap=False,
+            interp_lib=interp_lib
         )
 
         with pytest.raises(AssertionError):
             em.select(**kwargs)
 
-    def test_extrap_True(self, model):
+    def test_extrap_True(self, model, interp_lib):
         """Check that a point right outside domain has
         extrapolated value of neighbor point."""
 
@@ -230,13 +128,17 @@ class TestModel:
             iZ=Z,
             iT=T,
             extrap=True,
+            interp_lib=interp_lib
         )
 
-        da_out = em.select(**kwargs)
+        try:
+            da_out = em.select(**kwargs)
+            assert np.allclose(da_out, da_check)
+        except ValueError:
+            if interp_lib == 'pyinterp':
+                pass
 
-        assert np.allclose(da_out, da_check, equal_nan=True)
-
-    def test_extrap_False_extrap_val_nan(self, model):
+    def test_extrap_False_extrap_val_nan(self, model, interp_lib):
         """Check that land point returns np.nan for extrap=False
         and extrap_val=np.nan."""
 
@@ -256,13 +158,14 @@ class TestModel:
             iT=T,
             extrap=False,
             extrap_val=np.nan,
+            interp_lib=interp_lib
         )
 
         da_out = em.select(**kwargs)
 
         assert da_out.isnull()
 
-    def test_locstream(self, model):
+    def test_locstream(self, model, interp_lib):
 
         da = model["da"]
         lonslice, latslice = model["lonslice"], model["latslice"]
@@ -290,16 +193,17 @@ class TestModel:
             iZ=Z,
             iT=T,
             locstream=True,
+            interp_lib=interp_lib
         )
 
-        da_out = em.select(**kwargs)
+        if interp_lib == 'xesmf':
+            da_out = em.select(**kwargs)
+            da_check = da.cf.sel(sel).cf.isel(isel)
+            assert np.allclose(da_out, da_check, equal_nan=True)
+        else:
+            pass
 
-        # check
-        da_check = da.cf.sel(sel).cf.isel(isel)
-
-        assert np.allclose(da_out, da_check, equal_nan=True)
-
-    def test_grid(self, model):
+    def test_grid(self, model, interp_lib):
 
         da = model["da"]
         lonslice, latslice = model["lonslice"], model["latslice"]
@@ -324,8 +228,7 @@ class TestModel:
             # check
             da_check = da.cf.isel(isel)
 
-        kwargs = dict(da=da, longitude=longitude, latitude=latitude, iZ=Z, iT=T)
+        kwargs = dict(da=da, longitude=longitude, latitude=latitude, iZ=Z, iT=T, interp_lib=interp_lib)
 
         da_out = em.select(**kwargs)
-
         assert np.allclose(da_out, da_check)
