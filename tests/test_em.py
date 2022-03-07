@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -30,6 +31,7 @@ def test_Z_interp():
     assert np.allclose(da_out[-1, -1], -0.1365)
 
 
+interp_libs = ['pyinterp', 'xesmf'] if 'xesmf' in sys.modules else ['pyinterp']
 test_args = []
 for model in models:
     for lib in ["xesmf", "pyinterp"]:

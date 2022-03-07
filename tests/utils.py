@@ -1,3 +1,5 @@
+from pathlib import Path  # noqa E401
+
 import xarray as xr
 import yaml
 

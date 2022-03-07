@@ -371,7 +371,7 @@ def _pyinterp_interp(
                 interped,
                 coords=coords,
                 dims=output_dims,
-                attrs=da.attrs | {'regrid_method': regrid_method}
+                attrs={**da.attrs, **{'regrid_method': regrid_method}}
             )
         elif ndims == 3:
             # Subset data
