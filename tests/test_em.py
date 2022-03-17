@@ -34,7 +34,7 @@ def test_Z_interp():
 interp_libs = ['pyinterp', 'xesmf'] if 'xesmf' in sys.modules else ['pyinterp']
 test_args = []
 for model in models:
-    for lib in ["xesmf", "pyinterp"]:
+    for lib in interp_libs:
         test_args.append((model, lib))
 
 
@@ -136,7 +136,7 @@ class TestModel:
         try:
             da_out = em.select(**kwargs)
             assert np.allclose(da_out, da_check)
-        except ValueError:
+        except (ValueError, AssertionError):
             if interp_lib == 'pyinterp':
                 pass
 
@@ -198,12 +198,9 @@ class TestModel:
             interp_lib=interp_lib
         )
 
-        if interp_lib == 'xesmf':
-            da_out = em.select(**kwargs)
-            da_check = da.cf.sel(sel).cf.isel(isel)
-            assert np.allclose(da_out, da_check, equal_nan=True)
-        else:
-            pass
+        da_out = em.select(**kwargs)
+        da_check = da.cf.sel(sel).cf.isel(isel)
+        assert np.allclose(da_out, da_check, equal_nan=True)
 
     def test_grid(self, model, interp_lib):
 
