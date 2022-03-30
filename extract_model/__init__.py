@@ -9,7 +9,10 @@ import requests  # noqa: F401
 
 from pkg_resources import DistributionNotFound, get_distribution
 
-from .extract_model import select  # noqa: F401
+import extract_model.accessor
+
+from .extract_model import select, argsel2d, sel2d  # noqa: F401
+from .utils import preprocess, order, subset
 
 
 try:
