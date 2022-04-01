@@ -39,7 +39,7 @@ models += [mom6]
 
 # HYCOM inputs
 url = Path(__file__).parent / "test_hycom.nc"
-ds = xr.open_dataset(url)
+ds = xr.open_mfdataset([url], preprocess=em.preprocess)
 da = ds["water_u"]
 i, j = 0, 30
 Z, T = 0, None
@@ -66,7 +66,7 @@ models += [hycom]
 
 # Second HYCOM example inputs, from Heather
 url = Path(__file__).parent / "test_hycom2.nc"
-ds = xr.open_dataset(url)
+ds = xr.open_mfdataset([url], preprocess=em.preprocess)
 da = ds["u"]
 j, i = 30, 0
 Z, T = 0, None
@@ -93,7 +93,7 @@ models += [hycom2]
 
 # ROMS inputs
 url = Path(__file__).parent / "test_roms.nc"
-ds = xr.open_dataset(url)
+ds = xr.open_mfdataset([url], preprocess=em.preprocess)
 da = ds["zeta"]
 j, i = 50, 10
 Z1, T = None, 0
@@ -124,7 +124,7 @@ def test_T_interp():
 
     url = Path(__file__).parent / "test_roms.nc"
     ds = xr.open_dataset(url)
-    da_out = em.select(da=ds["zeta"], T=0.5)
+    da_out, _ = em.select(da=ds["zeta"], T=0.5)
     assert np.allclose(da_out[0, 0], -0.12584045)
 
 
@@ -133,7 +133,7 @@ def test_Z_interp():
 
     url = Path(__file__).parent / "test_hycom.nc"
     ds = xr.open_dataset(url)
-    da_out = em.select(da=ds["water_u"], Z=1.0)
+    da_out, _ = em.select(da=ds["water_u"], Z=1.0)
     assert np.allclose(da_out[-1, -1], -0.1365)
 
 
@@ -149,25 +149,13 @@ class TestModel:
         if da.cf["longitude"].ndim == 1:
             longitude = float(da.cf["X"][i])
             latitude = float(da.cf["Y"][j])
-            sel = dict(longitude=longitude, latitude=latitude)
 
-            # isel
-            isel = dict(Z=Z)
-
-            # check
-            da_check = da.cf.sel(sel).cf.isel(isel)
         elif da.cf["longitude"].ndim == 2:
             longitude = float(da.cf["longitude"][j, i])
             latitude = float(da.cf["latitude"][j, i])
 
-            isel = dict(T=T, X=i, Y=j)
-
-            # check
-            da_check = da.cf.isel(isel)
-
-        kwargs = dict(da=da, longitude=longitude, latitude=latitude, iZ=Z, iT=T)
-
-        da_out = em.select(**kwargs)
+        da_check = da.em.sel2d(longitude, latitude, iT=T, iZ=Z)
+        da_out = da.em.interp2d(lons=longitude, lats=latitude, iZ=Z, iT=T)
 
         assert np.allclose(da_out, da_check)
 
@@ -183,23 +171,21 @@ class TestModel:
         latitude = lat1
 
         kwargs = dict(
-            da=da,
-            longitude=longitude,
-            latitude=latitude,
+            lons=longitude,
+            lats=latitude,
             iT=T,
             iZ=Z,
             extrap=False,
         )
 
         with pytest.raises(AssertionError):
-            em.select(**kwargs)
+            da.em.interp2d(**kwargs)
 
     def test_extrap_True(self, model):
         """Check that a point right outside domain has
         extrapolated value of neighbor point."""
 
         da = model["da"]
-        # varname = model["varname"]
         i, j = model["i"], model["j"]
         Z, T = model["Z"], model["T"]
 
@@ -207,32 +193,21 @@ class TestModel:
             longitude_check = float(da.cf["X"][i])
             longitude = longitude_check - 0.1
             latitude = float(da.cf["Y"][j])
-            sel = dict(longitude=longitude_check, latitude=latitude)
 
-            # isel
-            isel = dict(Z=Z)
-
-            # check
-            da_check = da.cf.sel(sel).cf.isel(isel)
         elif da.cf["longitude"].ndim == 2:
             longitude = float(da.cf["longitude"][j, i])
             latitude = float(da.cf["latitude"][j, i])
 
-            isel = dict(T=T, X=i, Y=j)
-
-            # check
-            da_check = da.cf.isel(isel)
-
         kwargs = dict(
-            da=da,
-            longitude=longitude,
-            latitude=latitude,
+            lons=longitude,
+            lats=latitude,
             iZ=Z,
             iT=T,
             extrap=True,
         )
 
-        da_out = em.select(**kwargs)
+        da_out = da.em.interp2d(**kwargs)
+        da_check = da.em.sel2d(longitude, latitude, iT=T, iZ=Z)
 
         assert np.allclose(da_out, da_check, equal_nan=True)
 
@@ -249,16 +224,15 @@ class TestModel:
         latitude = lat2
 
         kwargs = dict(
-            da=da,
-            longitude=longitude,
-            latitude=latitude,
+            lons=longitude,
+            lats=latitude,
             iZ=Z,
             iT=T,
             extrap=False,
             extrap_val=np.nan,
         )
 
-        da_out = em.select(**kwargs)
+        da_out = da.em.interp2d(**kwargs)
 
         assert da_out.isnull()
 
@@ -284,17 +258,14 @@ class TestModel:
             sel = dict(X=longitude.cf["X"], Y=longitude.cf["Y"])
 
         kwargs = dict(
-            da=da,
-            longitude=longitude,
-            latitude=latitude,
+            lons=longitude,
+            lats=latitude,
             iZ=Z,
             iT=T,
             locstream=True,
         )
 
-        da_out = em.select(**kwargs)
-
-        # check
+        da_out = da.em.interp2d(**kwargs)
         da_check = da.cf.sel(sel).cf.isel(isel)
 
         assert np.allclose(da_out, da_check, equal_nan=True)
@@ -309,23 +280,25 @@ class TestModel:
             longitude = da.cf["X"][lonslice]
             latitude = da.cf["Y"][latslice]
             sel = dict(longitude=longitude, latitude=latitude)
-
             isel = dict(Z=Z)
-
-            # check
             da_check = da.cf.sel(sel).cf.isel(isel)
 
         elif da.cf["longitude"].ndim == 2:
             longitude = da.cf["longitude"][latslice, lonslice].values
             latitude = da.cf["latitude"][latslice, lonslice].values
-
             isel = dict(T=T, X=lonslice, Y=latslice)
-
-            # check
             da_check = da.cf.isel(isel)
 
-        kwargs = dict(da=da, longitude=longitude, latitude=latitude, iZ=Z, iT=T)
-
-        da_out = em.select(**kwargs)
+        kwargs = dict(lons=longitude, lats=latitude, iZ=Z, iT=T, locstream=False)
+        da_out = da.em.interp2d(**kwargs)
 
         assert np.allclose(da_out, da_check)
+
+    def test_preprocess(self, model):
+        """Test preprocessing on output."""
+
+        da = model["da"]
+        axes = ["T", "Z", "Y", "X"]
+        conds = [True if axis in da.cf.axes else axis for axis in axes]
+
+        assert all(conds)
