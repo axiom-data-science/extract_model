@@ -16,7 +16,10 @@ xr.set_options(keep_attrs=True)
 
 @xr.register_dataset_accessor("em")
 class emDatasetAccessor:
+    """Dataset accessor."""
+
     def __init__(self, ds):
+        """Initialize."""
 
         self.ds = ds
 
@@ -26,7 +29,10 @@ class emDatasetAccessor:
 
 @xr.register_dataarray_accessor("em")
 class emDataArrayAccessor:
+    """DataArray accessor."""
+
     def __init__(self, da):
+        "Initialize."
 
         self.da = da
         self.argsel2d_map = {}

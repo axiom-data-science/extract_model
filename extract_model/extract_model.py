@@ -2,19 +2,19 @@
 Main file for this code. The main code is in `select`, and the rest is to help with variable name management.
 """
 
+import cartopy.geodesic
 import cf_xarray  # noqa: F401
 import numpy as np
 import xarray as xr
 import xesmf as xe
 
 
-try:
-    import cartopy.geodesic
-except ImportError:
-    warnings.warn(
-        "cartopy is not installed, so `sel2d` and `argsel2d` will not run.",
-        ImportWarning,
-    )
+# try:
+# except ImportError:
+#     warnings.warn(
+#         "cartopy is not installed, so `sel2d` and `argsel2d` will not run.",
+#         ImportWarning,
+#     )
 
 
 def select(
