@@ -4,7 +4,8 @@ channels:
 dependencies:
   - python=3.8
   ############## These will have to be adjusted to your specific project
-  - cf_xarray>=0.6
+  - cartopy
+  - cf_xarray
   - cmocean
   - dask
   - jupyter
