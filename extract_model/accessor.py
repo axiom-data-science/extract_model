@@ -36,13 +36,24 @@ class emDatasetAccessor:
 
         return em.sub_grid(self.ds, bbox)
 
-    def sub_bbox(self, bbox, drop=True):
+    def sub_bbox(self, bbox, drop=True, dask_array_chunks=True):
         """Subset DataArray in space defined by bbox.
 
         See full docs at `em.sub_bbox()`.
         """
 
-        return em.sub_bbox(self.ds, bbox, drop=drop)
+        dss = []
+        Vars = [
+            Var for Var in self.ds.data_vars if "longitude" in self.ds[Var].cf.coords
+        ]
+        for Var in Vars:
+            dss.append(
+                em.sub_bbox(
+                    self.ds[Var], bbox, drop=drop, dask_array_chunks=dask_array_chunks
+                )
+            )
+
+        return xr.merge(dss)
 
 
 @xr.register_dataarray_accessor("em")
@@ -235,10 +246,12 @@ class emDataArrayAccessor:
 
         return da
 
-    def sub_bbox(self, bbox, drop=True):
+    def sub_bbox(self, bbox, drop=True, dask_array_chunks=True):
         """Subset DataArray in space defined by bbox.
 
         See full docs at `em.sub_bbox()`.
         """
 
-        return em.sub_bbox(self.da, bbox, drop=drop)
+        return em.sub_bbox(
+            self.da, bbox, drop=drop, dask_array_chunks=dask_array_chunks
+        )

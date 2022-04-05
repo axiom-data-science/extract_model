@@ -6,7 +6,7 @@ import numpy as np
 import xarray as xr
 
 
-def sub_grid(ds, bbox):
+def sub_grid(ds, bbox, dask_array_chunks=True):
     """Subset Dataset grids.
 
     Preserves horizontal grid structure, which matters for ROMS.
@@ -24,6 +24,8 @@ def sub_grid(ds, bbox):
         xarray Dataset to select model output from.
     bbox: list
         The bounding box for subsetting is defined as [min_lon, min_lat, max_lon, max_lat]
+    dask_array_chunks: boolean, optional
+        If True, avoids creating large chunks in slicing operation. If False, accept the large chunk and silence this warning. Comes up if Slicing is producing a large chunk.
 
     Returns
     -------
@@ -69,11 +71,14 @@ def sub_grid(ds, bbox):
         if "xi_psi" in ds:
             sel_dict["xi_psi"] = xi_rho[:-1]
         # adjust dimensions of full dataset
-        ds_new = ds.sel(sel_dict)
+        import dask
+
+        with dask.config.set(**{"array.slicing.split_large_chunks": dask_array_chunks}):
+            ds_new = ds.sel(sel_dict)
 
     elif len(lon_names) == 1:
 
-        ds_new = sub_bbox(ds, bbox)
+        ds_new = sub_bbox(ds, bbox, drop=True)
 
     else:
         # raise exception
@@ -84,7 +89,7 @@ def sub_grid(ds, bbox):
     return ds_new
 
 
-def sub_bbox(da, bbox, drop=True):
+def sub_bbox(da, bbox, drop=True, dask_array_chunks=True):
     """Subset DataArray in space.
 
     Can also be used on a Dataset if there is only one horizontal grid.
@@ -98,6 +103,8 @@ def sub_bbox(da, bbox, drop=True):
     drop: bool, optional
         This is passed onto xarray's `da.where()` function. If True, coordinates outside bbox
         are dropped from the DataArray, otherwise they are kept but masked/nan'ed.
+    dask_array_chunks: boolean, optional
+        If True, avoids creating large chunks in slicing operation. If False, accept the large chunk and silence this warning. Comes up if Slicing is producing a large chunk.
 
     Notes
     -----
@@ -112,7 +119,10 @@ def sub_bbox(da, bbox, drop=True):
         & (da.cf["latitude"] < bbox[3])
     ).compute()
 
-    da_smaller = da.where(box, drop=drop)
+    import dask
+
+    with dask.config.set(**{"array.slicing.split_large_chunks": dask_array_chunks}):
+        da_smaller = da.where(box, drop=drop)
 
     return da_smaller
 
