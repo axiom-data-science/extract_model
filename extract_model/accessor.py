@@ -26,6 +26,24 @@ class emDatasetAccessor:
         # extra for getting coordinates but changes variables
         self._ds = ds.copy(deep=True)
 
+    def sub_grid(self, bbox, drop=True):
+        """Subset Dataset in space defined by bbox.
+
+        Returns full set of grids that preserve structure.
+
+        See full docs at `em.sub_grid()`.
+        """
+
+        return em.sub_grid(self.ds, bbox)
+
+    def sub_bbox(self, bbox, drop=True):
+        """Subset DataArray in space defined by bbox.
+
+        See full docs at `em.sub_bbox()`.
+        """
+
+        return em.sub_bbox(self.ds, bbox, drop=drop)
+
 
 @xr.register_dataarray_accessor("em")
 class emDataArrayAccessor:
@@ -217,10 +235,10 @@ class emDataArrayAccessor:
 
         return da
 
-    def subset(self, bbox, drop=True):
-        """Subset DataArray in space.
+    def sub_bbox(self, bbox, drop=True):
+        """Subset DataArray in space defined by bbox.
 
-        See full docs at `em.subset()`.
+        See full docs at `em.sub_bbox()`.
         """
 
-        return em.subset(self.da, bbox, drop=drop)
+        return em.sub_bbox(self.da, bbox, drop=drop)
