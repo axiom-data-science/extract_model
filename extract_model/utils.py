@@ -37,7 +37,7 @@ def sub_grid(ds, bbox):
     attrs = ds.attrs
 
     # return var names for longitude — may be more than 1
-    lons = ds.cf[['longitude']]
+    lons = ds.cf[["longitude"]]
     lon_names = set(lons.coords) - set(lons.dims)
 
     # if longitude is also the name of the dimension
@@ -45,9 +45,9 @@ def sub_grid(ds, bbox):
         lon_names = set(lons.coords)
 
     # check for ROMS special case
-    if 'lon_rho' in lon_names:
+    if "lon_rho" in lon_names:
         # variables with 'lon_rho', just use first one
-        Var = [Var for Var in ds.data_vars if 'lon_rho' in ds[Var].coords][0]
+        Var = [Var for Var in ds.data_vars if "lon_rho" in ds[Var].coords][0]
         subsetted = sub_bbox(ds[Var], bbox, drop=True)
         # import pdb; pdb.set_trace()
         # get xi_rho and eta_rho slice values
@@ -55,19 +55,19 @@ def sub_grid(ds, bbox):
         # This first part is to keep the dimensions consistent across
         # the grids
         # then know xi_u, eta_v
-        sel_dict = {'xi_rho': xi_rho, 'eta_rho': eta_rho}
-        if 'xi_u' in ds:
-            sel_dict['xi_u'] = xi_rho[:-1]
-        if 'eta_v' in ds:
-            sel_dict['eta_v'] = eta_rho[:-1]
-        if 'eta_u' in ds:
-            sel_dict['eta_u'] = eta_rho
-        if 'xi_v' in ds:
-            sel_dict['xi_v'] = xi_rho
-        if 'eta_psi' in ds:
-            sel_dict['eta_psi'] = eta_rho[:-1]
-        if 'xi_psi' in ds:
-            sel_dict['xi_psi'] = xi_rho[:-1]
+        sel_dict = {"xi_rho": xi_rho, "eta_rho": eta_rho}
+        if "xi_u" in ds:
+            sel_dict["xi_u"] = xi_rho[:-1]
+        if "eta_v" in ds:
+            sel_dict["eta_v"] = eta_rho[:-1]
+        if "eta_u" in ds:
+            sel_dict["eta_u"] = eta_rho
+        if "xi_v" in ds:
+            sel_dict["xi_v"] = xi_rho
+        if "eta_psi" in ds:
+            sel_dict["eta_psi"] = eta_rho[:-1]
+        if "xi_psi" in ds:
+            sel_dict["xi_psi"] = xi_rho[:-1]
         # adjust dimensions of full dataset
         ds_new = ds.sel(sel_dict)
 
@@ -77,7 +77,7 @@ def sub_grid(ds, bbox):
 
     else:
         # raise exception
-        print('Not prepared to deal with this situation.')
+        print("Not prepared to deal with this situation.")
 
     ds_new.attrs = attrs
 
