@@ -3,10 +3,91 @@ Utilities to help extract_model work better.
 """
 
 import numpy as np
+import xarray as xr
 
 
-def subset(da, bbox, drop=True):
+def sub_grid(ds, bbox):
+    """Subset Dataset grids.
+
+    Preserves horizontal grid structure, which matters for ROMS.
+    Like `sub_bbox`, this function takes in a bounding box to
+    limit the horizontal domain size. But this function preserves
+    the relative sizes of horizontal grids if more than 1. There
+    will be grid values outside of bbox if grid is curvilinear since
+    the axes then do not follow lon/lat directly.
+
+    If there is only one horizontal grid, this simply calls `sub_bbox()`.
+
+    Parameters
+    ----------
+    ds: Dataset
+        xarray Dataset to select model output from.
+    bbox: list
+        The bounding box for subsetting is defined as [min_lon, min_lat, max_lon, max_lat]
+
+    Returns
+    -------
+    Dataset that preserves original Dataset horizontal grid structure.
+
+    """
+
+    assertion = "Input should be `xarray` Dataset. For DataArray, try `sub_bbox()`."
+    assert isinstance(ds, xr.Dataset), assertion
+
+    attrs = ds.attrs
+
+    # return var names for longitude — may be more than 1
+    lons = ds.cf[['longitude']]
+    lon_names = set(lons.coords) - set(lons.dims)
+
+    # if longitude is also the name of the dimension
+    if len(lon_names) == 0:
+        lon_names = set(lons.coords)
+
+    # check for ROMS special case
+    if 'lon_rho' in lon_names:
+        # variables with 'lon_rho', just use first one
+        Var = [Var for Var in ds.data_vars if 'lon_rho' in ds[Var].coords][0]
+        subsetted = sub_bbox(ds[Var], bbox, drop=True)
+        # import pdb; pdb.set_trace()
+        # get xi_rho and eta_rho slice values
+        xi_rho, eta_rho = subsetted.xi_rho.values, subsetted.eta_rho.values
+        # This first part is to keep the dimensions consistent across
+        # the grids
+        # then know xi_u, eta_v
+        sel_dict = {'xi_rho': xi_rho, 'eta_rho': eta_rho}
+        if 'xi_u' in ds:
+            sel_dict['xi_u'] = xi_rho[:-1]
+        if 'eta_v' in ds:
+            sel_dict['eta_v'] = eta_rho[:-1]
+        if 'eta_u' in ds:
+            sel_dict['eta_u'] = eta_rho
+        if 'xi_v' in ds:
+            sel_dict['xi_v'] = xi_rho
+        if 'eta_psi' in ds:
+            sel_dict['eta_psi'] = eta_rho[:-1]
+        if 'xi_psi' in ds:
+            sel_dict['xi_psi'] = xi_rho[:-1]
+        # adjust dimensions of full dataset
+        ds_new = ds.sel(sel_dict)
+
+    elif len(lon_names) == 1:
+
+        ds_new = sub_bbox(ds, bbox)
+
+    else:
+        # raise exception
+        print('Not prepared to deal with this situation.')
+
+    ds_new.attrs = attrs
+
+    return ds_new
+
+
+def sub_bbox(da, bbox, drop=True):
     """Subset DataArray in space.
+
+    Can also be used on a Dataset if there is only one horizontal grid.
 
     Parameters
     ----------
@@ -17,6 +98,10 @@ def subset(da, bbox, drop=True):
     drop: bool, optional
         This is passed onto xarray's `da.where()` function. If True, coordinates outside bbox
         are dropped from the DataArray, otherwise they are kept but masked/nan'ed.
+
+    Notes
+    -----
+    Not dealing with MOM6 output currently.
     """
 
     # this condition defines the region of interest
