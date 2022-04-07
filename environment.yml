@@ -6,7 +6,7 @@ dependencies:
   - pytest
   # Examples (remove and add as needed)
   - cartopy
-  # - cf_xarray
+  - cf_xarray
   - cmocean
   - dask
   - jupyter
@@ -19,5 +19,5 @@ dependencies:
   - xarray
   - xcmocean
   - xesmf
-  - pip:  # install from github to get recent PRs I contributed
-    - git@github.com:xarray-contrib/cf-xarray.git
+  # - pip:  # install from github to get recent PRs I contributed
+  #   - git@github.com:xarray-contrib/cf-xarray.git
