@@ -42,18 +42,38 @@ class emDatasetAccessor:
         See full docs at `em.sub_bbox()`.
         """
 
+        attrs = self.ds.attrs
+
         dss = []
         Vars = [
             Var for Var in self.ds.data_vars if "longitude" in self.ds[Var].cf.coords
         ]
-        for Var in Vars:
-            dss.append(
-                em.sub_bbox(
-                    self.ds[Var], bbox, drop=drop, dask_array_chunks=dask_array_chunks
+        for Var in self.ds.data_vars:
+            if Var in Vars:
+                dss.append(
+                    em.sub_bbox(
+                        self.ds[Var],
+                        bbox,
+                        drop=drop,
+                        dask_array_chunks=dask_array_chunks,
+                    )
                 )
-            )
+            else:
+                dss.append(self.ds[Var])
 
-        return xr.merge(dss)
+        ds_out = xr.merge(dss)
+
+        ds_out.attrs = attrs
+
+        return ds_out
+
+    def filter(self, standard_names):
+        """Filter Dataset to standard_names, keep imp variables too.
+
+        See full docs at `em.utils.filter()`.
+        """
+
+        return em.filter(self.ds, standard_names)
 
 
 @xr.register_dataarray_accessor("em")

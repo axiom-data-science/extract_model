@@ -12,7 +12,7 @@ from pkg_resources import DistributionNotFound, get_distribution
 import extract_model.accessor
 
 from .extract_model import argsel2d, sel2d, select  # noqa: F401
-from .utils import order, preprocess, sub_bbox, sub_grid
+from .utils import filter, order, preprocess, sub_bbox, sub_grid
 
 
 try:

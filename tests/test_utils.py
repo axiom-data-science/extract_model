@@ -89,19 +89,22 @@ class TestModel:
         assert np.allclose(da_out, da_compare, equal_nan=True)
         assert ds_out.equals(ds_compare)
 
-    def test_sub_grid_ds_roms(self, model):
+    def test_sub_grid_ds(self, model):
         """Test subset on Dataset."""
 
         url, var_name, bbox = model["url"], model["var_name"], model["bbox"]
 
         # Dataset
         ds = xr.open_mfdataset([url], preprocess=em.preprocess)
-        # bbox = [-92, 27, -91, 29]
+        # if 'roms' in url.stem:
+        #     import pdb; pdb.set_trace()
         ds_out = ds.em.sub_grid(bbox=bbox)
-        da_compare = ds[var_name].em.sub_bbox(bbox=bbox)
+        if "roms" not in url.stem:
 
-        X, Y = da_compare.cf["X"].values, da_compare.cf["Y"].values
-        sel_dict = {"X": X, "Y": Y}
-        ds_new = ds.cf.sel(sel_dict)
+            da_compare = ds[var_name].em.sub_bbox(bbox=bbox)
 
-        assert ds_out.equals(ds_new)
+            X, Y = da_compare.cf["X"].values, da_compare.cf["Y"].values
+            sel_dict = {"X": X, "Y": Y}
+            ds_new = ds.cf.sel(sel_dict)
+
+            assert ds_out.equals(ds_new)
