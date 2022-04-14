@@ -140,11 +140,13 @@ def select(
     else:
         ds_out = None
 
+    # If extrapolating, define method
     if extrap:
         extrap_method = "nearest_s2d"
     else:
         extrap_method = None
 
+    # Perform interpolation
     if interp_lib == "xesmf" and XESMF_AVAILABLE:
         da = _xesmf_interp(da, ds_out, T=T, Z=Z, iT=iT, iZ=iZ, extrap_method=extrap_method, extrap_val=extrap_val, locstream=locstream)
     elif interp_lib == "pyinterp" or not XESMF_AVAILABLE:
@@ -224,6 +226,27 @@ def _pyinterp_interp(
     extrap_val: Optional[Number] = None,
     locstream: bool = False,
 ):
+    """Interpolate input DataArray to output DataArray using PyInterp.
+
+    Parameters
+    ----------
+    da: xarray.DataArray
+        Input DataArray to interpolate.
+    da_out: xarray.DataArray
+        Output DataArray to interpolate to.
+    T: datetime-like string, list of datetime-like strings, optional
+    Z: int, float, list, optional
+    iT: int or list of ints, optional
+    iZ: int or list of ints, optional
+    extrap: bool, optional
+    extrap_val: int, float, optional
+    locstream: boolean, optional
+
+    Returns
+    -------
+    DataArray of interpolated and/or selected values from da.
+    """
+
     # Explicitly assing extrap method to var of same name
     if extrap_method is not None:
         extrap = extrap_method
