@@ -91,7 +91,7 @@ class TestModel:
             interp_lib=interp_lib
         )
 
-        with pytest.raises(AssertionError):
+        with pytest.raises(ValueError):
             em.select(**kwargs)
 
     def test_extrap_True(self, model, interp_lib):

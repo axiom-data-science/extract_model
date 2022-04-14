@@ -19,26 +19,23 @@ except ImportError:
     warnings.warn("xESMF not found. Interpolation will be performed using pyinterp.")
 
 try:
-    import pyinterp
-    import pyinterp.backends.xarray
-
     from .pyinterp_shim import PyInterpShim
 except ImportError:
-    warnings.warn("pytinerp not found. Interpolation will be performed using xESMF.")
+    warnings.warn("PyInterp not found. Interpolation will be performed using xESMF.")
 
 
 def select(
-    da,
-    longitude=None,
-    latitude=None,
-    T=None,
-    Z=None,
-    iT=None,
-    iZ=None,
-    extrap=False,
-    extrap_val=None,
-    locstream=False,
-    interp_lib="xesmf"
+    da: xr.DataArray,
+    longitude: Optional[Union[Number, list[Number], npt.ArrayLike, xr.DataArray]] = None,
+    latitude: Optional[Union[Number, list[Number], npt.ArrayLike, xr.DataArray]] = None,
+    T: Optional[Union[str, list[str]]] = None,
+    Z: Optional[Union[Number, list[Number]]] = None,
+    iT: Optional[Union[int, list[int]]] = None,
+    iZ: Optional[Union[int, list[int]]] = None,
+    extrap: bool = False,
+    extrap_val: Optional[Number] = None,
+    locstream: bool = False,
+    interp_lib: str = "xesmf"
 ):
     """Extract output from da at location(s).
 
@@ -101,38 +98,50 @@ def select(
     >>> da_out = em.select(**kwargs)
     """
 
-    # can't run in both Z and iZ mode, same for T/iT
-    assert not ((Z is not None) and (iZ is not None))
-    assert not ((T is not None) and (iT is not None))
+    # Must select or interpolate for depth and time.
+    # - i.e. One cannot run in both Z and iZ mode, same for T/iT
+    if (Z is not None) and (iZ is not None):
+        raise ValueError("Cannot specify both Z and iZ.")
+    if (T is not None) and (iT is not None):
+        raise ValueError("Cannot specify both T and iT.")
 
     if (longitude is not None) and (latitude is not None):
-        if (isinstance(longitude, int)) or (isinstance(longitude, float)):
+        # Must convert scalars to lists because 0D lat/lon arrays are not supported.
+        if isinstance(longitude, Number):
             longitude = [longitude]
-        if (isinstance(latitude, int)) or (isinstance(latitude, float)):
+        if isinstance(latitude, Number):
             latitude = [latitude]
-        latitude = np.asarray(latitude)
         longitude = np.asarray(longitude)
+        latitude = np.asarray(latitude)
 
-    if (not extrap) and ((longitude is not None) and (latitude is not None)):
-        assertion = "the input longitude range is outside the model domain"
-        assert (longitude.min() >= da.cf["longitude"].min()) and (
-            longitude.max() <= da.cf["longitude"].max()
-        ), assertion
-        assertion = "the input latitude range is outside the model domain"
-        assert (latitude.min() >= da.cf["latitude"].min()) and (
-            latitude.max() <= da.cf["latitude"].max()
-        ), assertion
+        output_grid = True
+    else:
+        output_grid = False
 
     # Horizontal interpolation
+    # Verify interpolated points in domain if not extrapolating.
+    if output_grid and not extrap:
+        if longitude.min() < da.cf["longitude"].min() or longitude.max() > da.cf["longitude"].max():
+            raise ValueError(
+                "Longitude outside of available domain."
+                "Use extrap=True to extrapolate."
+            )
+        if latitude.min() < da.cf["latitude"].min() or latitude.max() > da.cf["latitude"].max():
+            raise ValueError(
+                "Latitude outside of available domain."
+                "Use extrap=True to extrapolate."
+            )
+
+    # Create output grid as Dataset.
+    if output_grid:
+        ds_out = make_output_ds(longitude, latitude)
+    else:
+        ds_out = None
+
     if extrap:
         extrap_method = "nearest_s2d"
     else:
         extrap_method = None
-
-    if (longitude is not None) and (latitude is not None):
-        ds_out = make_output_ds(longitude, latitude)
-    else:
-        ds_out = None
 
     if interp_lib == "xesmf" and XESMF_AVAILABLE:
         da = _xesmf_interp(da, ds_out, T=T, Z=Z, iT=iT, iZ=iZ, extrap_method=extrap_method, extrap_val=extrap_val, locstream=locstream)
@@ -154,7 +163,7 @@ def _xesmf_interp(
     extrap_method: Optional[str] = None,
     extrap_val: Optional[Number] = None,
     locstream: bool = False,
-):
+) -> xr.DataArray:
     """Interpolate input DataArray to output DataArray using xESMF.
 
     Parameters
