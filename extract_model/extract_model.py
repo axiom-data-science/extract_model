@@ -2,7 +2,6 @@
 Main file for this code. The main code is in `select`, and the rest is to help with variable name management.
 """
 import warnings
-from ast import Import
 from numbers import Number
 from typing import Optional, Union
 
@@ -21,7 +20,10 @@ except ImportError:
 try:
     from .pyinterp_shim import PyInterpShim
 except ImportError:
-    warnings.warn("PyInterp not found. Interpolation will be performed using xESMF.")
+    if XESMF_AVAILABLE:
+        warnings.warn("PyInterp not found. Interpolation will be performed using xESMF.")
+    else:
+        raise ModuleNotFoundError("Neither PyInterp nor xESMF are available. Please install either package.")
 
 
 def select(
