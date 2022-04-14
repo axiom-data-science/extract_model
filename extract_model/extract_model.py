@@ -3,7 +3,7 @@ Main file for this code. The main code is in `select`, and the rest is to help w
 """
 import warnings
 from numbers import Number
-from typing import Optional, Union, cast
+from typing import Optional, Union
 
 import cf_xarray  # noqa: F401
 import numpy as np
