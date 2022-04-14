@@ -136,7 +136,8 @@ class TestModel:
         try:
             da_out = em.select(**kwargs)
             assert np.allclose(da_out, da_check)
-        except (ValueError, AssertionError):
+        # Should throw TypeError because extrap is not supported using PyInterp.
+        except (ValueError, AssertionError, TypeError):
             if interp_lib == 'pyinterp':
                 pass
 

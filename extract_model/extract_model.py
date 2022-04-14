@@ -3,6 +3,8 @@ Main file for this code. The main code is in `select`, and the rest is to help w
 """
 import warnings
 from ast import Import
+from numbers import Number
+from typing import Optional, Union
 
 import cf_xarray  # noqa: F401
 import numpy as np
@@ -11,10 +13,10 @@ import xarray as xr
 
 try:
     import xesmf as xe
-    XESMF = True
+    XESMF_AVAILABLE = True
 except ImportError:
+    XESMF_AVAILABLE = False
     warnings.warn("xESMF not found. Interpolation will be performed using pyinterp.")
-    XESMF = False
 
 try:
     import pyinterp
@@ -127,15 +129,15 @@ def select(
     else:
         extrap_method = None
 
-    ds_out = None
     if (longitude is not None) and (latitude is not None):
         ds_out = make_output_ds(longitude, latitude)
+    else:
+        ds_out = None
 
-    if XESMF and interp_lib == "xesmf":
+    if interp_lib == "xesmf" and XESMF_AVAILABLE:
         da = _xesmf_interp(da, ds_out, T=T, Z=Z, iT=iT, iZ=iZ, extrap_method=extrap_method, extrap_val=extrap_val, locstream=locstream)
-    elif not XESMF or interp_lib == "pyinterp":
-        interpretor = PyInterpShim()
-        da = interpretor(da, ds_out, T=T, Z=Z, iT=iT, iZ=iZ, extrap=extrap, locstream=locstream)
+    elif interp_lib == "pyinterp" or not XESMF_AVAILABLE:
+        da = _pyinterp_interp(da, ds_out, T=T, Z=Z, iT=iT, iZ=iZ, extrap_method=extrap_method, extrap_val=extrap_val, locstream=locstream)
     else:
         raise ValueError(f"{interp_lib} interpolation not supported")
 
@@ -143,20 +145,40 @@ def select(
 
 
 def _xesmf_interp(
-    da,
-    da_out=None,
-    T=None,
-    Z=None,
-    iT=None,
-    iZ=None,
-    extrap_method='nearest_s2d',
-    extrap_val=None,
-    locstream=False,
+    da: xr.DataArray,
+    ds_out: Optional[xr.Dataset] = None,
+    T: Optional[Union[str, list[str]]] = None,
+    Z: Optional[Union[Number, list[Number]]] = None,
+    iT: Optional[Union[int, list[int]]] = None,
+    iZ: Optional[Union[int, list[int]]] = None,
+    extrap_method: Optional[str] = None,
+    extrap_val: Optional[Number] = None,
+    locstream: bool = False,
 ):
-    if da_out is not None:
+    """Interpolate input DataArray to output DataArray using xESMF.
+
+    Parameters
+    ----------
+    da: xarray.DataArray
+        Input DataArray to interpolate.
+    da_out: xarray.DataArray
+        Output DataArray to interpolate to.
+    T: datetime-like string, list of datetime-like strings, optional
+    Z: int, float, list, optional
+    iT: int or list of ints, optional
+    iZ: int or list of ints, optional
+    extrap: bool, optional
+    extrap_val: int, float, optional
+    locstream: boolean, optional
+
+    Returns
+    -------
+    DataArray of interpolated and/or selected values from da.
+    """
+    if ds_out is not None:
         # set up regridder, which would work for multiple interpolations if desired
         regridder = xe.Regridder(
-            da, da_out, "bilinear", extrap_method=extrap_method, locstream_out=locstream
+            da, ds_out, "bilinear", extrap_method=extrap_method, locstream_out=locstream
         )
         da = regridder(da, keep_attrs=True)
 
@@ -180,44 +202,65 @@ def _xesmf_interp(
     return da
 
 
+def _pyinterp_interp(
+    da: xr.DataArray,
+    ds_out: Optional[xr.Dataset] = None,
+    T: Optional[Union[str, list[str]]] = None,
+    Z: Optional[Union[Number, list[Number]]] = None,
+    iT: Optional[Union[int, list[int]]] = None,
+    iZ: Optional[Union[int, list[int]]] = None,
+    extrap_method: Optional[str] = None,
+    extrap_val: Optional[Number] = None,
+    locstream: bool = False,
+):
+    # Explicitly assing extrap method to var of same name
+    if extrap_method is not None:
+        extrap = extrap_method
+    else:
+        extrap = None
+
+    interpretor = PyInterpShim()
+    da = interpretor(da, ds_out, T=T, Z=Z, iT=iT, iZ=iZ, extrap=extrap, locstream=locstream)
+
+    return da
+
+
 def make_output_ds(longitude: npt.ArrayLike, latitude: npt.ArrayLike) -> xr.Dataset:
     """
     Given desired interpolated longitude and latitude, return points as Dataset.
     """
     # Grid of lat/lon to interpolate to with desired ending attributes
-    ds_out = None
-    if (longitude is not None) and (latitude is not None):
-        if latitude.ndim == 1:
-            ds_out = xr.Dataset(
-                {
-                    "lat": (
-                        ["lat"],
-                        latitude,
-                        dict(axis="Y", units="degrees_north", standard_name="latitude"),
-                    ),
-                    "lon": (
-                        ["lon"],
-                        longitude,
-                        dict(axis="X", units="degrees_east", standard_name="longitude"),
-                    ),
-                }
-            )
-        elif latitude.ndim == 2:
-            ds_out = xr.Dataset(
-                {
-                    "lat": (
-                        ["Y", "X"],
-                        latitude,
-                        dict(units="degrees_north", standard_name="latitude"),
-                    ),
-                    "lon": (
-                        ["Y", "X"],
-                        longitude,
-                        dict(units="degrees_east", standard_name="longitude"),
-                    ),
-                }
-            )
-        else:
-            raise IndexError(f"{latitude.ndim}D latitude/longitude arrays not supported.")
+    if latitude.ndim == 1:
+        ds_out = xr.Dataset(
+            {
+                "lat": (
+                    ["lat"],
+                    latitude,
+                    dict(axis="Y", units="degrees_north", standard_name="latitude"),
+                ),
+                "lon": (
+                    ["lon"],
+                    longitude,
+                    dict(axis="X", units="degrees_east", standard_name="longitude"),
+                ),
+            }
+        )
+    elif latitude.ndim == 2:
+        ds_out = xr.Dataset(
+            {
+                "lat": (
+                    ["Y", "X"],
+                    latitude,
+                    dict(units="degrees_north", standard_name="latitude"),
+                ),
+                "lon": (
+                    ["Y", "X"],
+                    longitude,
+                    dict(units="degrees_east", standard_name="longitude"),
+                ),
+            }
+        )
+    else:
+        raise IndexError(f"{latitude.ndim}D latitude/longitude arrays not supported.")
 
     return ds_out
