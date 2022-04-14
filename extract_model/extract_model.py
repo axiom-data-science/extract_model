@@ -3,7 +3,7 @@ Main file for this code. The main code is in `select`, and the rest is to help w
 """
 import warnings
 from numbers import Number
-from typing import Optional, Union
+from typing import Optional, Union, cast
 
 import cf_xarray  # noqa: F401
 import numpy as np
@@ -115,7 +115,6 @@ def select(
             latitude = [latitude]
         longitude = np.asarray(longitude)
         latitude = np.asarray(latitude)
-
         output_grid = True
     else:
         output_grid = False
@@ -247,11 +246,11 @@ def _pyinterp_interp(
     DataArray of interpolated and/or selected values from da.
     """
 
-    # Explicitly assing extrap method to var of same name
+    # Loess based extrapolation will be used if required.
     if extrap_method is not None:
-        extrap = extrap_method
+        extrap = True
     else:
-        extrap = None
+        extrap = False
 
     interpretor = PyInterpShim()
     da = interpretor(da, ds_out, T=T, Z=Z, iT=iT, iZ=iZ, extrap=extrap, locstream=locstream)

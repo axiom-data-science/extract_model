@@ -1,11 +1,12 @@
 """
-Temporary interface for using pyinterp.
+Temporary interface for using pyinterp in same manner as xESMF in this package.
 """
-import numbers
 import warnings
-from typing import Tuple
+from numbers import Number
+from typing import Optional, Tuple, Union
 
 import numpy as np
+import numpy.typing as npt
 import xarray as xr
 
 try:
@@ -20,21 +21,21 @@ class PyInterpShim:
 
     def __call__(
         self,
-        da,
-        da_out=None,
-        T=None,
-        Z=None,
-        iT=None,
-        iZ=None,
-        extrap=None,
-        locstream=False,
+        da: xr.DataArray,
+        da_out: Optional[xr.DataArray] = None,
+        T: Optional[Union[str, list[str]]] = None,
+        Z: Optional[Union[Number, list[Number]]] = None,
+        iT: Optional[Union[int, list[int]]] = None,
+        iZ: Optional[Union[int, list[int]]] = None,
+        extrap: bool = False,
+        locstream: bool = False,
     ):
-        warnings.warn("extrap_method not supported for pyinterp.")
-
-        if extrap is not None:
-            bounds_error = extrap
-        else:
+        # If extrapolating, bounds_errors will not be raised.
+        # Loess extrapoltion will be used.
+        if extrap:
             bounds_error = False
+        else:
+            bounds_error = True
 
         # Time and depth interpolation or iselection
         with xr.set_options(keep_attrs=True):
@@ -62,17 +63,17 @@ class PyInterpShim:
 
     def _interp(
         self,
-        da,
-        da_out,
-        T=None,
-        Z=None,
-        iT=None,
-        iZ=None,
-        bounds_error=None
+        da: xr.DataArray,
+        da_out: xr.DataArray,
+        T: Optional[Union[str, list[str]]] = None,
+        Z: Optional[Union[Number, list[Number]]] = None,
+        iT: Optional[Union[int, list[int]]] = None,
+        iZ: Optional[Union[int, list[int]]] = None,
+        bounds_error: bool = False,
     ) -> Tuple[xr.DataArray, np.ndarray, str]:
         # Prepare points for interpolation
         # - Need a DataArray
-        if type(da) == xr.Dataset:
+        if isinstance(da, xr.Dataset):
             var_name = list(da.data_vars)[0]
             da = da[var_name]
         else:
@@ -90,7 +91,7 @@ class PyInterpShim:
                 if v is not None:
                     if isinstance(v, list) and len(v) == 0:
                         return True
-                    elif isinstance(v, numbers.Number):
+                    elif isinstance(v, Number):
                         return True
 
             # Then check if there are singular dimensions in the data array
@@ -368,7 +369,7 @@ class PyInterpShim:
                 if v is not None:
                     if isinstance(v, list) and len(v) == 0:
                         return True
-                    elif isinstance(v, numbers.Number):
+                    elif isinstance(v, Number):
                         return True
 
             # Then check if there are singular dimensions in the data array
