@@ -2,9 +2,8 @@ name: test-env
 channels:
   - conda-forge
 dependencies:
-  - python=3.8
-  - cartopy
-  - cf_xarray
+  - python=3.9
+  - cf_xarray>=0.6
   - cmocean
   - dask
   - matplotlib

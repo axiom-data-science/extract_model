@@ -3,8 +3,7 @@ channels:
   - conda-forge
 dependencies:
   - python=3.8
-  - cartopy
-  - cf_xarray
+  - cf_xarray>=0.6
   - cmocean
   - dask
   - matplotlib
@@ -15,7 +14,6 @@ dependencies:
   - requests
   - xarray
   - xcmocean
-  - xesmf
   - pytest
   - pip:
     - codecov

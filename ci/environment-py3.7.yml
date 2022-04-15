@@ -1,24 +1,21 @@
-name: test_env_extract_model
+name: test-env
 channels:
   - conda-forge
 dependencies:
   - python=3.7
-  ############## These will have to be adjusted to your specific project
   - cartopy
   - cf_xarray
   - cmocean
   - dask
-  - jupyter
-  - jupyterlab
   - matplotlib
   - netcdf4
   - numpy
   - pip
+  - pyinterp
   - requests
   - xarray
   - xcmocean
   - xesmf
-  ##############
   - pytest
   - pip:
     - codecov

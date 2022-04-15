@@ -1,12 +1,36 @@
 """
 Main file for this code. The main code is in `select`, and the rest is to help with variable name management.
 """
+import warnings
+from numbers import Number
+from types import ModuleType
+from typing import List, Optional, Union
 
 import cartopy.geodesic
 import cf_xarray  # noqa: F401
 import numpy as np
+import numpy.typing as npt
 import xarray as xr
-import xesmf as xe
+
+try:
+    import xesmf as xe
+
+    XESMF_AVAILABLE = True
+except ImportError:
+    XESMF_AVAILABLE = False
+    warnings.warn("xESMF not found. Interpolation will be performed using pyinterp.")
+
+try:
+    from .pyinterp_shim import PyInterpShim
+except ImportError:
+    if XESMF_AVAILABLE:
+        warnings.warn(
+            "PyInterp not found. Interpolation will be performed using xESMF."
+        )
+    else:
+        raise ModuleNotFoundError(
+            "Neither PyInterp nor xESMF are available. Please install either package."
+        )
 
 
 # try:
@@ -18,24 +42,27 @@ import xesmf as xe
 
 
 def select(
-    da,
-    longitude=None,
-    latitude=None,
-    T=None,
-    Z=None,
-    iT=None,
-    iZ=None,
-    extrap=False,
-    extrap_val=None,
-    locstream=False,
-    regridder=None,
+    da: xr.DataArray,
+    longitude: Optional[
+        Union[Number, List[Number], npt.ArrayLike, xr.DataArray]
+    ] = None,
+    latitude: Optional[Union[Number, List[Number], npt.ArrayLike, xr.DataArray]] = None,
+    T: Optional[Union[str, List[str]]] = None,
+    Z: Optional[Union[Number, List[Number]]] = None,
+    iT: Optional[Union[int, List[int]]] = None,
+    iZ: Optional[Union[int, List[int]]] = None,
+    extrap: bool = False,
+    extrap_val: Optional[Number] = None,
+    locstream: bool = False,
+    interp_lib: str = "xesmf",
+    regridder: Optional[ModuleType] = None,
 ):
     """Extract output from da at location(s).
 
     Parameters
     ----------
     da: DataArray
-        Property to select model output from.
+        DataArray from which to extract data.
     longitude, latitude: int, float, list, array (1D or 2D), DataArray, optional
         longitude(s), latitude(s) at which to return model output.
         Package `xESMF` will be used to interpolate with "bilinear" to
@@ -94,83 +121,128 @@ def select(
     >>> da_out = em.select(**kwargs)
     """
 
-    # can't run in both Z and iZ mode, same for T/iT
-    assert not ((Z is not None) and (iZ is not None))
-    assert not ((T is not None) and (iT is not None))
+    # Must select or interpolate for depth and time.
+    # - i.e. One cannot run in both Z and iZ mode, same for T/iT
+    if (Z is not None) and (iZ is not None):
+        raise ValueError("Cannot specify both Z and iZ.")
+    if (T is not None) and (iT is not None):
+        raise ValueError("Cannot specify both T and iT.")
 
     if (longitude is not None) and (latitude is not None):
-        if (isinstance(longitude, int)) or (isinstance(longitude, float)):
+        # Must convert scalars to lists because 0D lat/lon arrays are not supported.
+        if isinstance(longitude, Number):
             longitude = [longitude]
-        if (isinstance(latitude, int)) or (isinstance(latitude, float)):
+        if isinstance(latitude, Number):
             latitude = [latitude]
-        latitude = np.asarray(latitude)
         longitude = np.asarray(longitude)
+        latitude = np.asarray(latitude)
+        output_grid = True
+    else:
+        output_grid = False
 
+    # Horizontal interpolation
+    # Verify interpolated points in domain if not extrapolating.
+    if output_grid and not extrap:
+        if (
+            longitude.min() < da.cf["longitude"].min()
+            or longitude.max() > da.cf["longitude"].max()
+        ):
+            raise ValueError(
+                "Longitude outside of available domain."
+                "Use extrap=True to extrapolate."
+            )
+        if (
+            latitude.min() < da.cf["latitude"].min()
+            or latitude.max() > da.cf["latitude"].max()
+        ):
+            raise ValueError(
+                "Latitude outside of available domain."
+                "Use extrap=True to extrapolate."
+            )
+
+    # Create output grid as Dataset.
+    if output_grid:
+        ds_out = make_output_ds(longitude, latitude)
+    else:
+        ds_out = None
+
+    # If extrapolating, define method
     if extrap:
         extrap_method = "nearest_s2d"
     else:
         extrap_method = None
 
-    if (not extrap) and ((longitude is not None) and (latitude is not None)):
-        assertion = "the input longitude range is outside the model domain"
-        assert (longitude.min() >= da.cf["longitude"].min()) and (
-            longitude.max() <= da.cf["longitude"].max()
-        ), assertion
-        assertion = "the input latitude range is outside the model domain"
-        assert (latitude.min() >= da.cf["latitude"].min()) and (
-            latitude.max() <= da.cf["latitude"].max()
-        ), assertion
+    # Perform interpolation
+    if interp_lib == "xesmf" and XESMF_AVAILABLE:
+        da = _xesmf_interp(
+            da,
+            ds_out,
+            T=T,
+            Z=Z,
+            iT=iT,
+            iZ=iZ,
+            extrap_method=extrap_method,
+            extrap_val=extrap_val,
+            locstream=locstream,
+            regridder=regridder
+        )
+    elif interp_lib == "pyinterp" or not XESMF_AVAILABLE:
+        da = _pyinterp_interp(
+            da,
+            ds_out,
+            T=T,
+            Z=Z,
+            iT=iT,
+            iZ=iZ,
+            extrap_method=extrap_method,
+            extrap_val=extrap_val,
+            locstream=locstream
+        )
+    else:
+        raise ValueError(f"{interp_lib} interpolation not supported")
 
-    # Horizontal interpolation #
-    # grid of lon/lat to interpolate to, with desired ending attributes
-    if (longitude is not None) and (latitude is not None):
+    return da
 
-        if latitude.ndim == 1:
-            da_out = xr.Dataset(
-                {
-                    "lat": (
-                        ["lat"],
-                        latitude,
-                        dict(axis="Y", units="degrees_north", standard_name="latitude"),
-                    ),
-                    "lon": (
-                        ["lon"],
-                        longitude,
-                        dict(axis="X", units="degrees_east", standard_name="longitude"),
-                    ),
-                }
-            )
-        elif latitude.ndim == 2:
-            da_out = xr.Dataset(
-                {
-                    "lat": (
-                        ["Y", "X"],
-                        latitude,
-                        dict(units="degrees_north", standard_name="latitude"),
-                    ),
-                    "lon": (
-                        ["Y", "X"],
-                        longitude,
-                        dict(units="degrees_east", standard_name="longitude"),
-                    ),
-                }
-            )
 
+def _xesmf_interp(
+    da: xr.DataArray,
+    ds_out: Optional[xr.Dataset] = None,
+    T: Optional[Union[str, List[str]]] = None,
+    Z: Optional[Union[Number, List[Number]]] = None,
+    iT: Optional[Union[int, List[int]]] = None,
+    iZ: Optional[Union[int, List[int]]] = None,
+    extrap_method: Optional[str] = None,
+    extrap_val: Optional[Number] = None,
+    locstream: bool = False,
+    regridder: Optional[ModuleType] = None
+) -> xr.DataArray:
+    """Interpolate input DataArray to output DataArray using xESMF.
+
+    Parameters
+    ----------
+    da: xarray.DataArray
+        Input DataArray to interpolate.
+    da_out: xarray.DataArray
+        Output DataArray to interpolate to.
+    T: datetime-like string, list of datetime-like strings, optional
+    Z: int, float, list, optional
+    iT: int or list of ints, optional
+    iZ: int or list of ints, optional
+    extrap: bool, optional
+    extrap_val: int, float, optional
+    locstream: boolean, optional
+
+    Returns
+    -------
+    DataArray of interpolated and/or selected values from da.
+    """
+    if ds_out is not None:
         if regridder is None:
             # set up regridder, which would work for multiple interpolations if desired
             regridder = xe.Regridder(
-                da,
-                da_out,
-                "bilinear",
-                extrap_method=extrap_method,
-                locstream_out=locstream,
-                ignore_degenerate=True,
+                da, ds_out, "bilinear", extrap_method=extrap_method, locstream_out=locstream
             )
-
-        # do regridding
-        da_int = regridder(da, keep_attrs=True)
-    else:
-        da_int = da
+        da = regridder(da, keep_attrs=True)
 
     # get z coordinates to go with interpolated output if not available
     if "vertical" in da.cf.coords:
@@ -181,50 +253,50 @@ def select(
             zint = regridder(da[zkey], keep_attrs=True)
 
             # add coords
-            da_int = da_int.assign_coords({zkey: zint})
+            da = da.assign_coords({zkey: zint})
 
     if iT is not None:
         with xr.set_options(keep_attrs=True):
-            da_int = da_int.cf.isel(T=iT)
+            da = da.cf.isel(T=iT)
 
     elif T is not None:
         with xr.set_options(keep_attrs=True):
-            da_int = da_int.cf.interp(T=T)
+            da = da.cf.interp(T=T)
 
     # Time and depth interpolation or iselection #
     if iZ is not None:
         with xr.set_options(keep_attrs=True):
-            da_int = da_int.cf.isel(Z=iZ)
+            da = da.cf.isel(Z=iZ)
 
     # deal with interpolation in Z separately
     elif Z is not None:
 
         # can do interpolation in depth for any number of dimensions if the
         # vertical coord is 1d
-        if da_int.cf["vertical"].ndim == 1:
-            da_int = da_int.cf.interp(vertical=Z)
+        if da.cf["vertical"].ndim == 1:
+            da = da.cf.interp(vertical=Z)
 
         # if the vertical coord is greater than 1D, can only do restricted interpolation
         # at the moment
         else:
-            da_int = da_int.squeeze()
-            if len(da_int.dims) == 1 and da_int.cf["Z"].name in da_int.dims:
-                da_int = da_int.swap_dims(
-                    {da_int.cf["Z"].name: da_int.cf["vertical"].name}
+            da = da.squeeze()
+            if len(da.dims) == 1 and da.cf["Z"].name in da.dims:
+                da = da.swap_dims(
+                    {da.cf["Z"].name: da.cf["vertical"].name}
                 )
-                da_int = da_int.cf.interp(vertical=Z)
-            elif len(da_int.dims) == 2 and da_int.cf["Z"].name in da_int.dims:
+                da = da.cf.interp(vertical=Z)
+            elif len(da.dims) == 2 and da.cf["Z"].name in da.dims:
                 # loop over other dimension
-                dim_var_name = list(set(da_int.dims) - set([da_int.cf["Z"].name]))[0]
+                dim_var_name = list(set(da.dims) - set([da.cf["Z"].name]))[0]
                 new_da = []
-                for i in range(len(da_int[dim_var_name])):
+                for i in range(len(da[dim_var_name])):
                     new_da.append(
-                        da_int.isel({dim_var_name: i})
-                        .swap_dims({da_int.cf["Z"].name: da_int.cf["vertical"].name})
+                        da.isel({dim_var_name: i})
+                        .swap_dims({da.cf["Z"].name: da.cf["vertical"].name})
                         .cf.interp(vertical=Z)
                     )
-                da_int = xr.concat(new_da, dim=dim_var_name)
-            elif len(da_int.dims) > 2:
+                da = xr.concat(new_da, dim=dim_var_name)
+            elif len(da.dims) > 2:
                 # need to implement (x)isoslice here
                 raise NotImplementedError(
                     "Currently it is not possible to interpolate in depth with more than 1 other (time) dimension."
@@ -233,9 +305,96 @@ def select(
     if extrap_val is not None:
         # returns 0 outside the domain by default. Assumes that no other values are exactly 0
         # and replaces all 0's with extrap_val if chosen.
-        da_int = da_int.where(da_int != 0, extrap_val)
+        da = da.where(da != 0, extrap_val)
 
-    return da_int.squeeze(), regridder
+    return da.squeeze()
+
+
+def _pyinterp_interp(
+    da: xr.DataArray,
+    ds_out: Optional[xr.Dataset] = None,
+    T: Optional[Union[str, List[str]]] = None,
+    Z: Optional[Union[Number, List[Number]]] = None,
+    iT: Optional[Union[int, List[int]]] = None,
+    iZ: Optional[Union[int, List[int]]] = None,
+    extrap_method: Optional[str] = None,
+    extrap_val: Optional[Number] = None,
+    locstream: bool = False
+):
+    """Interpolate input DataArray to output DataArray using PyInterp.
+
+    Parameters
+    ----------
+    da: xarray.DataArray
+        Input DataArray to interpolate.
+    da_out: xarray.DataArray
+        Output DataArray to interpolate to.
+    T: datetime-like string, list of datetime-like strings, optional
+    Z: int, float, list, optional
+    iT: int or list of ints, optional
+    iZ: int or list of ints, optional
+    extrap: bool, optional
+    extrap_val: int, float, optional
+    locstream: boolean, optional
+
+    Returns
+    -------
+    DataArray of interpolated and/or selected values from da.
+    """
+
+    # Loess based extrapolation will be used if required.
+    if extrap_method is not None:
+        extrap = True
+    else:
+        extrap = False
+
+    interpretor = PyInterpShim()
+    da = interpretor(
+        da, ds_out, T=T, Z=Z, iT=iT, iZ=iZ, extrap=extrap, locstream=locstream
+    )
+
+    return da
+
+
+def make_output_ds(longitude: npt.ArrayLike, latitude: npt.ArrayLike) -> xr.Dataset:
+    """
+    Given desired interpolated longitude and latitude, return points as Dataset.
+    """
+    # Grid of lat/lon to interpolate to with desired ending attributes
+    if latitude.ndim == 1:
+        ds_out = xr.Dataset(
+            {
+                "lat": (
+                    ["lat"],
+                    latitude,
+                    dict(axis="Y", units="degrees_north", standard_name="latitude"),
+                ),
+                "lon": (
+                    ["lon"],
+                    longitude,
+                    dict(axis="X", units="degrees_east", standard_name="longitude"),
+                ),
+            }
+        )
+    elif latitude.ndim == 2:
+        ds_out = xr.Dataset(
+            {
+                "lat": (
+                    ["Y", "X"],
+                    latitude,
+                    dict(units="degrees_north", standard_name="latitude"),
+                ),
+                "lon": (
+                    ["Y", "X"],
+                    longitude,
+                    dict(units="degrees_east", standard_name="longitude"),
+                ),
+            }
+        )
+    else:
+        raise IndexError(f"{latitude.ndim}D latitude/longitude arrays not supported.")
+
+    return ds_out
 
 
 def argsel2d(lons, lats, lon0, lat0):

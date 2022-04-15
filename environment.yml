@@ -4,18 +4,22 @@ channels:
 dependencies:
   # Required for full project functionality (dont remove)
   - pytest
+<<<<<<< HEAD
+  - cf_xarray>=0.6
+=======
   # Examples (remove and add as needed)
   - cartopy
   - cf_xarray
+>>>>>>> origin/main
   - cmocean
   - dask
-  - jupyter
-  - jupyterlab
   - matplotlib
   - netcdf4
   - numpy
   - pip
+  - pyinterp
   - requests
+  - scipy
   - xarray
   - xcmocean
   - xesmf
