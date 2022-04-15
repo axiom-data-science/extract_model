@@ -4,7 +4,6 @@ channels:
 dependencies:
   # Required for full project functionality (dont remove)
   - pytest
-  # Examples (remove and add as needed)
   - cf_xarray>=0.6
   - cmocean
   - dask
@@ -12,6 +11,7 @@ dependencies:
   - netcdf4
   - numpy
   - pip
+  - pyinterp
   - requests
   - scipy
   - xarray
