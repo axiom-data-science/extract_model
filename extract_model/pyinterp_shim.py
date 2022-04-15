@@ -3,10 +3,9 @@ Temporary interface for using pyinterp in same manner as xESMF in this package.
 """
 import warnings
 from numbers import Number
-from typing import Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
-import numpy.typing as npt
 import xarray as xr
 
 try:
@@ -24,10 +23,10 @@ class PyInterpShim:
         self,
         da: xr.DataArray,
         da_out: Optional[xr.DataArray] = None,
-        T: Optional[Union[str, list[str]]] = None,
-        Z: Optional[Union[Number, list[Number]]] = None,
-        iT: Optional[Union[int, list[int]]] = None,
-        iZ: Optional[Union[int, list[int]]] = None,
+        T: Optional[Union[str, List[str]]] = None,
+        Z: Optional[Union[Number, List[Number]]] = None,
+        iT: Optional[Union[int, List[int]]] = None,
+        iZ: Optional[Union[int, List[int]]] = None,
         extrap: bool = False,
         locstream: bool = False,
     ):
@@ -72,10 +71,11 @@ class PyInterpShim:
         self,
         da: xr.DataArray,
         da_out: xr.DataArray,
-        T: Optional[Union[str, list[str]]] = None,
-        Z: Optional[Union[Number, list[Number]]] = None,
-        iT: Optional[Union[int, list[int]]] = None,
-        iZ: Optional[Union[int, list[int]]] = None,
+        interped: xr.DataArray,
+        T: Optional[Union[str, List[str]]] = None,
+        Z: Optional[Union[Number, List[Number]]] = None,
+        iT: Optional[Union[int, List[int]]] = None,
+        iZ: Optional[Union[int, List[int]]] = None,
         bounds_error: bool = False,
     ) -> Tuple[xr.DataArray, np.ndarray, str]:
         # Prepare points for interpolation
@@ -286,15 +286,15 @@ class PyInterpShim:
 
     def _package_locstream(
         self,
-        da,
-        da_out,
-        subset_da,
-        interped,
-        T=None,
-        Z=None,
-        iT=None,
-        iZ=None,
-        regrid_method=None,
+        da: xr.DataArray,
+        da_out: xr.DataArray,
+        subset_da: xr.DataArray,
+        interped: np.ndarray,
+        T: Optional[Union[str, List[str]]] = None,
+        Z: Optional[Union[Number, List[Number]]] = None,
+        iT: Optional[Union[int, List[int]]] = None,
+        iZ: Optional[Union[int, List[int]]] = None,
+        regrid_method: Optional[str] = None,
     ):
         # Prepare points for interpolation
         # - Need a DataArray
@@ -353,15 +353,15 @@ class PyInterpShim:
 
     def _package_grid(
         self,
-        da,
-        da_out,
-        subset_da,
-        interped,
-        T=None,
-        Z=None,
-        iT=None,
-        iZ=None,
-        regrid_method=None,
+        da: xr.DataArray,
+        da_out: xr.DataArray,
+        subset_da: xr.DataArray,
+        interped: np.ndarray,
+        T: Optional[Union[str, List[str]]] = None,
+        Z: Optional[Union[Number, List[Number]]] = None,
+        iT: Optional[Union[int, List[int]]] = None,
+        iZ: Optional[Union[int, List[int]]] = None,
+        regrid_method: Optional[str] = None,
     ):
         # Prepare points for interpolation
         # - Need a DataArray

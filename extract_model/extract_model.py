@@ -3,7 +3,7 @@ Main file for this code. The main code is in `select`, and the rest is to help w
 """
 import warnings
 from numbers import Number
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 import cf_xarray  # noqa: F401
 import numpy as np
@@ -34,13 +34,13 @@ except ImportError:
 def select(
     da: xr.DataArray,
     longitude: Optional[
-        Union[Number, list[Number], npt.ArrayLike, xr.DataArray]
+        Union[Number, List[Number], npt.ArrayLike, xr.DataArray]
     ] = None,
-    latitude: Optional[Union[Number, list[Number], npt.ArrayLike, xr.DataArray]] = None,
-    T: Optional[Union[str, list[str]]] = None,
-    Z: Optional[Union[Number, list[Number]]] = None,
-    iT: Optional[Union[int, list[int]]] = None,
-    iZ: Optional[Union[int, list[int]]] = None,
+    latitude: Optional[Union[Number, List[Number], npt.ArrayLike, xr.DataArray]] = None,
+    T: Optional[Union[str, List[str]]] = None,
+    Z: Optional[Union[Number, List[Number]]] = None,
+    iT: Optional[Union[int, List[int]]] = None,
+    iZ: Optional[Union[int, List[int]]] = None,
     extrap: bool = False,
     extrap_val: Optional[Number] = None,
     locstream: bool = False,
@@ -192,10 +192,10 @@ def select(
 def _xesmf_interp(
     da: xr.DataArray,
     ds_out: Optional[xr.Dataset] = None,
-    T: Optional[Union[str, list[str]]] = None,
-    Z: Optional[Union[Number, list[Number]]] = None,
-    iT: Optional[Union[int, list[int]]] = None,
-    iZ: Optional[Union[int, list[int]]] = None,
+    T: Optional[Union[str, List[str]]] = None,
+    Z: Optional[Union[Number, List[Number]]] = None,
+    iT: Optional[Union[int, List[int]]] = None,
+    iZ: Optional[Union[int, List[int]]] = None,
     extrap_method: Optional[str] = None,
     extrap_val: Optional[Number] = None,
     locstream: bool = False,
@@ -250,10 +250,10 @@ def _xesmf_interp(
 def _pyinterp_interp(
     da: xr.DataArray,
     ds_out: Optional[xr.Dataset] = None,
-    T: Optional[Union[str, list[str]]] = None,
-    Z: Optional[Union[Number, list[Number]]] = None,
-    iT: Optional[Union[int, list[int]]] = None,
-    iZ: Optional[Union[int, list[int]]] = None,
+    T: Optional[Union[str, List[str]]] = None,
+    Z: Optional[Union[Number, List[Number]]] = None,
+    iT: Optional[Union[int, List[int]]] = None,
+    iZ: Optional[Union[int, List[int]]] = None,
     extrap_method: Optional[str] = None,
     extrap_val: Optional[Number] = None,
     locstream: bool = False,
