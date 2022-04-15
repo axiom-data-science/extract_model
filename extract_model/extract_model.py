@@ -12,6 +12,7 @@ import xarray as xr
 
 try:
     import xesmf as xe
+
     XESMF_AVAILABLE = True
 except ImportError:
     XESMF_AVAILABLE = False
@@ -21,14 +22,20 @@ try:
     from .pyinterp_shim import PyInterpShim
 except ImportError:
     if XESMF_AVAILABLE:
-        warnings.warn("PyInterp not found. Interpolation will be performed using xESMF.")
+        warnings.warn(
+            "PyInterp not found. Interpolation will be performed using xESMF."
+        )
     else:
-        raise ModuleNotFoundError("Neither PyInterp nor xESMF are available. Please install either package.")
+        raise ModuleNotFoundError(
+            "Neither PyInterp nor xESMF are available. Please install either package."
+        )
 
 
 def select(
     da: xr.DataArray,
-    longitude: Optional[Union[Number, list[Number], npt.ArrayLike, xr.DataArray]] = None,
+    longitude: Optional[
+        Union[Number, list[Number], npt.ArrayLike, xr.DataArray]
+    ] = None,
     latitude: Optional[Union[Number, list[Number], npt.ArrayLike, xr.DataArray]] = None,
     T: Optional[Union[str, list[str]]] = None,
     Z: Optional[Union[Number, list[Number]]] = None,
@@ -37,7 +44,7 @@ def select(
     extrap: bool = False,
     extrap_val: Optional[Number] = None,
     locstream: bool = False,
-    interp_lib: str = "xesmf"
+    interp_lib: str = "xesmf",
 ):
     """Extract output from da at location(s).
 
@@ -122,12 +129,18 @@ def select(
     # Horizontal interpolation
     # Verify interpolated points in domain if not extrapolating.
     if output_grid and not extrap:
-        if longitude.min() < da.cf["longitude"].min() or longitude.max() > da.cf["longitude"].max():
+        if (
+            longitude.min() < da.cf["longitude"].min()
+            or longitude.max() > da.cf["longitude"].max()
+        ):
             raise ValueError(
                 "Longitude outside of available domain."
                 "Use extrap=True to extrapolate."
             )
-        if latitude.min() < da.cf["latitude"].min() or latitude.max() > da.cf["latitude"].max():
+        if (
+            latitude.min() < da.cf["latitude"].min()
+            or latitude.max() > da.cf["latitude"].max()
+        ):
             raise ValueError(
                 "Latitude outside of available domain."
                 "Use extrap=True to extrapolate."
@@ -147,9 +160,29 @@ def select(
 
     # Perform interpolation
     if interp_lib == "xesmf" and XESMF_AVAILABLE:
-        da = _xesmf_interp(da, ds_out, T=T, Z=Z, iT=iT, iZ=iZ, extrap_method=extrap_method, extrap_val=extrap_val, locstream=locstream)
+        da = _xesmf_interp(
+            da,
+            ds_out,
+            T=T,
+            Z=Z,
+            iT=iT,
+            iZ=iZ,
+            extrap_method=extrap_method,
+            extrap_val=extrap_val,
+            locstream=locstream,
+        )
     elif interp_lib == "pyinterp" or not XESMF_AVAILABLE:
-        da = _pyinterp_interp(da, ds_out, T=T, Z=Z, iT=iT, iZ=iZ, extrap_method=extrap_method, extrap_val=extrap_val, locstream=locstream)
+        da = _pyinterp_interp(
+            da,
+            ds_out,
+            T=T,
+            Z=Z,
+            iT=iT,
+            iZ=iZ,
+            extrap_method=extrap_method,
+            extrap_val=extrap_val,
+            locstream=locstream,
+        )
     else:
         raise ValueError(f"{interp_lib} interpolation not supported")
 
@@ -253,7 +286,9 @@ def _pyinterp_interp(
         extrap = False
 
     interpretor = PyInterpShim()
-    da = interpretor(da, ds_out, T=T, Z=Z, iT=iT, iZ=iZ, extrap=extrap, locstream=locstream)
+    da = interpretor(
+        da, ds_out, T=T, Z=Z, iT=iT, iZ=iZ, extrap=extrap, locstream=locstream
+    )
 
     return da
 
