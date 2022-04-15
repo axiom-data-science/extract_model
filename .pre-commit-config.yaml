@@ -16,7 +16,7 @@ repos:
     - id: debug-statements
     - id: end-of-file-fixer
     - id: check-docstring-first
-    - id: check-added-large-files
+    # - id: check-added-large-files
     - id: requirements-txt-fixer
     - id: file-contents-sorter
       files: requirements-dev.txt
@@ -41,7 +41,7 @@ repos:
     - id: seed-isort-config
 
 - repo: https://github.com/psf/black
-  rev: stable
+  rev: 22.3.0
   hooks:
   - id: black
     language_version: python3
