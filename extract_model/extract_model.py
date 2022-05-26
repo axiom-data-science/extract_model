@@ -167,7 +167,7 @@ def select(
                 extrap_method=extrap_method,
                 locstream_out=locstream,
                 ignore_degenerate=True,
-                weights=weights
+                weights=weights,
             )
 
         # do regridding

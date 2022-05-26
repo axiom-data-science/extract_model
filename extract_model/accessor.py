@@ -181,7 +181,7 @@ class emDataArrayAccessor:
         iZ=None,
         extrap=False,
         extrap_val=None,
-        weights=None
+        weights=None,
     ):
         """Interpolate var to lons/lats positions.
 
