@@ -181,6 +181,7 @@ class emDataArrayAccessor:
         iZ=None,
         extrap=False,
         extrap_val=None,
+        weights=None
     ):
         """Interpolate var to lons/lats positions.
 
@@ -233,7 +234,6 @@ class emDataArrayAccessor:
 
         hashenc = hashlib.sha256(str(coords).encode()).hexdigest()
 
-        # first see if already know the mapping
         if hashenc in self.regridder_map:
             regridder = self.regridder_map[hashenc]
             da, _ = em.select(
@@ -241,6 +241,7 @@ class emDataArrayAccessor:
                 longitude=lons,
                 latitude=lats,
                 locstream=locstream,
+                weights=weights,
                 regridder=regridder,
                 iT=iT,
                 T=T,
@@ -248,20 +249,21 @@ class emDataArrayAccessor:
                 Z=Z,
                 extrap=extrap,
                 extrap_val=extrap_val,
-            )  # which=which)
+            )
         else:
             da, regridder = em.select(
                 self.da,
                 longitude=lons,
                 latitude=lats,
                 locstream=locstream,
+                weights=weights,
                 iT=iT,
                 T=T,
                 iZ=iZ,
                 Z=Z,
                 extrap=extrap,
                 extrap_val=extrap_val,
-            )  # which=which)
+            )
             self.regridder_map[hashenc] = regridder
 
         return da

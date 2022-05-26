@@ -29,6 +29,7 @@ def select(
     extrap_val=None,
     locstream=False,
     regridder=None,
+    weights=None,
 ):
     """Extract output from da at location(s).
 
@@ -74,7 +75,8 @@ def select(
     regridder: xESMF regridder object
         If this interpolation setup has been performed before and regridder saved,
         you can input it to save time.
-
+    weights: xESMF netCDF file path
+        If a weights file exists you can pass it as an argument here and it will be re-used
 
     Returns
     -------
@@ -165,6 +167,7 @@ def select(
                 extrap_method=extrap_method,
                 locstream_out=locstream,
                 ignore_degenerate=True,
+                weights=weights
             )
 
         # do regridding
