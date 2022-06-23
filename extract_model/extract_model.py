@@ -156,7 +156,7 @@ def _xesmf_interp(
     if da_out is not None:
         # set up regridder, which would work for multiple interpolations if desired
         regridder = xe.Regridder(
-            da, da_out, "bilinear", extrap_method=extrap_method, locstream_out=locstream
+            da, da_out, "bilinear", extrap_method=extrap_method, locstream_out=locstream, ignore_degenerate=True,
         )
         da = regridder(da, keep_attrs=True)
 
