@@ -175,8 +175,8 @@ class TestModel:
         da_out = da.em.interp2d(lons=longitude, lats=latitude, iZ=Z, iT=T)
         tb1 = time() - tb0
 
-        # speed up should be at least 8 times
-        assert ta1 / tb1 > 8
+        # speed up should be at least 5 times
+        assert ta1 / tb1 > 5
 
     def test_extrap_False(self, model):
         """Search for point outside domain, which should raise an assertion."""
