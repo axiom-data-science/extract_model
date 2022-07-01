@@ -73,7 +73,7 @@ def select(
         * True: lons/lats as unstructured coordinate pairs (in xESMF language, LocStream).
     regridder: xESMF regridder object
         If this interpolation setup has been performed before and regridder saved,
-        you can input it to save time.
+        you can input it to save time. This is the same as the weights.
 
 
     Returns
@@ -126,20 +126,54 @@ def select(
     if (longitude is not None) and (latitude is not None):
 
         if latitude.ndim == 1:
-            da_out = xr.Dataset(
-                {
-                    "lat": (
-                        ["lat"],
-                        latitude,
-                        dict(axis="Y", units="degrees_north", standard_name="latitude"),
-                    ),
-                    "lon": (
-                        ["lon"],
-                        longitude,
-                        dict(axis="X", units="degrees_east", standard_name="longitude"),
-                    ),
-                }
-            )
+            if locstream:
+                # for locstream need a single dimension (in this case called "loc")
+                da_out = xr.Dataset(
+                    {
+                        "lat": (
+                            ["loc"],
+                            latitude,
+                            dict(
+                                axis="Y",
+                                units="degrees_north",
+                                standard_name="latitude",
+                            ),
+                        ),
+                        "lon": (
+                            ["loc"],
+                            longitude,
+                            dict(
+                                axis="X",
+                                units="degrees_east",
+                                standard_name="longitude",
+                            ),
+                        ),
+                    }
+                )
+
+            else:
+                da_out = xr.Dataset(
+                    {
+                        "lat": (
+                            ["lat"],
+                            latitude,
+                            dict(
+                                axis="Y",
+                                units="degrees_north",
+                                standard_name="latitude",
+                            ),
+                        ),
+                        "lon": (
+                            ["lon"],
+                            longitude,
+                            dict(
+                                axis="X",
+                                units="degrees_east",
+                                standard_name="longitude",
+                            ),
+                        ),
+                    }
+                )
         elif latitude.ndim == 2:
             da_out = xr.Dataset(
                 {

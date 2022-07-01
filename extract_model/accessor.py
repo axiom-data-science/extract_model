@@ -185,6 +185,8 @@ class emDataArrayAccessor:
         """Interpolate var to lons/lats positions.
 
         Wraps xESMF to perform proper horizontal interpolation on non-flat Earth.
+        This reuses the regridder behind the scenes if the same interpolation is
+        requested. This is the same as the weights.
 
         Inputs
         ------
