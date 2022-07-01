@@ -7,7 +7,7 @@ dependencies:
   - cartopy
   - cf_xarray
   - cmocean
-  - dask
+  - dask <=2022.05.0 # https://github.com/axiom-data-science/extract_model/issues/49
   - jupyter
   - jupyterlab
   - matplotlib
