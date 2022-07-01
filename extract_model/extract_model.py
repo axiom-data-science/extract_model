@@ -28,7 +28,7 @@ def select(
     extrap=False,
     extrap_val=None,
     locstream=False,
-    regridder=None,
+    weights=None,
 ):
     """Extract output from da at location(s).
 
@@ -71,10 +71,9 @@ def select(
 
         * False: 2D array of points with 1 dimension the lons and the other dimension the lats.
         * True: lons/lats as unstructured coordinate pairs (in xESMF language, LocStream).
-    regridder: xESMF regridder object
-        If this interpolation setup has been performed before and regridder saved,
-        you can input it to save time. This is the same as the weights.
-
+    weights: xESMF netCDF file path, DataArray, optional
+        If a weights file or array exists you can pass it as an argument here and it will
+        be re-used.
 
     Returns
     -------
@@ -190,19 +189,21 @@ def select(
                 }
             )
 
-        if regridder is None:
-            # set up regridder, which would work for multiple interpolations if desired
-            regridder = xe.Regridder(
-                da,
-                da_out,
-                "bilinear",
-                extrap_method=extrap_method,
-                locstream_out=locstream,
-                ignore_degenerate=True,
-            )
+        # set up regridder, use weights if available
+        regridder = xe.Regridder(
+            da,
+            da_out,
+            "bilinear",
+            extrap_method=extrap_method,
+            locstream_out=locstream,
+            ignore_degenerate=True,
+            weights=weights,
+        )
 
         # do regridding
         da_int = regridder(da, keep_attrs=True)
+        if weights is None:
+            weights = regridder.weights
     else:
         da_int = da
 
@@ -269,7 +270,7 @@ def select(
         # and replaces all 0's with extrap_val if chosen.
         da_int = da_int.where(da_int != 0, extrap_val)
 
-    return da_int.squeeze(), regridder
+    return da_int.squeeze(), weights
 
 
 def argsel2d(lons, lats, lon0, lat0):
