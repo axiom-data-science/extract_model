@@ -85,7 +85,7 @@ class emDataArrayAccessor:
 
         self.da = da
         self.argsel2d_map = {}
-        self.regridder_map = {}
+        self.weights_map = {}
 
     #         # improve this logic over time
     #         if 'node' in da.dims:
@@ -186,8 +186,8 @@ class emDataArrayAccessor:
         """Interpolate var to lons/lats positions.
 
         Wraps xESMF to perform proper horizontal interpolation on non-flat Earth.
-        This reuses the regridder behind the scenes if the same interpolation is
-        requested. This is the same as the weights.
+        This reuses the calculated weights behind the scenes if the same
+        interpolation is requested.
 
         Inputs
         ------
@@ -236,15 +236,14 @@ class emDataArrayAccessor:
 
         hashenc = hashlib.sha256(str(coords).encode()).hexdigest()
 
-        if hashenc in self.regridder_map:
-            regridder = self.regridder_map[hashenc]
+        if hashenc in self.weights_map:
+            weights = self.weights_map[hashenc]
             da, _ = em.select(
                 self.da,
                 longitude=lons,
                 latitude=lats,
                 locstream=locstream,
                 weights=weights,
-                regridder=regridder,
                 iT=iT,
                 T=T,
                 iZ=iZ,
@@ -253,7 +252,7 @@ class emDataArrayAccessor:
                 extrap_val=extrap_val,
             )
         else:
-            da, regridder = em.select(
+            da, weights = em.select(
                 self.da,
                 longitude=lons,
                 latitude=lats,
@@ -266,7 +265,7 @@ class emDataArrayAccessor:
                 extrap=extrap,
                 extrap_val=extrap_val,
             )
-            self.regridder_map[hashenc] = regridder
+            self.weights_map[hashenc] = weights
 
         return da
 

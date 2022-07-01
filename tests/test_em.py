@@ -143,7 +143,7 @@ class TestModel:
     def test_grid_point_isel_Z(self, model):
         """Select and return a grid point.
 
-        Also make sure regridder is used if input."""
+        Also make sure weights are used if input."""
 
         da = model["da"]
         i, j = model["i"], model["j"]
@@ -166,17 +166,26 @@ class TestModel:
 
         assert np.allclose(da_out, da_check)
 
-        # Make sure regridder is reused when input
-        # could retrieve regridder with
-        # $ regridder = list(da.em.regridder_map.values())[0]
-        # since there is only one but it will be reused automatically
-        # so just call the same command again
+        # Make sure weights are reused when present
+        # here they are used from being saved in the da object
         tb0 = time()
         da_out = da.em.interp2d(lons=longitude, lats=latitude, iZ=Z, iT=T)
         tb1 = time() - tb0
 
         # speed up should be at least 2 times
         assert ta1 / tb1 > 2
+
+        # here they are used explicitly
+        weights = list(da.em.weights_map.values())[0]
+        da2 = model["da"].copy()
+        tc0 = time()
+        da_out = da2.em.interp2d(
+            lons=longitude, lats=latitude, iZ=Z, iT=T, weights=weights
+        )
+        tc1 = time() - tc0
+
+        # speed up should be at least 2 times
+        assert ta1 / tc1 > 2
 
     def test_extrap_False(self, model):
         """Search for point outside domain, which should raise an assertion."""
