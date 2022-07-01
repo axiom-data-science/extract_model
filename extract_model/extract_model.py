@@ -126,20 +126,54 @@ def select(
     if (longitude is not None) and (latitude is not None):
 
         if latitude.ndim == 1:
-            da_out = xr.Dataset(
-                {
-                    "lat": (
-                        ["lat"],
-                        latitude,
-                        dict(axis="Y", units="degrees_north", standard_name="latitude"),
-                    ),
-                    "lon": (
-                        ["lon"],
-                        longitude,
-                        dict(axis="X", units="degrees_east", standard_name="longitude"),
-                    ),
-                }
-            )
+            if locstream:
+                # for locstream need a single dimension (in this case called "loc")
+                da_out = xr.Dataset(
+                    {
+                        "lat": (
+                            ["loc"],
+                            latitude,
+                            dict(
+                                axis="Y",
+                                units="degrees_north",
+                                standard_name="latitude",
+                            ),
+                        ),
+                        "lon": (
+                            ["loc"],
+                            longitude,
+                            dict(
+                                axis="X",
+                                units="degrees_east",
+                                standard_name="longitude",
+                            ),
+                        ),
+                    }
+                )
+
+            else:
+                da_out = xr.Dataset(
+                    {
+                        "lat": (
+                            ["lat"],
+                            latitude,
+                            dict(
+                                axis="Y",
+                                units="degrees_north",
+                                standard_name="latitude",
+                            ),
+                        ),
+                        "lon": (
+                            ["lon"],
+                            longitude,
+                            dict(
+                                axis="X",
+                                units="degrees_east",
+                                standard_name="longitude",
+                            ),
+                        ),
+                    }
+                )
         elif latitude.ndim == 2:
             da_out = xr.Dataset(
                 {
