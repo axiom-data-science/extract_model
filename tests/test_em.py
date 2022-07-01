@@ -1,4 +1,5 @@
 from pathlib import Path
+from time import time
 
 import numpy as np
 import pytest
@@ -140,7 +141,9 @@ def test_Z_interp():
 @pytest.mark.parametrize("model", models)
 class TestModel:
     def test_grid_point_isel_Z(self, model):
-        """Select and return a grid point."""
+        """Select and return a grid point.
+
+        Also make sure regridder is used if input."""
 
         da = model["da"]
         i, j = model["i"], model["j"]
@@ -155,9 +158,25 @@ class TestModel:
             latitude = float(da.cf["latitude"][j, i])
 
         da_check = da.em.sel2d(longitude, latitude, iT=T, iZ=Z)
+
+        # save time required when regridder is being calculated
+        ta0 = time()
         da_out = da.em.interp2d(lons=longitude, lats=latitude, iZ=Z, iT=T)
+        ta1 = time() - ta0
 
         assert np.allclose(da_out, da_check)
+
+        # Make sure regridder is reused when input
+        # could retrieve regridder with
+        # $ regridder = list(da.em.regridder_map.values())[0]
+        # since there is only one but it will be reused automatically
+        # so just call the same command again
+        tb0 = time()
+        da_out = da.em.interp2d(lons=longitude, lats=latitude, iZ=Z, iT=T)
+        tb1 = time() - tb0
+
+        # speed up should be at least 8 times
+        assert ta1 / tb1 > 8
 
     def test_extrap_False(self, model):
         """Search for point outside domain, which should raise an assertion."""

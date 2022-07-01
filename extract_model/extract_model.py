@@ -73,7 +73,7 @@ def select(
         * True: lons/lats as unstructured coordinate pairs (in xESMF language, LocStream).
     regridder: xESMF regridder object
         If this interpolation setup has been performed before and regridder saved,
-        you can input it to save time.
+        you can input it to save time. This is the same as the weights.
 
 
     Returns
