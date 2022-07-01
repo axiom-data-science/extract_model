@@ -283,7 +283,7 @@ class TestModel:
             iT=T,
             locstream=True,
         )
-
+        import pdb; pdb.set_trace()
         da_out = da.em.interp2d(**kwargs)
         da_check = da.cf.sel(sel).cf.isel(isel)
 
