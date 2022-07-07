@@ -120,13 +120,21 @@ roms = dict(
 models += [roms]
 
 
-def test_T_interp():
-    """Test interpolation in time for one model."""
+def test_T_interp_no_xesmf():
+    """Test interpolation in time for one model.
+
+    Also test for no xESMF package."""
 
     url = Path(__file__).parent / "test_roms.nc"
     ds = xr.open_dataset(url)
     da_out, _ = em.select(da=ds["zeta"], T=0.5)
     assert np.allclose(da_out[0, 0], -0.12584045)
+
+    XESMF_AVAILABLE = em.extract_model.XESMF_AVAILABLE
+    em.extract_model.XESMF_AVAILABLE = False
+    da_out, _ = em.select(da=ds["zeta"], T=0.5)
+    assert np.allclose(da_out[0, 0], -0.12584045)
+    em.extract_model.XESMF_AVAILABLE = XESMF_AVAILABLE
 
 
 def test_Z_interp():
@@ -136,6 +144,29 @@ def test_Z_interp():
     ds = xr.open_dataset(url)
     da_out, _ = em.select(da=ds["water_u"], Z=1.0)
     assert np.allclose(da_out[-1, -1], -0.1365)
+
+
+def test_hor_interp_no_xesmf():
+    """Code shouldn't work without xESMF.
+
+    Make sure horizontal interpolation doesn't run if xESMF not available."""
+
+    da = models[3]["da"]
+    i, j = models[3]["i"], models[3]["j"]
+
+    if da.cf["longitude"].ndim == 1:
+        longitude = float(da.cf["X"][i])
+        latitude = float(da.cf["Y"][j])
+
+    elif da.cf["longitude"].ndim == 2:
+        longitude = float(da.cf["longitude"][j, i])
+        latitude = float(da.cf["latitude"][j, i])
+
+    XESMF_AVAILABLE = em.extract_model.XESMF_AVAILABLE
+    em.extract_model.XESMF_AVAILABLE = False
+    with pytest.raises(ModuleNotFoundError):
+        em.select(da, longitude=longitude, latitude=latitude, T=0.5)
+    em.extract_model.XESMF_AVAILABLE = XESMF_AVAILABLE
 
 
 @pytest.mark.parametrize("model", models)

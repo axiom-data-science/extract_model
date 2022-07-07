@@ -6,8 +6,15 @@ import cartopy.geodesic
 import cf_xarray  # noqa: F401
 import numpy as np
 import xarray as xr
-import xesmf as xe
+import warnings
 
+try:
+    import xesmf as xe
+
+    XESMF_AVAILABLE = True
+except ImportError:
+    XESMF_AVAILABLE = False
+    warnings.warn("xESMF not found. Interpolation will not work.")
 
 # try:
 # except ImportError:
@@ -15,6 +22,45 @@ import xesmf as xe
 #         "cartopy is not installed, so `sel2d` and `argsel2d` will not run.",
 #         ImportWarning,
 #     )
+
+
+def interp_multi_dim(da, da_out=None, T=None, Z=None, iT=None, iZ=None,
+                     extrap_method=None, extrap_val=None, locstream=False,
+                     weights=None):
+
+    if not XESMF_AVAILABLE:
+        raise ModuleNotFoundError(
+            "xESMF is not available so horizontal interpolation in 2D cannot be performed."
+        )
+
+    # set up regridder, use weights if available
+    regridder = xe.Regridder(
+        da,
+        da_out,
+        "bilinear",
+        extrap_method=extrap_method,
+        locstream_out=locstream,
+        ignore_degenerate=True,
+        weights=weights,
+    )
+
+    # do regridding
+    da_int = regridder(da, keep_attrs=True)
+    if weights is None:
+        weights = regridder.weights
+
+    # get z coordinates to go with interpolated output if not available
+    if "vertical" in da.cf.coords:
+        zkey = da.cf["vertical"].name
+
+        # only need to interpolate z coordinates if they are not 1D
+        if da[zkey].ndim > 1:
+            zint = regridder(da[zkey], keep_attrs=True)
+
+            # add coords
+            da_int = da_int.assign_coords({zkey: zint})
+
+    return da_int, weights
 
 
 def select(
@@ -121,6 +167,7 @@ def select(
         ), assertion
 
     # Horizontal interpolation #
+
     # grid of lon/lat to interpolate to, with desired ending attributes
     if (longitude is not None) and (latitude is not None):
 
@@ -189,34 +236,28 @@ def select(
                 }
             )
 
-        # set up regridder, use weights if available
-        regridder = xe.Regridder(
-            da,
-            da_out,
-            "bilinear",
-            extrap_method=extrap_method,
-            locstream_out=locstream,
-            ignore_degenerate=True,
-            weights=weights,
-        )
-
-        # do regridding
-        da_int = regridder(da, keep_attrs=True)
-        if weights is None:
-            weights = regridder.weights
+        if XESMF_AVAILABLE:
+            da_int, weights = interp_multi_dim(
+                            da,
+                            da_out,
+                            T=T,
+                            Z=Z,
+                            iT=iT,
+                            iZ=iZ,
+                            extrap_method=extrap_method,
+                            extrap_val=extrap_val,
+                            locstream=locstream,
+                            weights=weights)
+        else:
+            raise ModuleNotFoundError(
+                "xESMF is not available so horizontal interpolation in 2D cannot be performed."
+            )
+            # warnings.warn(
+            #     "xESMF not found. Horizontal interpolation is not being run."
+            # )
+            # da_int = da
     else:
         da_int = da
-
-    # get z coordinates to go with interpolated output if not available
-    if "vertical" in da.cf.coords:
-        zkey = da.cf["vertical"].name
-
-        # only need to interpolate z coordinates if they are not 1D
-        if da[zkey].ndim > 1:
-            zint = regridder(da[zkey], keep_attrs=True)
-
-            # add coords
-            da_int = da_int.assign_coords({zkey: zint})
 
     if iT is not None:
         with xr.set_options(keep_attrs=True):
