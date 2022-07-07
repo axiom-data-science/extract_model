@@ -2,12 +2,16 @@
 Main file for this code. The main code is in `select`, and the rest is to help with variable name management.
 """
 
+import warnings
+
+from numbers import Number
+
 import cartopy.geodesic
 import cf_xarray  # noqa: F401
 import numpy as np
 import xarray as xr
-import warnings
-from numbers import Number
+
+
 try:
     import xesmf as xe
 
@@ -24,9 +28,18 @@ except ImportError:
 #     )
 
 
-def interp_multi_dim(da, da_out=None, T=None, Z=None, iT=None, iZ=None,
-                     extrap_method=None, extrap_val=None, locstream=False,
-                     weights=None):
+def interp_multi_dim(
+    da,
+    da_out=None,
+    T=None,
+    Z=None,
+    iT=None,
+    iZ=None,
+    extrap_method=None,
+    extrap_val=None,
+    locstream=False,
+    weights=None,
+):
     """Interpolate input DataArray to output DataArray using xESMF.
 
     Parameters
@@ -288,16 +301,17 @@ def select(
 
         if XESMF_AVAILABLE:
             da, weights = interp_multi_dim(
-                                                da,
-                                                ds_out,
-                                                T=T,
-                                                Z=Z,
-                                                iT=iT,
-                                                iZ=iZ,
-                                                extrap_method=extrap_method,
-                                                extrap_val=extrap_val,
-                                                locstream=locstream,
-                                                weights=weights)
+                da,
+                ds_out,
+                T=T,
+                Z=Z,
+                iT=iT,
+                iZ=iZ,
+                extrap_method=extrap_method,
+                extrap_val=extrap_val,
+                locstream=locstream,
+                weights=weights,
+            )
         else:
             raise ModuleNotFoundError(
                 "xESMF is not available so horizontal interpolation in 2D cannot be performed."
@@ -329,9 +343,7 @@ def select(
         else:
             da = da.squeeze()
             if len(da.dims) == 1 and da.cf["Z"].name in da.dims:
-                da = da.swap_dims(
-                    {da.cf["Z"].name: da.cf["vertical"].name}
-                )
+                da = da.swap_dims({da.cf["Z"].name: da.cf["vertical"].name})
                 da = da.cf.interp(vertical=Z)
             elif len(da.dims) == 2 and da.cf["Z"].name in da.dims:
                 # loop over other dimension
