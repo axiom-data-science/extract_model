@@ -237,7 +237,7 @@ class TestModel:
             extrap=False,
         )
 
-        with pytest.raises(AssertionError):
+        with pytest.raises(ValueError):
             da.em.interp2d(**kwargs)
 
     def test_extrap_True(self, model):
