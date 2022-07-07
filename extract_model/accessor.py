@@ -187,7 +187,7 @@ class emDataArrayAccessor:
 
         Wraps xESMF to perform proper horizontal interpolation on non-flat Earth.
         This reuses the calculated weights behind the scenes if the same
-        interpolation is requested.
+        interpolation is requested. Does not work if xESMF is not installed.
 
         Inputs
         ------

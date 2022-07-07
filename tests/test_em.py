@@ -85,32 +85,38 @@ class TestModel:
         da_check = da.em.sel2d(longitude, latitude, iT=T, iZ=Z)
 
         # save time required when regridder is being calculated
-        ta0 = time()
-        da_out = da.em.interp2d(lons=longitude, lats=latitude, iZ=Z, iT=T)
-        ta1 = time() - ta0
+        try:
+            ta0 = time()
+            da_out = da.em.interp2d(lons=longitude, lats=latitude, iZ=Z, iT=T)
+            ta1 = time() - ta0
 
-        assert np.allclose(da_out, da_check)
+            assert np.allclose(da_out, da_check)
 
-        # Make sure weights are reused when present
-        # here they are used from being saved in the da object
-        tb0 = time()
-        da_out = da.em.interp2d(lons=longitude, lats=latitude, iZ=Z, iT=T)
-        tb1 = time() - tb0
+            # Make sure weights are reused when present
+            # here they are used from being saved in the da object
+            tb0 = time()
+            da_out = da.em.interp2d(lons=longitude, lats=latitude, iZ=Z, iT=T)
+            tb1 = time() - tb0
 
-        # speed up should be at least 2 times
-        assert ta1 / tb1 > 2
+            # speed up should be at least 2 times
+            assert ta1 / tb1 > 2
 
-        # here they are used explicitly
-        weights = list(da.em.weights_map.values())[0]
-        da2 = model["da"].copy()
-        tc0 = time()
-        da_out = da2.em.interp2d(
-            lons=longitude, lats=latitude, iZ=Z, iT=T, weights=weights
-        )
-        tc1 = time() - tc0
+            # here they are used explicitly
+            weights = list(da.em.weights_map.values())[0]
+            da2 = model["da"].copy()
+            tc0 = time()
+            da_out = da2.em.interp2d(
+                lons=longitude, lats=latitude, iZ=Z, iT=T, weights=weights
+            )
+            tc1 = time() - tc0
 
-        # speed up should be at least 2 times
-        assert ta1 / tc1 > 2
+            # speed up should be at least 2 times
+            assert ta1 / tc1 > 2
+
+        # this should only run if xESMF is installed
+        except AttributeError:
+            if not em.extract_model.XESMF_AVAILABLE:
+                pass
 
     def test_extrap_False(self, model):
         """Search for point outside domain, which should raise an assertion."""
@@ -159,10 +165,16 @@ class TestModel:
             extrap=True,
         )
 
-        da_out = da.em.interp2d(**kwargs)
-        da_check = da.em.sel2d(longitude, latitude, iT=T, iZ=Z)
+        try:
+            da_out = da.em.interp2d(**kwargs)
+            da_check = da.em.sel2d(longitude, latitude, iT=T, iZ=Z)
 
-        assert np.allclose(da_out, da_check, equal_nan=True)
+            assert np.allclose(da_out, da_check, equal_nan=True)
+
+        # this should only run if xESMF is installed
+        except AttributeError:
+            if not em.extract_model.XESMF_AVAILABLE:
+                pass
 
     def test_extrap_False_extrap_val_nan(self, model):
         """Check that land point returns np.nan for extrap=False
@@ -185,9 +197,13 @@ class TestModel:
             extrap_val=np.nan,
         )
 
-        da_out = da.em.interp2d(**kwargs)
-
-        assert da_out.isnull()
+        try:
+            da_out = da.em.interp2d(**kwargs)
+            assert da_out.isnull()
+        # this should only run if xESMF is installed
+        except AttributeError:
+            if not em.extract_model.XESMF_AVAILABLE:
+                pass
 
     def test_locstream(self, model):
 
@@ -218,10 +234,14 @@ class TestModel:
             locstream=True,
         )
 
-        da_out = da.em.interp2d(**kwargs)
-        da_check = da.cf.sel(sel).cf.isel(isel)
-
-        assert np.allclose(da_out, da_check, equal_nan=True)
+        try:
+            da_out = da.em.interp2d(**kwargs)
+            da_check = da.cf.sel(sel).cf.isel(isel)
+            assert np.allclose(da_out, da_check, equal_nan=True)
+        # this should only run if xESMF is installed
+        except AttributeError:
+            if not em.extract_model.XESMF_AVAILABLE:
+                pass
 
     def test_grid(self, model):
 
@@ -243,9 +263,14 @@ class TestModel:
             da_check = da.cf.isel(isel)
 
         kwargs = dict(lons=longitude, lats=latitude, iZ=Z, iT=T, locstream=False)
-        da_out = da.em.interp2d(**kwargs)
 
-        assert np.allclose(da_out, da_check)
+        try:
+            da_out = da.em.interp2d(**kwargs)
+            assert np.allclose(da_out, da_check)
+        # this should only run if xESMF is installed
+        except AttributeError:
+            if not em.extract_model.XESMF_AVAILABLE:
+                pass
 
     def test_preprocess(self, model):
         """Test preprocessing on output."""
