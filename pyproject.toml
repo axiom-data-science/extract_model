@@ -19,7 +19,7 @@ quiet = false
 color = true
 
 [tool.isort]
-known_third_party = ["cartopy", "cf_xarray", "numpy", "pkg_resources", "pytest", "requests", "setuptools", "xarray", "xesmf"]
+known_third_party = ["cartopy", "cf_xarray", "numpy", "pkg_resources", "pytest", "requests", "setuptools", "xarray", "yaml"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"

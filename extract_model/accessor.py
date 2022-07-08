@@ -87,6 +87,10 @@ class emDataArrayAccessor:
         self.argsel2d_map = {}
         self.weights_map = {}
 
+        # interp2d should be called `select` to be consistent with original
+        # function, so making either work here
+        self.select = self.interp2d
+
     #         # improve this logic over time
     #         if 'node' in da.dims:
     #             self.is_unstructured = True
@@ -187,7 +191,7 @@ class emDataArrayAccessor:
 
         Wraps xESMF to perform proper horizontal interpolation on non-flat Earth.
         This reuses the calculated weights behind the scenes if the same
-        interpolation is requested.
+        interpolation is requested. Does not work if xESMF is not installed.
 
         Inputs
         ------
@@ -195,7 +199,7 @@ class emDataArrayAccessor:
             Longitudes to interpolate to. Will be flattened upon input.
         lats: list, ndarray, optional
             Latitudes to interpolate to. Will be flattened upon input.
-        Full docs are available at `em.interp2d()`.
+        Full docs are available at `em.select()`.
 
         Returns
         -------

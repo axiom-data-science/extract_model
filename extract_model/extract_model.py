@@ -2,12 +2,23 @@
 Main file for this code. The main code is in `select`, and the rest is to help with variable name management.
 """
 
+import warnings
+
+from numbers import Number
+
 import cartopy.geodesic
 import cf_xarray  # noqa: F401
 import numpy as np
 import xarray as xr
-import xesmf as xe
 
+
+try:
+    import xesmf as xe
+
+    XESMF_AVAILABLE = True
+except ImportError:
+    XESMF_AVAILABLE = False
+    warnings.warn("xESMF not found. Interpolation will not work.")
 
 # try:
 # except ImportError:
@@ -15,6 +26,150 @@ import xesmf as xe
 #         "cartopy is not installed, so `sel2d` and `argsel2d` will not run.",
 #         ImportWarning,
 #     )
+
+
+def interp_multi_dim(
+    da,
+    da_out=None,
+    T=None,
+    Z=None,
+    iT=None,
+    iZ=None,
+    extrap_method=None,
+    extrap_val=None,
+    locstream=False,
+    weights=None,
+):
+    """Interpolate input DataArray to output DataArray using xESMF.
+
+    Parameters
+    ----------
+    da: xarray.DataArray
+        Input DataArray to interpolate.
+    da_out: xarray.DataArray
+        Output DataArray to interpolate to.
+    T: datetime-like string, list of datetime-like strings, optional
+    Z: int, float, list, optional
+    iT: int or list of ints, optional
+    iZ: int or list of ints, optional
+    extrap: bool, optional
+    extrap_val: int, float, optional
+    locstream: boolean, optional
+
+    Returns
+    -------
+    DataArray of interpolated and/or selected values from da and array of interpolation weights.
+    """
+
+    if not XESMF_AVAILABLE:
+        raise ModuleNotFoundError(
+            "xESMF is not available so horizontal interpolation in 2D cannot be performed."
+        )
+
+    # set up regridder, use weights if available
+    regridder = xe.Regridder(
+        da,
+        da_out,
+        "bilinear",
+        extrap_method=extrap_method,
+        locstream_out=locstream,
+        ignore_degenerate=True,
+        weights=weights,
+    )
+
+    # do regridding
+    da_int = regridder(da, keep_attrs=True)
+    if weights is None:
+        weights = regridder.weights
+
+    # get z coordinates to go with interpolated output if not available
+    if "vertical" in da.cf.coords:
+        zkey = da.cf["vertical"].name
+
+        # only need to interpolate z coordinates if they are not 1D
+        if da[zkey].ndim > 1:
+            zint = regridder(da[zkey], keep_attrs=True)
+
+            # add coords
+            da_int = da_int.assign_coords({zkey: zint})
+
+    return da_int, weights
+
+
+def make_output_ds(longitude, latitude, locstream=False):
+    """
+    Given desired interpolated longitude and latitude, return points as Dataset.
+    """
+
+    # Grid of lat/lon to interpolate to with desired ending attributes
+    if latitude.ndim == 1:
+        if locstream:
+            # for locstream need a single dimension (in this case called "loc")
+            ds_out = xr.Dataset(
+                {
+                    "lat": (
+                        ["loc"],
+                        latitude,
+                        dict(
+                            axis="Y",
+                            units="degrees_north",
+                            standard_name="latitude",
+                        ),
+                    ),
+                    "lon": (
+                        ["loc"],
+                        longitude,
+                        dict(
+                            axis="X",
+                            units="degrees_east",
+                            standard_name="longitude",
+                        ),
+                    ),
+                }
+            )
+
+        else:
+            ds_out = xr.Dataset(
+                {
+                    "lat": (
+                        ["lat"],
+                        latitude,
+                        dict(
+                            axis="Y",
+                            units="degrees_north",
+                            standard_name="latitude",
+                        ),
+                    ),
+                    "lon": (
+                        ["lon"],
+                        longitude,
+                        dict(
+                            axis="X",
+                            units="degrees_east",
+                            standard_name="longitude",
+                        ),
+                    ),
+                }
+            )
+    elif latitude.ndim == 2:
+        ds_out = xr.Dataset(
+            {
+                "lat": (
+                    ["Y", "X"],
+                    latitude,
+                    dict(units="degrees_north", standard_name="latitude"),
+                ),
+                "lon": (
+                    ["Y", "X"],
+                    longitude,
+                    dict(units="degrees_east", standard_name="longitude"),
+                ),
+            }
+        )
+    else:
+        raise IndexError(f"{latitude.ndim}D latitude/longitude arrays not supported.")
+
+    return ds_out
 
 
 def select(
@@ -35,7 +190,7 @@ def select(
     Parameters
     ----------
     da: DataArray
-        Property to select model output from.
+        DataArray from which to extract data.
     longitude, latitude: int, float, list, array (1D or 2D), DataArray, optional
         longitude(s), latitude(s) at which to return model output.
         Package `xESMF` will be used to interpolate with "bilinear" to
@@ -77,7 +232,7 @@ def select(
 
     Returns
     -------
-    DataArray of interpolated and/or selected values from da.
+    DataArray of interpolated and/or selected values from da, and array of weights.
 
     Examples
     --------
@@ -93,173 +248,115 @@ def select(
     >>> da_out = em.select(**kwargs)
     """
 
-    # can't run in both Z and iZ mode, same for T/iT
-    assert not ((Z is not None) and (iZ is not None))
-    assert not ((T is not None) and (iT is not None))
+    # Must select or interpolate for depth and time.
+    # - i.e. One cannot run in both Z and iZ mode, same for T/iT
+    if (Z is not None) and (iZ is not None):
+        raise ValueError("Cannot specify both Z and iZ.")
+    if (T is not None) and (iT is not None):
+        raise ValueError("Cannot specify both T and iT.")
 
     if (longitude is not None) and (latitude is not None):
-        if (isinstance(longitude, int)) or (isinstance(longitude, float)):
+        # Must convert scalars to lists because 0D lat/lon arrays are not supported.
+        if isinstance(longitude, Number):
             longitude = [longitude]
-        if (isinstance(latitude, int)) or (isinstance(latitude, float)):
+        if isinstance(latitude, Number):
             latitude = [latitude]
-        latitude = np.asarray(latitude)
         longitude = np.asarray(longitude)
+        latitude = np.asarray(latitude)
+        # If longitude and latitude are input, perform horizontal interpolation
+        horizontal_interp = True
+    else:
+        horizontal_interp = False
 
+    # If extrapolating, define method
     if extrap:
         extrap_method = "nearest_s2d"
     else:
         extrap_method = None
 
-    if (not extrap) and ((longitude is not None) and (latitude is not None)):
-        assertion = "the input longitude range is outside the model domain"
-        assert (longitude.min() >= da.cf["longitude"].min()) and (
-            longitude.max() <= da.cf["longitude"].max()
-        ), assertion
-        assertion = "the input latitude range is outside the model domain"
-        assert (latitude.min() >= da.cf["latitude"].min()) and (
-            latitude.max() <= da.cf["latitude"].max()
-        ), assertion
-
     # Horizontal interpolation #
-    # grid of lon/lat to interpolate to, with desired ending attributes
-    if (longitude is not None) and (latitude is not None):
-
-        if latitude.ndim == 1:
-            if locstream:
-                # for locstream need a single dimension (in this case called "loc")
-                da_out = xr.Dataset(
-                    {
-                        "lat": (
-                            ["loc"],
-                            latitude,
-                            dict(
-                                axis="Y",
-                                units="degrees_north",
-                                standard_name="latitude",
-                            ),
-                        ),
-                        "lon": (
-                            ["loc"],
-                            longitude,
-                            dict(
-                                axis="X",
-                                units="degrees_east",
-                                standard_name="longitude",
-                            ),
-                        ),
-                    }
-                )
-
-            else:
-                da_out = xr.Dataset(
-                    {
-                        "lat": (
-                            ["lat"],
-                            latitude,
-                            dict(
-                                axis="Y",
-                                units="degrees_north",
-                                standard_name="latitude",
-                            ),
-                        ),
-                        "lon": (
-                            ["lon"],
-                            longitude,
-                            dict(
-                                axis="X",
-                                units="degrees_east",
-                                standard_name="longitude",
-                            ),
-                        ),
-                    }
-                )
-        elif latitude.ndim == 2:
-            da_out = xr.Dataset(
-                {
-                    "lat": (
-                        ["Y", "X"],
-                        latitude,
-                        dict(units="degrees_north", standard_name="latitude"),
-                    ),
-                    "lon": (
-                        ["Y", "X"],
-                        longitude,
-                        dict(units="degrees_east", standard_name="longitude"),
-                    ),
-                }
+    # Verify interpolated points in domain if not extrapolating.
+    if horizontal_interp and not extrap:
+        if (
+            longitude.min() < da.cf["longitude"].min()
+            or longitude.max() > da.cf["longitude"].max()
+        ):
+            raise ValueError(
+                "Longitude outside of available domain."
+                "Use extrap=True to extrapolate."
+            )
+        if (
+            latitude.min() < da.cf["latitude"].min()
+            or latitude.max() > da.cf["latitude"].max()
+        ):
+            raise ValueError(
+                "Latitude outside of available domain."
+                "Use extrap=True to extrapolate."
             )
 
-        # set up regridder, use weights if available
-        regridder = xe.Regridder(
-            da,
-            da_out,
-            "bilinear",
-            extrap_method=extrap_method,
-            locstream_out=locstream,
-            ignore_degenerate=True,
-            weights=weights,
-        )
+    # Perform interpolation
+    if horizontal_interp:
+        # create Dataset to interpolate to
+        ds_out = make_output_ds(longitude, latitude, locstream=locstream)
 
-        # do regridding
-        da_int = regridder(da, keep_attrs=True)
-        if weights is None:
-            weights = regridder.weights
-    else:
-        da_int = da
-
-    # get z coordinates to go with interpolated output if not available
-    if "vertical" in da.cf.coords:
-        zkey = da.cf["vertical"].name
-
-        # only need to interpolate z coordinates if they are not 1D
-        if da[zkey].ndim > 1:
-            zint = regridder(da[zkey], keep_attrs=True)
-
-            # add coords
-            da_int = da_int.assign_coords({zkey: zint})
+        if XESMF_AVAILABLE:
+            da, weights = interp_multi_dim(
+                da,
+                ds_out,
+                T=T,
+                Z=Z,
+                iT=iT,
+                iZ=iZ,
+                extrap_method=extrap_method,
+                extrap_val=extrap_val,
+                locstream=locstream,
+                weights=weights,
+            )
+        else:
+            raise ModuleNotFoundError(
+                "xESMF is not available so horizontal interpolation in 2D cannot be performed."
+            )
 
     if iT is not None:
         with xr.set_options(keep_attrs=True):
-            da_int = da_int.cf.isel(T=iT)
+            da = da.cf.isel(T=iT)
 
     elif T is not None:
         with xr.set_options(keep_attrs=True):
-            da_int = da_int.cf.interp(T=T)
+            da = da.cf.interp(T=T)
 
     # Time and depth interpolation or iselection #
     if iZ is not None:
         with xr.set_options(keep_attrs=True):
-            da_int = da_int.cf.isel(Z=iZ)
+            da = da.cf.isel(Z=iZ)
 
     # deal with interpolation in Z separately
     elif Z is not None:
 
         # can do interpolation in depth for any number of dimensions if the
         # vertical coord is 1d
-        if da_int.cf["vertical"].ndim == 1:
-            da_int = da_int.cf.interp(vertical=Z)
+        if da.cf["vertical"].ndim == 1:
+            da = da.cf.interp(vertical=Z)
 
         # if the vertical coord is greater than 1D, can only do restricted interpolation
         # at the moment
         else:
-            da_int = da_int.squeeze()
-            if len(da_int.dims) == 1 and da_int.cf["Z"].name in da_int.dims:
-                da_int = da_int.swap_dims(
-                    {da_int.cf["Z"].name: da_int.cf["vertical"].name}
-                )
-                da_int = da_int.cf.interp(vertical=Z)
-            elif len(da_int.dims) == 2 and da_int.cf["Z"].name in da_int.dims:
+            da = da.squeeze()
+            if len(da.dims) == 1 and da.cf["Z"].name in da.dims:
+                da = da.swap_dims({da.cf["Z"].name: da.cf["vertical"].name})
+                da = da.cf.interp(vertical=Z)
+            elif len(da.dims) == 2 and da.cf["Z"].name in da.dims:
                 # loop over other dimension
-                dim_var_name = list(set(da_int.dims) - set([da_int.cf["Z"].name]))[0]
+                dim_var_name = list(set(da.dims) - set([da.cf["Z"].name]))[0]
                 new_da = []
-                for i in range(len(da_int[dim_var_name])):
+                for i in range(len(da[dim_var_name])):
                     new_da.append(
-                        da_int.isel({dim_var_name: i})
-                        .swap_dims({da_int.cf["Z"].name: da_int.cf["vertical"].name})
+                        da.isel({dim_var_name: i})
+                        .swap_dims({da.cf["Z"].name: da.cf["vertical"].name})
                         .cf.interp(vertical=Z)
                     )
-                da_int = xr.concat(new_da, dim=dim_var_name)
-            elif len(da_int.dims) > 2:
+                da = xr.concat(new_da, dim=dim_var_name)
+            elif len(da.dims) > 2:
                 # need to implement (x)isoslice here
                 raise NotImplementedError(
                     "Currently it is not possible to interpolate in depth with more than 1 other (time) dimension."
@@ -268,9 +365,9 @@ def select(
     if extrap_val is not None:
         # returns 0 outside the domain by default. Assumes that no other values are exactly 0
         # and replaces all 0's with extrap_val if chosen.
-        da_int = da_int.where(da_int != 0, extrap_val)
+        da = da.where(da != 0, extrap_val)
 
-    return da_int.squeeze(), weights
+    return da.squeeze(), weights
 
 
 def argsel2d(lons, lats, lon0, lat0):

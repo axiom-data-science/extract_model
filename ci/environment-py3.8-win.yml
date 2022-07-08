@@ -1,12 +1,12 @@
-name: test-env-mac-unix
+name: test-env-win
 channels:
   - conda-forge
 dependencies:
-  - python=3.7
+  - python=3.8
   - cartopy
-  - cf_xarray
+  - cf_xarray>=0.6
   - cmocean
-  - dask <=2022.05.0 # https://github.com/axiom-data-science/extract_model/issues/49
+  - dask
   - matplotlib
   - netcdf4
   - numpy
@@ -14,7 +14,6 @@ dependencies:
   - requests
   - xarray
   - xcmocean
-  - xesmf
   - pytest
   - pip:
     - codecov
