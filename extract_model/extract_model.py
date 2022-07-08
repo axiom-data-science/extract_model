@@ -36,7 +36,6 @@ def interp_multi_dim(
     iT=None,
     iZ=None,
     extrap_method=None,
-    extrap_val=None,
     locstream=False,
     weights=None,
 ):
@@ -52,8 +51,7 @@ def interp_multi_dim(
     Z: int, float, list, optional
     iT: int or list of ints, optional
     iZ: int or list of ints, optional
-    extrap: bool, optional
-    extrap_val: int, float, optional
+    extrap_method: str, optional
     locstream: boolean, optional
 
     Returns
@@ -220,7 +218,7 @@ def select(
         `extrap_method = "nearest_s2d"` to extrapolate.
     extrap_val: int, float, optional
         If `extrap==False`, values outside domain will be returned as 0,
-        or as `extra_value` if input.
+        or as `extrap_value` if input.
     locstream: boolean, optional
         Which type of interpolation to do:
 
@@ -282,7 +280,7 @@ def select(
             or longitude.max() > da.cf["longitude"].max()
         ):
             raise ValueError(
-                "Longitude outside of available domain."
+                "Longitude outside of available domain. "
                 "Use extrap=True to extrapolate."
             )
         if (
@@ -290,7 +288,7 @@ def select(
             or latitude.max() > da.cf["latitude"].max()
         ):
             raise ValueError(
-                "Latitude outside of available domain."
+                "Latitude outside of available domain. "
                 "Use extrap=True to extrapolate."
             )
 
@@ -308,7 +306,6 @@ def select(
                 iT=iT,
                 iZ=iZ,
                 extrap_method=extrap_method,
-                extrap_val=extrap_val,
                 locstream=locstream,
                 weights=weights,
             )
