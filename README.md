@@ -31,8 +31,15 @@ In particular this package can:
 
 ### From conda-forge
 
-```
+This will install for all operating systems:
+``` bash
 conda install -c conda-forge extract_model
+```
+
+However, users will need to additionally install the `xESMF` package to use horizontal functionality. `xESMF` will only run for Mac and Linux/Unix; for those users who want to be able to horizontally interpolate (but aren't on Windows), additionally install with:
+
+``` bash
+$ conda install --file conda-requirements.txt
 ```
 
 ### With environment
