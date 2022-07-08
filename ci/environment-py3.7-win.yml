@@ -1,4 +1,4 @@
-name: test-env
+name: test-env-win
 channels:
   - conda-forge
 dependencies:

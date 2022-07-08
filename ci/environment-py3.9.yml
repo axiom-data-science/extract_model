@@ -1,4 +1,4 @@
-name: test-env
+name: test-env-mac-unix
 channels:
   - conda-forge
 dependencies:

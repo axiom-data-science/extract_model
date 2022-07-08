@@ -45,10 +45,10 @@ jobs:
           channel-priority: true
           environment-file: ci/environment-py${{ matrix.python-version }}.yml
 
-          activate-environment: test_env_extract_model
+          activate-environment: test-env-mac-unix
           use-only-tar-bz2: true # IMPORTANT: This needs to be set for caching to work properly!
 
-      - name: Build and activate Linux/macOS Conda environment
+      - name: Build and activate Windows Conda environment
         if: ${{ runner.os == 'windows-latest' }}
         uses: conda-incubator/setup-miniconda@v2
         with:
@@ -57,7 +57,7 @@ jobs:
           channel-priority: true
           environment-file: ci/environment-py${{ matrix.python-version }}-win.yml
 
-          activate-environment: test_env_extract_model
+          activate-environment: test-env-win
           use-only-tar-bz2: true # IMPORTANT: This needs to be set for caching to work properly!
 
       - name: Install package in environment
