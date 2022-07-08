@@ -114,7 +114,7 @@ class TestModel:
             assert ta1 / tc1 > 1.5
 
         # this should only run if xESMF is installed
-        except AttributeError:
+        except ModuleNotFoundError:
             if not em.extract_model.XESMF_AVAILABLE:
                 pass
 
@@ -172,7 +172,7 @@ class TestModel:
             assert np.allclose(da_out, da_check, equal_nan=True)
 
         # this should only run if xESMF is installed
-        except AttributeError:
+        except ModuleNotFoundError:
             if not em.extract_model.XESMF_AVAILABLE:
                 pass
 
@@ -201,7 +201,7 @@ class TestModel:
             da_out = da.em.interp2d(**kwargs)
             assert da_out.isnull()
         # this should only run if xESMF is installed
-        except AttributeError:
+        except ModuleNotFoundError:
             if not em.extract_model.XESMF_AVAILABLE:
                 pass
 
@@ -239,7 +239,7 @@ class TestModel:
             da_check = da.cf.sel(sel).cf.isel(isel)
             assert np.allclose(da_out, da_check, equal_nan=True)
         # this should only run if xESMF is installed
-        except AttributeError:
+        except ModuleNotFoundError:
             if not em.extract_model.XESMF_AVAILABLE:
                 pass
 
@@ -268,7 +268,7 @@ class TestModel:
             da_out = da.em.interp2d(**kwargs)
             assert np.allclose(da_out, da_check)
         # this should only run if xESMF is installed
-        except AttributeError:
+        except ModuleNotFoundError:
             if not em.extract_model.XESMF_AVAILABLE:
                 pass
 
