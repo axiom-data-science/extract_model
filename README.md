@@ -10,6 +10,19 @@ extract_model
 
 Facilitates read-in and extraction for ocean model output.
 
+In particular this package can:
+- interpolate a model time series to a longitude, latitude location on a 2D grid, while bringing along the calculated z coordinates, with `select()`
+ - saves the weights of the interpolation to save time in the accessor if used, or allows user to input
+ - uses `xESMF` for fast interpolation that respects longitude/latitude grids
+- find the nearest grid point to a longitude, latitude location on a horizontal grid (structured or unstructured) with `sel2d()`
+ - saves the indices for grid points to previously-requested locations to save time on subsequent search
+- select a sub-region of a structured grid in two ways with `sub_bbox()` and `sub_grid()`
+- has an `xarray` accessor for convenient access to methods
+- uses `cf-xarray` to understand `xarray` Dataset metadata and allow for generic axis and coordinate names as well as calculate vertical coordinates
+- can preprocess a variety of model output types (including ROMS, HYCOM, and POM) to improve metadata and ease of use
+
+> :warning: **If you are using Windows**: Horizontal interpolation currently will not work in `extract_model` until `xESMF` is installable on Windows. Other functions will work.
+
 --------
 
 <p><small>Project based on the <a target="_blank" href="https://github.com/jbusecke/cookiecutter-science-project">cookiecutter science project template</a>.</small></p>
