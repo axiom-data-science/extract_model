@@ -93,7 +93,7 @@ class TestModel:
             da_out = da.em.interp2d(lons=longitude, lats=latitude, iZ=Z, iT=T)
             ta1 = time() - ta0
 
-            assert np.allclose(da_out, da_check)
+            assert np.allclose(da_out.values, da_check.values)
 
             # Make sure weights are reused when present
             assert da.em.weights_map != {}
@@ -161,7 +161,7 @@ class TestModel:
             da_out = da.em.interp2d(**kwargs)
             da_check = da.em.sel2d(longitude, latitude, iT=T, iZ=Z)
 
-            assert np.allclose(da_out, da_check, equal_nan=True)
+            assert np.allclose(da_out.values, da_check.values, equal_nan=True)
 
         # this should only run if xESMF is installed
         except ModuleNotFoundError:
@@ -229,7 +229,7 @@ class TestModel:
         try:
             da_out = da.em.interp2d(**kwargs)
             da_check = da.cf.sel(sel).cf.isel(isel)
-            assert np.allclose(da_out, da_check, equal_nan=True)
+            assert np.allclose(da_out.values, da_check.values, equal_nan=True)
         # this should only run if xESMF is installed
         except ModuleNotFoundError:
             if not em.extract_model.XESMF_AVAILABLE:
@@ -258,7 +258,7 @@ class TestModel:
 
         try:
             da_out = da.em.interp2d(**kwargs)
-            assert np.allclose(da_out, da_check)
+            assert np.allclose(da_out.values, da_check.values)
         # this should only run if xESMF is installed
         except ModuleNotFoundError:
             if not em.extract_model.XESMF_AVAILABLE:
