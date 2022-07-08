@@ -98,8 +98,8 @@ class TestModel:
             da_out = da.em.interp2d(lons=longitude, lats=latitude, iZ=Z, iT=T)
             tb1 = time() - tb0
 
-            # speed up should be at least 2 times
-            assert ta1 / tb1 > 2
+            # speed up should be at least 1.5 times
+            assert ta1 / tb1 > 1.5
 
             # here they are used explicitly
             weights = list(da.em.weights_map.values())[0]
@@ -110,8 +110,8 @@ class TestModel:
             )
             tc1 = time() - tc0
 
-            # speed up should be at least 2 times
-            assert ta1 / tc1 > 2
+            # speed up should be at least 1.5 times
+            assert ta1 / tc1 > 1.5
 
         # this should only run if xESMF is installed
         except AttributeError:
