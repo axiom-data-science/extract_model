@@ -37,7 +37,7 @@ jobs:
           key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('ci/environment-py${{ matrix.python-version }}-win.yml') }}
 
       - name: Build and activate Linux/macOS Conda environment
-        if: ${{ runnor.os != 'windows-latest' }}
+        if: ${{ runner.os != 'windows-latest' }}
         uses: conda-incubator/setup-miniconda@v2
         with:
           mamba-version: "*" # activate this to build with mamba.
@@ -49,7 +49,7 @@ jobs:
           use-only-tar-bz2: true # IMPORTANT: This needs to be set for caching to work properly!
 
       - name: Build and activate Linux/macOS Conda environment
-        if: ${{ runnor.os == 'windows-latest' }}
+        if: ${{ runner.os == 'windows-latest' }}
         uses: conda-incubator/setup-miniconda@v2
         with:
           mamba-version: "*" # activate this to build with mamba.
