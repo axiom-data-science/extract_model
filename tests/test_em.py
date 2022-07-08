@@ -86,6 +86,9 @@ class TestModel:
 
         # save time required when regridder is being calculated
         try:
+            # should not be weights yet
+            assert da.em.weights_map == {}
+
             ta0 = time()
             da_out = da.em.interp2d(lons=longitude, lats=latitude, iZ=Z, iT=T)
             ta1 = time() - ta0
@@ -93,25 +96,14 @@ class TestModel:
             assert np.allclose(da_out, da_check)
 
             # Make sure weights are reused when present
+            assert da.em.weights_map != {}
             # here they are used from being saved in the da object
             tb0 = time()
             da_out = da.em.interp2d(lons=longitude, lats=latitude, iZ=Z, iT=T)
             tb1 = time() - tb0
 
-            # speed up should be at least 1.5 times
-            assert ta1 / tb1 > 1.5
-
-            # here they are used explicitly
-            weights = list(da.em.weights_map.values())[0]
-            da2 = model["da"].copy()
-            tc0 = time()
-            da_out = da2.em.interp2d(
-                lons=longitude, lats=latitude, iZ=Z, iT=T, weights=weights
-            )
-            tc1 = time() - tc0
-
-            # speed up should be at least 1.5 times
-            assert ta1 / tc1 > 1.5
+            # using weights should be faster than not
+            assert ta1 > tb1
 
         # this should only run if xESMF is installed
         except ModuleNotFoundError:
