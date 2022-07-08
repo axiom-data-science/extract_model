@@ -16,6 +16,6 @@ dependencies:
   - requests
   - xarray
   - xcmocean
-  - xesmf
+  - xesmf  # don't install if on windows
   # - pip:  # install from github to get recent PRs I contributed
   #   - git@github.com:xarray-contrib/cf-xarray.git
