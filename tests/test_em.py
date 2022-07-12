@@ -1,6 +1,7 @@
 from pathlib import Path
 from time import time
 
+import cf_xarray  # noqa: F401
 import numpy as np
 import pytest
 import xarray as xr
@@ -65,6 +66,31 @@ def test_hor_interp_no_xesmf():
 
 @pytest.mark.parametrize("model", models)
 class TestModel:
+    def test_sel2d(self, model):
+        """Test sel2d."""
+
+        da = model["da"]
+        i, j = model["i"], model["j"]
+
+        if da.cf["longitude"].ndim == 1:
+            longitude = float(da.cf["X"][i])
+            latitude = float(da.cf["Y"][j])
+
+        elif da.cf["longitude"].ndim == 2:
+            longitude = float(da.cf["longitude"][j, i])
+            latitude = float(da.cf["latitude"][j, i])
+
+        # take a nearby point to test function
+        lon_comp = longitude - 0.001
+        lat_comp = latitude - 0.001
+
+        da_sel2d = em.sel2d(da, da.cf["longitude"],
+                            da.cf["latitude"],
+                            lon_comp, lat_comp)
+        da_check = da.cf.isel(X=i, Y=j)
+
+        assert np.allclose(da_sel2d, da_check)
+
     def test_grid_point_isel_Z(self, model):
         """Select and return a grid point.
 
