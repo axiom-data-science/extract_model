@@ -6,6 +6,7 @@ build:
     python: "mambaforge-4.10"
 
 conda:
+    environment: docs/environment.yml
     file: docs/environment.yml
 python:
    version: 3.8
