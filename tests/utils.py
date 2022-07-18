@@ -15,7 +15,7 @@ def read_model_configs(model_configs_file):
     with open(model_configs_file) as f:
         configs = yaml.safe_load(f)
 
-    for _, config in configs.items():
+    for name, config in configs.items():
         path = eval(config["url"])
         with xr.open_mfdataset([path], preprocess=em.preprocess) as ds:
             da = ds[config["var"]]
@@ -23,5 +23,6 @@ def read_model_configs(model_configs_file):
 
         config["lonslice"] = eval(config["lonslice"])
         config["latslice"] = eval(config["latslice"])
+        config["name"] = name
 
-    return [config for _, config in configs.items()]
+    return list(configs.values())
