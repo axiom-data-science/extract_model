@@ -86,8 +86,10 @@ class TestModel:
             lon_comp = longitude - 0.001
             lat_comp = latitude - 0.001
 
-            inputs = {da.cf["longitude"].name: lon_comp,
-                      da.cf["latitude"].name: lat_comp}
+            inputs = {
+                da.cf["longitude"].name: lon_comp,
+                da.cf["latitude"].name: lat_comp,
+            }
             da_sel2d = em.sel2d(da, **inputs)
             da_check = da.cf.isel(X=i, Y=j)
 
@@ -111,11 +113,10 @@ class TestModel:
             latitude = float(da.cf["latitude"][j, i])
 
         inputs = dict(X=i, Y=j)
-        # import pdb; pdb.set_trace()
-        if 'Z' in da.cf.axes and Z is not None:
-            inputs['Z'] = Z
-        if 'T' in da.cf.axes and T is not None:
-            inputs['T'] = T
+        if "Z" in da.cf.axes and Z is not None:
+            inputs["Z"] = Z
+        if "T" in da.cf.axes and T is not None:
+            inputs["T"] = T
         da_check = da.cf.isel(**inputs)
         # da_check = da.em.sel2d(longitude, latitude, iT=T, iZ=Z)
 

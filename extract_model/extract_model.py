@@ -418,7 +418,7 @@ def sel2d(var, **kwargs):
     key1 = next(kwargs_iter)
     key2 = next(kwargs_iter)
     lonname, latname = key1, key2
-    if ('lat' in key1) and ('lon' in key2):
+    if ("lat" in key1) and ("lon" in key2):
         latname = key1
         lonname = key2
 
@@ -437,26 +437,24 @@ def sel2d(var, **kwargs):
 
     # 1D or 2D
     if lons.ndim == lats.ndim == 1:
-        dims = 'loc'
+        dims = "loc"
     elif lons.ndim == lats.ndim == 2:
-        dims = ('loc_y', 'loc_x')
+        dims = ("loc_y", "loc_x")
     # else: Raise exception
 
     # create Dataset
-    ds_to_find = xr.Dataset({
-        'lat_to_find': (dims, lats),
-        'lon_to_find': (dims, lons)
-    })
+    ds_to_find = xr.Dataset({"lat_to_find": (dims, lats), "lon_to_find": (dims, lons)})
 
     if var.xoak.index is None:
-        var.xoak.set_index([latname, lonname], 'sklearn_geo_balltree')
+        var.xoak.set_index([latname, lonname], "sklearn_geo_balltree")
     elif (latname, lonname) != var.xoak._index_coords:
-        raise ValueError(f"Index has been built for grid with coords {var.xoak._index_coords} but coord names input are ({latname}, {lonname}).")
+        raise ValueError(
+            f"Index has been built for grid with coords {var.xoak._index_coords} but coord names input are ({latname}, {lonname})."
+        )
 
     # perform selection
     output = var.xoak.sel(
-        {latname: ds_to_find.lat_to_find,
-         lonname: ds_to_find.lon_to_find}
+        {latname: ds_to_find.lat_to_find, lonname: ds_to_find.lon_to_find}
     )
 
     return output.sel(**kwargs)
@@ -484,29 +482,31 @@ def sel2dcf(var, **kwargs):
     >>> em.sel2d(da, longitude=-96, latitude=27, Z=0.0, method='nearest')
     """
 
-    lons, lats = kwargs['longitude'], kwargs['latitude']
+    lons, lats = kwargs["longitude"], kwargs["latitude"]
 
     # use cf-xarray to get lon/lat key names
     try:
-        latname = var.cf['latitude'].name
-        lonname = var.cf['longitude'].name
+        latname = var.cf["latitude"].name
+        lonname = var.cf["longitude"].name
     except KeyError:
-        print('cf-xarray cannot determine variable name for longitude and latitude. Instead, use `sel2d()` and input the coordinate names specifically.')
+        print(
+            "cf-xarray cannot determine variable name for longitude and latitude. Instead, use `sel2d()` and input the coordinate names specifically."
+        )
 
-    kwargs.pop('longitude')
-    kwargs.pop('latitude')
+    kwargs.pop("longitude")
+    kwargs.pop("latitude")
 
     # need to maintain order
     new_kwargs = {lonname: lons, latname: lats}
 
-    if 'T' in kwargs:
-        tname = var.cf['T'].name
-        new_kwargs[tname] = kwargs['T']
-        kwargs.pop('T')
-    if 'Z' in kwargs:
-        zname = var.cf['Z'].name
-        new_kwargs[zname] = kwargs['Z']
-        kwargs.pop('Z')
+    if "T" in kwargs:
+        tname = var.cf["T"].name
+        new_kwargs[tname] = kwargs["T"]
+        kwargs.pop("T")
+    if "Z" in kwargs:
+        zname = var.cf["Z"].name
+        new_kwargs[zname] = kwargs["Z"]
+        kwargs.pop("Z")
 
     new_kwargs.update(kwargs)
 
