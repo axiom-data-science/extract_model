@@ -7,9 +7,10 @@ Need to combine later to be more organized.
 from pathlib import Path
 from time import time
 
-import extract_model as em
 import numpy as np
 import pytest
+
+import extract_model as em
 
 from .utils import read_model_configs
 
@@ -40,8 +41,7 @@ def test_lon_lat_types():
     assert np.allclose(da_check, da_test)
 
     # Array
-    da_test = em.sel2d(da, lon_rho=np.array([lon]),
-                       lat_rho=np.array([lat])).squeeze()
+    da_test = em.sel2d(da, lon_rho=np.array([lon]), lat_rho=np.array([lat])).squeeze()
     assert np.allclose(da_check, da_test)
 
 
@@ -51,8 +51,8 @@ def test_2D():
     # Make 2D grid of indices
     ii, jj = [i, i + 1, i + 2], [j, j + 1, j + 2]
     I, J = np.meshgrid(ii, jj)
-    Lon = da.cf['longitude'].cf.isel(X=I.flatten(), Y=J.flatten())
-    Lat = da.cf['latitude'].cf.isel(X=I.flatten(), Y=J.flatten())
+    Lon = da.cf["longitude"].cf.isel(X=I.flatten(), Y=J.flatten())
+    Lat = da.cf["latitude"].cf.isel(X=I.flatten(), Y=J.flatten())
     Lon, Lat = Lon.values, Lat.values
 
     da_check = da.cf.isel(X=I.flatten(), Y=J.flatten())
