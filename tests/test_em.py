@@ -73,23 +73,25 @@ class TestModel:
         i, j = model["i"], model["j"]
 
         if da.cf["longitude"].ndim == 1:
-            longitude = float(da.cf["X"][i])
-            latitude = float(da.cf["Y"][j])
+            # sel2d is for 2D horizontal grids
+            pass
+            # longitude = float(da.cf["X"][i])
+            # latitude = float(da.cf["Y"][j])
 
         elif da.cf["longitude"].ndim == 2:
             longitude = float(da.cf["longitude"][j, i])
             latitude = float(da.cf["latitude"][j, i])
 
-        # take a nearby point to test function
-        lon_comp = longitude - 0.001
-        lat_comp = latitude - 0.001
+            # take a nearby point to test function
+            lon_comp = longitude - 0.001
+            lat_comp = latitude - 0.001
 
-        da_sel2d = em.sel2d(da, da.cf["longitude"],
-                            da.cf["latitude"],
-                            lon_comp, lat_comp)
-        da_check = da.cf.isel(X=i, Y=j)
+            inputs = {da.cf["longitude"].name: lon_comp,
+                      da.cf["latitude"].name: lat_comp}
+            da_sel2d = em.sel2d(da, **inputs)
+            da_check = da.cf.isel(X=i, Y=j)
 
-        assert np.allclose(da_sel2d, da_check)
+            assert np.allclose(da_sel2d.squeeze(), da_check)
 
     def test_grid_point_isel_Z(self, model):
         """Select and return a grid point.
@@ -108,7 +110,14 @@ class TestModel:
             longitude = float(da.cf["longitude"][j, i])
             latitude = float(da.cf["latitude"][j, i])
 
-        da_check = da.em.sel2d(longitude, latitude, iT=T, iZ=Z)
+        inputs = dict(X=i, Y=j)
+        # import pdb; pdb.set_trace()
+        if 'Z' in da.cf.axes and Z is not None:
+            inputs['Z'] = Z
+        if 'T' in da.cf.axes and T is not None:
+            inputs['T'] = T
+        da_check = da.cf.isel(**inputs)
+        # da_check = da.em.sel2d(longitude, latitude, iT=T, iZ=Z)
 
         # save time required when regridder is being calculated
         try:

@@ -14,7 +14,7 @@ def test_2dsel():
 
     indices saved from first use of sel2d."""
 
-    model = models[0]
+    model = models[3]
     da = model["da"]
     i, j = model["i"], model["j"]
 
@@ -30,11 +30,11 @@ def test_2dsel():
     lon_comp = longitude + 0.001
     lat_comp = latitude + 0.001
 
-    da_sel2d = da.em.sel2d(lon_comp, lat_comp)
+    inputs = {da.cf["longitude"].name: lon_comp,
+              da.cf["latitude"].name: lat_comp}
+    da_sel2d = da.em.sel2d(**inputs)
+    # da_sel2d = da.em.sel2d(lon_comp, lat_comp)
     da_check = da.cf.isel(X=i, Y=j)
 
     # checks that the resultant model output is the same
-    assert np.allclose(da_sel2d, da_check)
-
-    # checks that the indices are the same
-    assert (i,j) == da.em.argsel2d_map[(lon_comp, lat_comp)]
+    assert np.allclose(da_sel2d.squeeze(), da_check)
