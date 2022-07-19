@@ -457,7 +457,8 @@ def sel2d(var, **kwargs):
         {latname: ds_to_find.lat_to_find, lonname: ds_to_find.lon_to_find}
     )
 
-    return output.sel(**kwargs)
+    with xr.set_options(keep_attrs=True):
+        return output.sel(**kwargs)
 
 
 def sel2dcf(var, **kwargs):
@@ -465,7 +466,7 @@ def sel2dcf(var, **kwargs):
 
     Use "longitude" and "latitude" for those coordinate names.
 
-    You can input a combination of variable names and cf-xarray names for time and z dimensions.
+    You can input a combination of variable names and cf-xarray names for time and z dimensions. Order of the input names doesn't matter (unlike in `em.sel2d()`).
 
     See `sel2d` for full docs. This wraps that function but will use cf-xarray standard names.
 
