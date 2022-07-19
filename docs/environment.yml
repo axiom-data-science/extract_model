@@ -8,8 +8,7 @@ dependencies:
    - extract_model
    # These are needed for the docs themselves
    - numpydoc
-   # https://stackoverflow.com/questions/68642540/nbsphinx-causes-build-to-fail-when-building-jupyter-notebooks
-   - sphinx==4.0.2
+   - sphinx
    - sphinx_rtd_theme
    - ipython
    - nbconvert
@@ -20,7 +19,7 @@ dependencies:
    - pip
    - pip:
      - docrep<=0.2.7
-     - nbsphinx
+     - nbsphinx>=0.8.7
      - jupyter_client
      - sphinx_pangeo_theme
      - sphinx-copybutton

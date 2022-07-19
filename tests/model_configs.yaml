@@ -7,6 +7,7 @@ MOM6:
   Z: 0
   iT: null
   T: null
+  sub_bbox: [-152., 54.0, -148., 56.0]
   lon1: -166
   lat1: 48
   lon2: -149
@@ -24,6 +25,7 @@ HYCOM_01:
   Z: 0
   iT: null
   T: null
+  sub_bbox: [146, -14., 148, -12.]
   lon1: -166
   lat1: 48
   lon2: 149.0
@@ -41,6 +43,7 @@ HYCOM_02:
   Z: 0
   iT: null
   T: null
+  sub_bbox: [-91.8, 28.0, -91.2, 29.0]
   lon1: -166
   lat1: 48
   lon2: -91
@@ -58,6 +61,7 @@ ROMS:
   Z: null
   iT: null
   T: 0
+  sub_bbox: [-92., 27., -91., 29.]
   lon1: -166
   lat1: 48
   lon2: -91
