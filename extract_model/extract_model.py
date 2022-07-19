@@ -10,6 +10,7 @@ import cartopy.geodesic
 import cf_xarray  # noqa: F401
 import numpy as np
 import xarray as xr
+import xoak
 
 
 try:
@@ -418,7 +419,128 @@ def argsel2d(lons, lats, lon0, lat0):
     return inds
 
 
-def sel2d(var, lons, lats, lon0, lat0, inds=None, T=None, iT=None, Z=None, iZ=None):
+# def sel2d(var, lons, lats, lon0, lat0, inds=None, T=None, iT=None, Z=None, iZ=None):
+#     """Find the value of the var at closest location to lon0,lat0.
+#
+#     Can optionally include datetime-like str or index for time T axis, and/or
+#     vertical depth or vertical index.
+#
+#     Inputs
+#     ------
+#     var: DataArray, ndarray
+#         Variable to operate on.
+#     lons: DataArray, ndarray, list
+#         Longitudes of points to search through for closest point.
+#     lats: DataArray, ndarray, list
+#         Latitudes of points to search through for closest point.
+#     lon0: float, int
+#         Longitude of comparison point.
+#     lat0: float, int
+#         Latitude of comparison point.
+#     inds: list, optional
+#         indices of location in coordinate pairs made up of lons, lats
+#         that is closest to location lon0, lat0. Number of dimensions of
+#         returned indices will correspond to the shape of input lons.
+#     T: datetime-like string, list of datetime-like strings, optional
+#         Datetime or datetimes at which to return model output.
+#         `xarray`'s built-in 1D selection will be used to calculate.
+#         To select time in any way, use either this keyword argument
+#         or `iT`, but not both simultaneously.
+#     iT: int or list of ints, optional
+#         Index of time in time coordinate to select using `.isel`.
+#         To select time in any way, use either this keyword argument
+#         or `T`, but not both simultaneously.
+#     Z: int, float, list, optional
+#         Depth(s) at which to return model output.
+#         `xarray`'s built-in 1D interpolation will be used to calculate.
+#         To selection depth in any way, use either this keyword argument
+#         or `iZ`, but not both simultaneously.
+#     iZ: int or list of ints, optional
+#         Index of depth in depth coordinate to select using `.isel`.
+#         To selection depth in any way, use either this keyword argument
+#         or `Z`, but not both simultaneously.
+#
+#     Returns
+#     -------
+#     Value in var of location in coordinate pairs made up of lons, lats
+#     that is closest to location lon0, lat0. If var has other
+#     dimensions, they are brought along.
+#
+#     Notes
+#     -----
+#     This function uses Great Circle distance to calculate distances assuming
+#     longitudes and latitudes as point coordinates. Uses cartopy function
+#     `Geodesic`: https://scitools.org.uk/cartopy/docs/latest/cartopy/geodesic.html
+#     If searching for the closest grid node to a lon/lat location, be sure to
+#     use the correct horizontal grid (rho, u, v, or psi). This is accounted for
+#     if this function is used through the accessor.
+#     This is meant to be used by the accessor to conveniently wrap
+#     `argsel2d`.
+#
+#     Example usage
+#     -------------
+#     >>> em.sel2d(ds.temp, ds.lon_rho, ds.lat_rho, -96, 27)
+#     """
+#
+#     # can't run in both Z and iZ mode, same for T/iT
+#     assert not ((Z is not None) and (iZ is not None))
+#     assert not ((T is not None) and (iT is not None))
+#
+#     assert isinstance(var, xr.DataArray), "Input a DataArray"
+#     if inds is None:
+#         inds = argsel2d(lons, lats, lon0, lat0)
+#
+#     # initialize sel and isel dicts so they are available
+#     isel, sel = dict(), dict()
+#
+#     # selection to make
+#     if len(inds) == 2:  # structured models
+#         isel["X"] = inds[1]
+#         isel["Y"] = inds[0]
+#     elif len(inds) == 1 and "Y" in var.cf.axes:  # structured but 1D lon/lat
+#         isel["X"] = inds[0]
+#         isel["Y"] = inds[0]
+#     elif len(inds) == 1 and "Y" not in var.cf.axes:  # unstructured models
+#         isel["X"] = inds[0]
+#     else:
+#         print("I don't know this type of model.")
+#
+#     # if time, include time in sel/isel dict
+#     if T is not None:
+#         sel["T"] = T
+#     elif iT is not None:
+#         isel["T"] = iT
+#
+#     # if depth index, add to isel dict
+#     if iZ is not None:
+#         isel["Z"] = iZ
+#
+#     # Result after T or iT, iZ, lat+lon selection
+#     # if depth value to be nearest to, do subsequently
+#     result = var.cf.sel(**sel, method="nearest").cf.isel(**isel)
+#
+#     # deal with Z separately
+#     if Z is not None:
+#         if len(result.dims) == 1 and result.cf["Z"].name in result.dims:
+#             result = result.swap_dims({result.cf["Z"].name: result.cf["vertical"].name})
+#             result = result.cf.sel(vertical=Z, method="nearest")
+#         elif len(result.dims) == 2 and result.cf["Z"].name in result.dims:
+#             # loop over other dimension
+#             dim_var_name = list(set(result.dims) - set([result.cf["Z"].name]))[0]
+#             new_results = []
+#             for i in range(len(result[dim_var_name])):
+#                 new_results.append(
+#                     result.isel({dim_var_name: i})
+#                     .swap_dims({result.cf["Z"].name: result.cf["vertical"].name})
+#                     .cf.sel(vertical=Z, method="nearest")
+#                 )
+#             result = xr.concat(new_results, dim=dim_var_name)
+#
+#     return result
+
+
+def sel2d(var, lons, lats, lonname=None, latname=None, inds=None, T=None, iT=None, Z=None, iZ=None):
+# def sel2d(var, lons, lats, lon0, lat0, inds=None, T=None, iT=None, Z=None, iZ=None):
     """Find the value of the var at closest location to lon0,lat0.
 
     Can optionally include datetime-like str or index for time T axis, and/or
@@ -467,9 +589,6 @@ def sel2d(var, lons, lats, lon0, lat0, inds=None, T=None, iT=None, Z=None, iZ=No
 
     Notes
     -----
-    This function uses Great Circle distance to calculate distances assuming
-    longitudes and latitudes as point coordinates. Uses cartopy function
-    `Geodesic`: https://scitools.org.uk/cartopy/docs/latest/cartopy/geodesic.html
     If searching for the closest grid node to a lon/lat location, be sure to
     use the correct horizontal grid (rho, u, v, or psi). This is accounted for
     if this function is used through the accessor.
@@ -481,58 +600,44 @@ def sel2d(var, lons, lats, lon0, lat0, inds=None, T=None, iT=None, Z=None, iZ=No
     >>> em.sel2d(ds.temp, ds.lon_rho, ds.lat_rho, -96, 27)
     """
 
-    # can't run in both Z and iZ mode, same for T/iT
-    assert not ((Z is not None) and (iZ is not None))
-    assert not ((T is not None) and (iT is not None))
+    # Make a Dataset out of input lons/lats
+    # make sure everything is a numpy array
+    if isinstance((lons, lats), Number):
+        lons, lats = np.array([lons]), np.array([lats])
+    elif isinstance((lons, lats), list):
+        lons, lats = np.array(lons), np.array(lats)
 
-    assert isinstance(var, xr.DataArray), "Input a DataArray"
-    if inds is None:
-        inds = argsel2d(lons, lats, lon0, lat0)
+    # 1D or 2D
+    if lons.ndim == lats.ndim == 1:
+        dims = 'loc'
+    elif lons.ndim == lats.ndim == 2:
+        dims = ('loc_y', 'loc_x')
+    # else: Raise exception
 
-    # initialize sel and isel dicts so they are available
-    isel, sel = dict(), dict()
+    # create Dataset
+    ds_to_find = xr.Dataset({
+        'lat_to_find': (dims, lats),
+        'lon_to_find': (dims, lons)
+    })
 
-    # selection to make
-    if len(inds) == 2:  # structured models
-        isel["X"] = inds[1]
-        isel["Y"] = inds[0]
-    elif len(inds) == 1 and "Y" in var.cf.axes:  # structured but 1D lon/lat
-        isel["X"] = inds[0]
-        isel["Y"] = inds[0]
-    elif len(inds) == 1 and "Y" not in var.cf.axes:  # unstructured models
-        isel["X"] = inds[0]
-    else:
-        print("I don't know this type of model.")
+    if lonname is None and latname is None:
+        # use cf-xarray to get lon/lat key names
+        try:
+            latname = var.cf['latitude'].name
+            lonname = var.cf['longitude'].name
+        except KeyError:
+            print('cf-xarray cannot determine variable name for longitude and latitude, so input to function as `latname`, `lonname`.')
 
-    # if time, include time in sel/isel dict
-    if T is not None:
-        sel["T"] = T
-    elif iT is not None:
-        isel["T"] = iT
+    # DO THIS IN ACCESSOR REGARDLESS
+    if var.xoak.index is None:
+        var.xoak.set_index([latname, lonname], 'sklearn_geo_balltree')
+    elif (latname, lonname) != var.xoak._index_coords:
+        raise ValueError(f"Index has been built for grid with coords {var.xoak._index_coords} but coord names input are ({latname}, {lonname}).")
 
-    # if depth index, add to isel dict
-    if iZ is not None:
-        isel["Z"] = iZ
+    # perform selection
+    output = var.xoak.sel(
+        {latname: ds_to_find.lat_to_find,
+         lonname: ds_to_find.lon_to_find}
+    )
 
-    # Result after T or iT, iZ, lat+lon selection
-    # if depth value to be nearest to, do subsequently
-    result = var.cf.sel(**sel, method="nearest").cf.isel(**isel)
-
-    # deal with Z separately
-    if Z is not None:
-        if len(result.dims) == 1 and result.cf["Z"].name in result.dims:
-            result = result.swap_dims({result.cf["Z"].name: result.cf["vertical"].name})
-            result = result.cf.sel(vertical=Z, method="nearest")
-        elif len(result.dims) == 2 and result.cf["Z"].name in result.dims:
-            # loop over other dimension
-            dim_var_name = list(set(result.dims) - set([result.cf["Z"].name]))[0]
-            new_results = []
-            for i in range(len(result[dim_var_name])):
-                new_results.append(
-                    result.isel({dim_var_name: i})
-                    .swap_dims({result.cf["Z"].name: result.cf["vertical"].name})
-                    .cf.sel(vertical=Z, method="nearest")
-                )
-            result = xr.concat(new_results, dim=dim_var_name)
-
-    return result
+    return output

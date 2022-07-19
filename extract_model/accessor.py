@@ -9,7 +9,7 @@ import numpy as np
 import xarray as xr
 
 import extract_model as em
-
+from numbers import Number
 
 xr.set_options(keep_attrs=True)
 
@@ -84,7 +84,7 @@ class emDataArrayAccessor:
         "Initialize."
 
         self.da = da
-        self.argsel2d_map = {}
+        # self.argsel2d_map = {}
         self.weights_map = {}
 
         # interp2d should be called `select` to be consistent with original
@@ -97,80 +97,117 @@ class emDataArrayAccessor:
     #         else:
     #             self.is_unstructured = False
 
-    def argsel2d(self, lon0, lat0):
-        """Find the indices of coordinate pair closest to another point.
+    # def argsel2d(self, lon0, lat0):
+    #     """Find the indices of coordinate pair closest to another point.
+    #
+    #     Inputs
+    #     ------
+    #     lon0: float, int
+    #         Longitude of comparison point.
+    #     lat0: float, int
+    #         Latitude of comparison point.
+    #
+    #     Returns
+    #     -------
+    #     Indices in eta, xi of closest location to lon0, lat0.
+    #
+    #     Notes
+    #     -----
+    #     This function uses Great Circle distance to calculate distances assuming
+    #     longitudes and latitudes as point coordinates. Uses cartopy function
+    #     `Geodesic`: https://scitools.org.uk/cartopy/docs/latest/cartopy/geodesic.html
+    #
+    #     Example usage
+    #     -------------
+    #     >>> ds.temp.xroms.argsel2d(-96, 27)
+    #     """
+    #
+    #     # first see if already know the mapping
+    #     if (lon0, lat0) in self.argsel2d_map:
+    #         return self.argsel2d_map[(lon0, lat0)]
+    #
+    #     # save location mapping in case requested again:
+    #     else:
+    #         inds = em.argsel2d(
+    #             self.da.cf["longitude"], self.da.cf["latitude"], lon0, lat0
+    #         )
+    #         self.argsel2d_map[(lon0, lat0)] = tuple(inds)
+    #
+    #         return self.argsel2d_map[(lon0, lat0)]
+
+    # def sel2d(self, lon0, lat0, **kwargs):
+    #     """Find the value of the var at closest location to lon0,lat0.
+    #
+    #     Inputs
+    #     ------
+    #     lon0: float, int
+    #         Longitude of comparison point.
+    #     lat0: float, int
+    #         Latitude of comparison point.
+    #     kwargs: see `em.sel2d()` for full docs.
+    #
+    #     Returns
+    #     -------
+    #     DataArray value(s) of closest location to lon0/lat0.
+    #
+    #     Notes
+    #     -----
+    #     This function uses Great Circle distance to calculate distances assuming
+    #     longitudes and latitudes as point coordinates. Uses cartopy function
+    #     `Geodesic`: https://scitools.org.uk/cartopy/docs/latest/cartopy/geodesic.html
+    #     This wraps `argsel2d`.
+    #
+    #     Example usage
+    #     -------------
+    #     >>> ds.temp.em.sel2d(-96, 27)
+    #     """
+    #
+    #     self.argsel2d(lon0, lat0)
+    #
+    #     return em.sel2d(
+    #         self.da,
+    #         self.da.cf["longitude"],
+    #         self.da.cf["latitude"],
+    #         lon0,
+    #         lat0,
+    #         inds=self.argsel2d_map[(lon0, lat0)],
+    #         **kwargs
+    #     )
+
+    def sel2d(self, lons, lats, lonname=None, latname=None, **kwargs):
+        """Find value(s) closest to lons,lats.
 
         Inputs
         ------
-        lon0: float, int
-            Longitude of comparison point.
-        lat0: float, int
-            Latitude of comparison point.
-
-        Returns
-        -------
-        Indices in eta, xi of closest location to lon0, lat0.
-
-        Notes
-        -----
-        This function uses Great Circle distance to calculate distances assuming
-        longitudes and latitudes as point coordinates. Uses cartopy function
-        `Geodesic`: https://scitools.org.uk/cartopy/docs/latest/cartopy/geodesic.html
-
-        Example usage
-        -------------
-        >>> ds.temp.xroms.argsel2d(-96, 27)
-        """
-
-        # first see if already know the mapping
-        if (lon0, lat0) in self.argsel2d_map:
-            return self.argsel2d_map[(lon0, lat0)]
-
-        # save location mapping in case requested again:
-        else:
-            inds = em.argsel2d(
-                self.da.cf["longitude"], self.da.cf["latitude"], lon0, lat0
-            )
-            self.argsel2d_map[(lon0, lat0)] = tuple(inds)
-
-            return self.argsel2d_map[(lon0, lat0)]
-
-    def sel2d(self, lon0, lat0, **kwargs):
-        """Find the value of the var at closest location to lon0,lat0.
-
-        Inputs
-        ------
-        lon0: float, int
-            Longitude of comparison point.
-        lat0: float, int
-            Latitude of comparison point.
+        lons: float, int, list, array, DataArray
+            Longitude of comparison point(s). Input arrays can be 1D or 2D.
+            Shape must match lats.
+        lats: float, int, list, array, DataArray
+            Latitude of comparison point(s). Input arrays can be 1D or 2D.
+            Shape must match lons.
+        lonname: str, optional
+            Coordinate name for longitude in self.da. If not input, code
+            will guess with `cf-xarray`.
+        latname: str, optional
+            Coordinate name for longitude in self.da. If not input, code
+            will guess with `cf-xarray`.
         kwargs: see `em.sel2d()` for full docs.
 
         Returns
         -------
-        DataArray value(s) of closest location to lon0/lat0.
-
-        Notes
-        -----
-        This function uses Great Circle distance to calculate distances assuming
-        longitudes and latitudes as point coordinates. Uses cartopy function
-        `Geodesic`: https://scitools.org.uk/cartopy/docs/latest/cartopy/geodesic.html
-        This wraps `argsel2d`.
+        DataArray value(s) of closest location(s) to lons/lats. Dimensionality of output for horizontal coordinates will match that of lons/lats.
 
         Example usage
         -------------
         >>> ds.temp.em.sel2d(-96, 27)
         """
 
-        self.argsel2d(lon0, lat0)
-
         return em.sel2d(
             self.da,
-            self.da.cf["longitude"],
-            self.da.cf["latitude"],
-            lon0,
-            lat0,
-            inds=self.argsel2d_map[(lon0, lat0)],
+            lons,
+            lats,
+            lonname=lonname,
+            latname=latname,
             **kwargs
         )
 
