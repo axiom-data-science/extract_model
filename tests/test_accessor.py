@@ -1,9 +1,7 @@
-from pathlib import Path
-
+import extract_model as em
 import numpy as np
 
-import extract_model as em
-
+from pathlib import Path
 from .utils import read_model_configs
 
 
@@ -12,7 +10,7 @@ models = read_model_configs(model_config_path)
 
 
 def test_2dsel():
-    """Test accessor sel2d and argsel2d
+    """Test accessor sel2d
 
     indices saved from first use of sel2d."""
 
@@ -32,10 +30,13 @@ def test_2dsel():
     lon_comp = longitude + 0.001
     lat_comp = latitude + 0.001
 
-    inputs = {da.cf["longitude"].name: lon_comp, da.cf["latitude"].name: lat_comp}
+    inputs = {da.cf["longitude"].name: lon_comp,
+              da.cf["latitude"].name: lat_comp}
     da_sel2d = da.em.sel2d(**inputs)
-    # da_sel2d = da.em.sel2d(lon_comp, lat_comp)
     da_check = da.cf.isel(X=i, Y=j)
 
     # checks that the resultant model output is the same
     assert np.allclose(da_sel2d.squeeze(), da_check)
+
+    da_test = da.em.sel2dcf(longitude=lon_comp, latitude=lat_comp)
+    assert np.allclose(da_sel2d, da_test)
