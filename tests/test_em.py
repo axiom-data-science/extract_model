@@ -119,7 +119,6 @@ def test_grid_point_isel_Z(model):
     if "T" in da.cf.axes and T is not None:
         inputs["T"] = T
     da_check = da.cf.isel(**inputs)
-#     da_check = da.em.sel2d(longitude, latitude, iT=T, iZ=Z)
 
     # save time required when regridder is being calculated
     try:

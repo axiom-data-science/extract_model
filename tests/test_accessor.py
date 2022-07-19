@@ -1,7 +1,9 @@
-import extract_model as em
+from pathlib import Path
+
 import numpy as np
 
-from pathlib import Path
+import extract_model as em
+
 from .utils import read_model_configs
 
 
@@ -30,8 +32,7 @@ def test_2dsel():
     lon_comp = longitude + 0.001
     lat_comp = latitude + 0.001
 
-    inputs = {da.cf["longitude"].name: lon_comp,
-              da.cf["latitude"].name: lat_comp}
+    inputs = {da.cf["longitude"].name: lon_comp, da.cf["latitude"].name: lat_comp}
     da_sel2d = da.em.sel2d(**inputs)
     da_check = da.cf.isel(X=i, Y=j)
 
