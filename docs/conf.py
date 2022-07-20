@@ -27,7 +27,7 @@ root = pathlib.Path(__file__).parent.parent.absolute()
 os.environ["PYTHONPATH"] = str(root)
 sys.path.insert(0, str(root))
 
-#import extract_model  # isort:skip
+import extract_model  # isort:skip
 
 # -- Project information -----------------------------------------------------
 
