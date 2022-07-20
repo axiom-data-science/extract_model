@@ -19,7 +19,7 @@ def test_T_interp_no_xesmf():
 
     Also test for no xESMF package."""
 
-    url = Path(__file__).parent / "test_roms.nc"
+    url = Path(__file__).parent / "data/test_roms.nc"
     ds = xr.open_dataset(url)
     da_out, _ = em.select(da=ds["zeta"], T=0.5)
     assert np.allclose(da_out[0, 0], -0.12584045)
@@ -34,7 +34,7 @@ def test_T_interp_no_xesmf():
 def test_Z_interp():
     """Test interpolation in depth for one model."""
 
-    url = Path(__file__).parent / "test_hycom.nc"
+    url = Path(__file__).parent / "data/test_hycom.nc"
     ds = xr.open_dataset(url)
     da_out, _ = em.select(da=ds["water_u"], Z=1.0)
     assert np.allclose(da_out[-1, -1], -0.1365)

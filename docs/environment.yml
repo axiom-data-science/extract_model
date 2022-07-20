@@ -13,6 +13,7 @@ dependencies:
    - sphinx==4.0.2
    - sphinx_rtd_theme
    - ipython
+   - jinja2<=3.1
    - nbconvert
    - nbformat
    - ipykernel

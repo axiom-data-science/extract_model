@@ -68,6 +68,25 @@ def test_roms_mask_filtering(roms_model: xr.Dataset):
         assert coord_name not in ds.variables
 
 
+def test_roms_sub_grid():
+    """Test a specific case for sub_grid on ROMS from NOAA OFS."""
+    # This dataset is a manually selected region of the ROMS dataset with just enough metadata to
+    # describe the horizontal and vertical coordinates.
+    pth = Path(__file__).parent / "data/dbofs_sample.nc"
+    bbox = (-75.0, 38.0, -74.0, 38.4)
+    ds = xr.open_mfdataset([pth], preprocess=em.preprocess)
+    sub_ds = ds.em.sub_grid(bbox)
+    assert sub_ds.coords["lon_rho"].shape == (37, 28)
+    assert np.abs((sub_ds["lon_rho"].min().values - -75.02909851074219)) < 0.00001
+
+    # Check that we can sub-grid if xi_rho and eta_rho aren't coordinate variables
+    ds = xr.open_mfdataset([pth], preprocess=em.preprocess)
+    del ds.coords["xi_rho"]
+    del ds.coords["eta_rho"]
+    # Will raise if it can't sub-grid
+    ds.em.sub_grid(bbox)
+
+
 @pytest.mark.parametrize("model", models, ids=lambda x: x["name"])
 def test_sub_bbox(model):
     """Test sub_bbox on DataArray and Dataset.
