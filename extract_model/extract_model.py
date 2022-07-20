@@ -381,8 +381,8 @@ def sel2d(var, **kwargs):
 
     Can also pass through `xarray.sel()` information for other dimension selections.
 
-    Inputs
-    ------
+    Parameters
+    ----------
     var: DataArray, Dataset
         Container from which to extract data. For a DataArray, it is better to input a separate object instead of a Dataset with variable specified so that it remembers the index that is calculated. That is, use:
         >>> da = ds.variable
@@ -398,8 +398,8 @@ def sel2d(var, **kwargs):
     -----
     If var is a Dataset and contains more than one horizontal grid, the lonname, latname you use should match the variables you want to be able to access at the desired locations.
 
-    Example usage
-    -------------
+    Examples
+    --------
     Select grid node of DataArray nearest to location (-96, 27). The DataArray `ds.temp` has coordinates `lon_rho` and `lat_rho`:
     >>> da = ds.temp
     >>> em.sel2d(da, lon_rho=-96, lat_rho=27)
@@ -470,8 +470,8 @@ def sel2dcf(var, **kwargs):
 
     See `sel2d` for full docs. This wraps that function but will use cf-xarray standard names.
 
-    Example usage
-    -------------
+    Examples
+    --------
     Select grid node of DataArray nearest to location (-96, 27):
     >>> da = ds.temp
     >>> em.sel2d(da, longitude=-96, latitude=27)
