@@ -28,3 +28,9 @@ addopts = "-v"
 testpaths = [
     "tests",
 ]
+
+[tool.pylint.basic]
+good-names = [
+    "fd",
+    "ds",
+]
