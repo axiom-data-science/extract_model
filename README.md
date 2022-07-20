@@ -13,9 +13,9 @@ Facilitates read-in and extraction for ocean model output.
 In particular this package can:
 - interpolate a model time series to a longitude, latitude location on a 2D grid, while bringing along the calculated z coordinates, with `select()`
  - saves the weights of the interpolation to save time in the accessor if used, or allows user to input
- - uses `xESMF` for fast interpolation that respects longitude/latitude grids
-- find the nearest grid point to a longitude, latitude location on a horizontal grid (structured or unstructured) with `sel2d()`
- - saves the indices for grid points to previously-requested locations to save time on subsequent search
+ - uses [`xESMF`](https://pangeo-xesmf.readthedocs.io/en/latest/index.html) for fast interpolation that respects longitude/latitude grids
+- find the nearest grid point to a longitude, latitude location on a horizontal grid (structured or unstructured) in `sel2d()` using [`xoak`](https://xoak.readthedocs.io/en/latest/index.html)
+ - `xoak` saves the calculated index so that subsequent searches are faster
 - select a sub-region of a structured grid in two ways with `sub_bbox()` and `sub_grid()`
 - has an `xarray` accessor for convenient access to methods
 - uses `cf-xarray` to understand `xarray` Dataset metadata and allow for generic axis and coordinate names as well as calculate vertical coordinates
