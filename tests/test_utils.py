@@ -3,9 +3,10 @@
 Test utilities.
 """
 
+import subprocess
+
 from itertools import product
 from pathlib import Path
-from typing import Generator
 
 import numpy as np
 import pytest
@@ -13,7 +14,6 @@ import xarray as xr
 
 import extract_model as em
 
-from .dynamic import data_helper
 from .utils import read_model_configs
 
 
@@ -21,10 +21,19 @@ model_config_path = Path(__file__).parent / "model_configs.yaml"
 models = read_model_configs(model_config_path)
 
 
+@pytest.fixture(scope="session")
+def data_dir(tmp_path_factory) -> Path:
+    dirpth = tmp_path_factory.mktemp("data")
+    yield dirpth
+
+
 @pytest.fixture(scope="module", params=["ciofs", "tbofs", "cbofs", "dbofs"])
-def roms_model(request) -> Generator[xr.Dataset, None, None]:
-    """Yield a temporary file containing the model data."""
-    yield from data_helper.yield_from_cdl(request.param)
+def roms_model(request, data_dir):
+    tmp_pth = data_dir / f"{request.param}.nc"
+    pth = Path(__file__).parent / f"dynamic/data/{request.param}.cdl"
+    subprocess.run(["ncgen", "-o", str(tmp_pth), str(pth)], check=True)
+    ds = xr.open_dataset(tmp_pth)
+    return ds
 
 
 def test_roms_coordinate_filtering(roms_model: xr.Dataset):

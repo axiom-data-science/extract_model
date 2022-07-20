@@ -105,9 +105,9 @@ def test_grid_point_isel_Z(model):
         assert ta1 > tb1
 
     # this should only run if xESMF is installed
-    except ModuleNotFoundError:
-        if not em.extract_model.XESMF_AVAILABLE:
-            pass
+    except ModuleNotFoundError:  # pragma: no cover
+        if not em.extract_model.XESMF_AVAILABLE:  # pragma: no cover
+            pass  # pragma: no cover
 
 
 @pytest.mark.parametrize("model", models, ids=lambda x: x["name"])
@@ -199,9 +199,9 @@ def test_extrap_False_extrap_val_nan(model):
         da_out = da.em.interp2d(**kwargs)
         assert da_out.isnull()
     # this should only run if xESMF is installed
-    except ModuleNotFoundError:
-        if not em.extract_model.XESMF_AVAILABLE:
-            pass
+    except ModuleNotFoundError:  # pragma: no cover
+        if not em.extract_model.XESMF_AVAILABLE:  # pragma: no cover
+            pass  # pragma: no cover
 
 
 @pytest.mark.parametrize("model", models, ids=lambda x: x["name"])
@@ -239,9 +239,9 @@ def test_locstream(model):
         da_check = da.cf.sel(sel).cf.isel(isel)
         assert np.allclose(da_out.values, da_check.values, equal_nan=True)
     # this should only run if xESMF is installed
-    except ModuleNotFoundError:
-        if not em.extract_model.XESMF_AVAILABLE:
-            pass
+    except ModuleNotFoundError:  # pragma: no cover
+        if not em.extract_model.XESMF_AVAILABLE:  # pragma: no cover
+            pass  # pragma: no cover
 
 
 @pytest.mark.parametrize("model", models, ids=lambda x: x["name"])
@@ -269,9 +269,9 @@ def test_grid(model):
         da_out = da.em.interp2d(**kwargs)
         assert np.allclose(da_out.values, da_check.values)
     # this should only run if xESMF is installed
-    except ModuleNotFoundError:
-        if not em.extract_model.XESMF_AVAILABLE:
-            pass
+    except ModuleNotFoundError:  # pragma: no cover
+        if not em.extract_model.XESMF_AVAILABLE:  # pragma: no cover
+            pass  # pragma: no cover
 
 
 @pytest.mark.parametrize("model", models, ids=lambda x: x["name"])
