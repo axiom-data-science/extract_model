@@ -16,6 +16,7 @@ import extract_model as em
 from .dynamic import data_helper
 from .utils import read_model_configs
 
+
 model_config_path = Path(__file__).parent / "model_configs.yaml"
 models = read_model_configs(model_config_path)
 
