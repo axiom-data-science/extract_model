@@ -16,9 +16,9 @@ try:
     import xesmf as xe
 
     XESMF_AVAILABLE = True
-except ImportError:
-    XESMF_AVAILABLE = False
-    warnings.warn("xESMF not found. Interpolation will not work.")
+except ImportError:  # pragma: no cover
+    XESMF_AVAILABLE = False  # pragma: no cover
+    warnings.warn("xESMF not found. Interpolation will not work.")  # pragma: no cover
 
 # try:
 # except ImportError:
@@ -60,7 +60,7 @@ def interp_multi_dim(
     """
 
     if not XESMF_AVAILABLE:
-        raise ModuleNotFoundError(
+        raise ModuleNotFoundError(  # pragma: no cover
             "xESMF is not available so horizontal interpolation in 2D cannot be performed."
         )
 

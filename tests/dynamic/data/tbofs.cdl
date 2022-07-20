@@ -1,0 +1,827 @@
+netcdf test {
+dimensions:
+	tracer = 2 ;
+	s_rho = 2 ;
+	s_w = 2 ;
+	boundary = 4 ;
+	ocean_time = UNLIMITED ; // (1 currently)
+	eta_rho = 4 ;
+	xi_rho = 4 ;
+	eta_psi = 3 ;
+	xi_psi = 3 ;
+	eta_u = 3 ;
+	xi_u = 3 ;
+	eta_v = 3 ;
+	xi_v = 3 ;
+variables:
+	double Akk_bak ;
+		Akk_bak:long_name = "background vertical mixing coefficient for turbulent energy" ;
+		Akk_bak:units = "meter2 second-1" ;
+	double Akp_bak ;
+		Akp_bak:long_name = "background vertical mixing coefficient for length scale" ;
+		Akp_bak:units = "meter2 second-1" ;
+	double Akt_bak(tracer) ;
+		Akt_bak:long_name = "background vertical mixing coefficient for tracers" ;
+		Akt_bak:units = "meter2 second-1" ;
+	double Akv_bak ;
+		Akv_bak:long_name = "background vertical mixing coefficient for momentum" ;
+		Akv_bak:units = "meter2 second-1" ;
+	double Cs_r(s_rho) ;
+		Cs_r:long_name = "S-coordinate stretching curves at RHO-points" ;
+		Cs_r:valid_min = -1. ;
+		Cs_r:valid_max = 0. ;
+		Cs_r:field = "Cs_r, scalar" ;
+	double Cs_w(s_w) ;
+		Cs_w:long_name = "S-coordinate stretching curves at W-points" ;
+		Cs_w:valid_min = -1. ;
+		Cs_w:valid_max = 0. ;
+		Cs_w:field = "Cs_w, scalar" ;
+	double FSobc_in(boundary) ;
+		FSobc_in:long_name = "free-surface inflow, nudging inverse time scale" ;
+		FSobc_in:units = "second-1" ;
+	double FSobc_out(boundary) ;
+		FSobc_out:long_name = "free-surface outflow, nudging inverse time scale" ;
+		FSobc_out:units = "second-1" ;
+	double Falpha ;
+		Falpha:long_name = "Power-law shape barotropic filter parameter" ;
+	double Fbeta ;
+		Fbeta:long_name = "Power-law shape barotropic filter parameter" ;
+	double Fgamma ;
+		Fgamma:long_name = "Power-law shape barotropic filter parameter" ;
+	int Lm2CLM ;
+		Lm2CLM:long_name = "2D momentum climatology processing switch" ;
+		Lm2CLM:flag_values = 0, 1 ;
+		Lm2CLM:flag_meanings = ".FALSE. .TRUE." ;
+	int Lm3CLM ;
+		Lm3CLM:long_name = "3D momentum climatology processing switch" ;
+		Lm3CLM:flag_values = 0, 1 ;
+		Lm3CLM:flag_meanings = ".FALSE. .TRUE." ;
+	int LnudgeM2CLM ;
+		LnudgeM2CLM:long_name = "2D momentum climatology nudging activation switch" ;
+		LnudgeM2CLM:flag_values = 0, 1 ;
+		LnudgeM2CLM:flag_meanings = ".FALSE. .TRUE." ;
+	int LnudgeM3CLM ;
+		LnudgeM3CLM:long_name = "3D momentum climatology nudging activation switch" ;
+		LnudgeM3CLM:flag_values = 0, 1 ;
+		LnudgeM3CLM:flag_meanings = ".FALSE. .TRUE." ;
+	int LnudgeTCLM(tracer) ;
+		LnudgeTCLM:long_name = "tracer climatology nudging activation switch" ;
+		LnudgeTCLM:flag_values = 0, 1 ;
+		LnudgeTCLM:flag_meanings = ".FALSE. .TRUE." ;
+	int LsshCLM ;
+		LsshCLM:long_name = "sea surface height climatology processing switch" ;
+		LsshCLM:flag_values = 0, 1 ;
+		LsshCLM:flag_meanings = ".FALSE. .TRUE." ;
+	int LtracerCLM(tracer) ;
+		LtracerCLM:long_name = "tracer climatology processing switch" ;
+		LtracerCLM:flag_values = 0, 1 ;
+		LtracerCLM:flag_meanings = ".FALSE. .TRUE." ;
+	int LtracerSponge(tracer) ;
+		LtracerSponge:long_name = "horizontal diffusivity sponge activation switch" ;
+		LtracerSponge:flag_values = 0, 1 ;
+		LtracerSponge:flag_meanings = ".FALSE. .TRUE." ;
+	int LtracerSrc(tracer) ;
+		LtracerSrc:long_name = "tracer point sources and sink activation switch" ;
+		LtracerSrc:flag_values = 0, 1 ;
+		LtracerSrc:flag_meanings = ".FALSE. .TRUE." ;
+	int LuvSponge ;
+		LuvSponge:long_name = "horizontal viscosity sponge activation switch" ;
+		LuvSponge:flag_values = 0, 1 ;
+		LuvSponge:flag_meanings = ".FALSE. .TRUE." ;
+	int LuvSrc ;
+		LuvSrc:long_name = "momentum point sources and sink activation switch" ;
+		LuvSrc:flag_values = 0, 1 ;
+		LuvSrc:flag_meanings = ".FALSE. .TRUE." ;
+	int LwSrc ;
+		LwSrc:long_name = "mass point sources and sink activation switch" ;
+		LwSrc:flag_values = 0, 1 ;
+		LwSrc:flag_meanings = ".FALSE. .TRUE." ;
+	double M2nudg ;
+		M2nudg:long_name = "2D momentum nudging/relaxation inverse time scale" ;
+		M2nudg:units = "day-1" ;
+	double M2obc_in(boundary) ;
+		M2obc_in:long_name = "2D momentum inflow, nudging inverse time scale" ;
+		M2obc_in:units = "second-1" ;
+	double M2obc_out(boundary) ;
+		M2obc_out:long_name = "2D momentum outflow, nudging inverse time scale" ;
+		M2obc_out:units = "second-1" ;
+	double M3nudg ;
+		M3nudg:long_name = "3D momentum nudging/relaxation inverse time scale" ;
+		M3nudg:units = "day-1" ;
+	double M3obc_in(boundary) ;
+		M3obc_in:long_name = "3D momentum inflow, nudging inverse time scale" ;
+		M3obc_in:units = "second-1" ;
+	double M3obc_out(boundary) ;
+		M3obc_out:long_name = "3D momentum outflow, nudging inverse time scale" ;
+		M3obc_out:units = "second-1" ;
+	float Pair(ocean_time, eta_rho, xi_rho) ;
+		Pair:long_name = "surface air pressure" ;
+		Pair:units = "millibar" ;
+		Pair:time = "ocean_time" ;
+		Pair:grid = "grid" ;
+		Pair:location = "face" ;
+		Pair:coordinates = "lon_rho lat_rho ocean_time" ;
+		Pair:field = "Pair, scalar, series" ;
+		Pair:_FillValue = 1.e+37f ;
+	double Tcline ;
+		Tcline:long_name = "S-coordinate surface/bottom layer width" ;
+		Tcline:units = "meter" ;
+	double Tnudg(tracer) ;
+		Tnudg:long_name = "Tracers nudging/relaxation inverse time scale" ;
+		Tnudg:units = "day-1" ;
+	double Tobc_in(boundary, tracer) ;
+		Tobc_in:long_name = "tracers inflow, nudging inverse time scale" ;
+		Tobc_in:units = "second-1" ;
+	double Tobc_out(boundary, tracer) ;
+		Tobc_out:long_name = "tracers outflow, nudging inverse time scale" ;
+		Tobc_out:units = "second-1" ;
+	float Uwind(ocean_time, eta_rho, xi_rho) ;
+		Uwind:long_name = "surface u-wind component" ;
+		Uwind:units = "meter second-1" ;
+		Uwind:time = "ocean_time" ;
+		Uwind:grid = "grid" ;
+		Uwind:location = "face" ;
+		Uwind:coordinates = "lon_rho lat_rho ocean_time" ;
+		Uwind:field = "u-wind, scalar, series" ;
+		Uwind:_FillValue = 1.e+37f ;
+	int Vstretching ;
+		Vstretching:long_name = "vertical terrain-following stretching function" ;
+	int Vtransform ;
+		Vtransform:long_name = "vertical terrain-following transformation equation" ;
+	float Vwind(ocean_time, eta_rho, xi_rho) ;
+		Vwind:long_name = "surface v-wind component" ;
+		Vwind:units = "meter second-1" ;
+		Vwind:time = "ocean_time" ;
+		Vwind:grid = "grid" ;
+		Vwind:location = "face" ;
+		Vwind:coordinates = "lon_rho lat_rho ocean_time" ;
+		Vwind:field = "v-wind, scalar, series" ;
+		Vwind:_FillValue = 1.e+37f ;
+	double Znudg ;
+		Znudg:long_name = "free-surface nudging/relaxation inverse time scale" ;
+		Znudg:units = "day-1" ;
+	double Zob ;
+		Zob:long_name = "bottom roughness" ;
+		Zob:units = "meter" ;
+	double Zos ;
+		Zos:long_name = "surface roughness" ;
+		Zos:units = "meter" ;
+	double angle(eta_rho, xi_rho) ;
+		angle:long_name = "angle between XI-axis and EAST" ;
+		angle:units = "radians" ;
+		angle:grid = "grid" ;
+		angle:location = "face" ;
+		angle:coordinates = "lon_rho lat_rho" ;
+		angle:field = "angle, scalar" ;
+	double dstart ;
+		dstart:long_name = "time stamp assigned to model initilization" ;
+		dstart:units = "days since 2009-01-01 00:00:00" ;
+		dstart:calendar = "proleptic_gregorian" ;
+	double dt ;
+		dt:long_name = "size of long time-steps" ;
+		dt:units = "second" ;
+	double dtfast ;
+		dtfast:long_name = "size of short time-steps" ;
+		dtfast:units = "second" ;
+	double el ;
+		el:long_name = "domain length in the ETA-direction" ;
+		el:units = "meter" ;
+	double f(eta_rho, xi_rho) ;
+		f:long_name = "Coriolis parameter at RHO-points" ;
+		f:units = "second-1" ;
+		f:grid = "grid" ;
+		f:location = "face" ;
+		f:coordinates = "lon_rho lat_rho" ;
+		f:field = "coriolis, scalar" ;
+	double gamma2 ;
+		gamma2:long_name = "slipperiness parameter" ;
+	int grid ;
+		grid:cf_role = "grid_topology" ;
+		grid:topology_dimension = 2 ;
+		grid:node_dimensions = "xi_psi eta_psi" ;
+		grid:face_dimensions = "xi_rho: xi_psi (padding: both) eta_rho: eta_psi (padding: both)" ;
+		grid:edge1_dimensions = "xi_u: xi_psi eta_u: eta_psi (padding: both)" ;
+		grid:edge2_dimensions = "xi_v: xi_psi (padding: both) eta_v: eta_psi" ;
+		grid:node_coordinates = "lon_psi lat_psi" ;
+		grid:face_coordinates = "lon_rho lat_rho" ;
+		grid:edge1_coordinates = "lon_u lat_u" ;
+		grid:edge2_coordinates = "lon_v lat_v" ;
+		grid:vertical_dimensions = "s_rho: s_w (padding: none)" ;
+	double h(eta_rho, xi_rho) ;
+		h:long_name = "bathymetry at RHO-points" ;
+		h:units = "meter" ;
+		h:grid = "grid" ;
+		h:location = "face" ;
+		h:coordinates = "lon_rho lat_rho" ;
+		h:field = "bath, scalar" ;
+	double hc ;
+		hc:long_name = "S-coordinate parameter, critical depth" ;
+		hc:units = "meter" ;
+	double lat_psi(eta_psi, xi_psi) ;
+		lat_psi:long_name = "latitude of PSI-points" ;
+		lat_psi:units = "degree_north" ;
+		lat_psi:standard_name = "latitude" ;
+		lat_psi:field = "lat_psi, scalar" ;
+	double lat_rho(eta_rho, xi_rho) ;
+		lat_rho:long_name = "latitude of RHO-points" ;
+		lat_rho:units = "degree_north" ;
+		lat_rho:standard_name = "latitude" ;
+		lat_rho:field = "lat_rho, scalar" ;
+	double lat_u(eta_u, xi_u) ;
+		lat_u:long_name = "latitude of U-points" ;
+		lat_u:units = "degree_north" ;
+		lat_u:standard_name = "latitude" ;
+		lat_u:field = "lat_u, scalar" ;
+	double lat_v(eta_v, xi_v) ;
+		lat_v:long_name = "latitude of V-points" ;
+		lat_v:units = "degree_north" ;
+		lat_v:standard_name = "latitude" ;
+		lat_v:field = "lat_v, scalar" ;
+	double lon_psi(eta_psi, xi_psi) ;
+		lon_psi:long_name = "longitude of PSI-points" ;
+		lon_psi:units = "degree_east" ;
+		lon_psi:standard_name = "longitude" ;
+		lon_psi:field = "lon_psi, scalar" ;
+	double lon_rho(eta_rho, xi_rho) ;
+		lon_rho:long_name = "longitude of RHO-points" ;
+		lon_rho:units = "degree_east" ;
+		lon_rho:standard_name = "longitude" ;
+		lon_rho:field = "lon_rho, scalar" ;
+	double lon_u(eta_u, xi_u) ;
+		lon_u:long_name = "longitude of U-points" ;
+		lon_u:units = "degree_east" ;
+		lon_u:standard_name = "longitude" ;
+		lon_u:field = "lon_u, scalar" ;
+	double lon_v(eta_v, xi_v) ;
+		lon_v:long_name = "longitude of V-points" ;
+		lon_v:units = "degree_east" ;
+		lon_v:standard_name = "longitude" ;
+		lon_v:field = "lon_v, scalar" ;
+	double mask_psi(eta_psi, xi_psi) ;
+		mask_psi:long_name = "mask on psi-points" ;
+		mask_psi:flag_values = 0., 1. ;
+		mask_psi:flag_meanings = "land water" ;
+		mask_psi:grid = "grid" ;
+		mask_psi:location = "node" ;
+		mask_psi:coordinates = "lon_psi lat_psi" ;
+	double mask_rho(eta_rho, xi_rho) ;
+		mask_rho:long_name = "mask on RHO-points" ;
+		mask_rho:flag_values = 0., 1. ;
+		mask_rho:flag_meanings = "land water" ;
+		mask_rho:grid = "grid" ;
+		mask_rho:location = "face" ;
+		mask_rho:coordinates = "lon_rho lat_rho" ;
+	double mask_u(eta_u, xi_u) ;
+		mask_u:long_name = "mask on U-points" ;
+		mask_u:flag_values = 0., 1. ;
+		mask_u:flag_meanings = "land water" ;
+		mask_u:grid = "grid" ;
+		mask_u:location = "edge1" ;
+		mask_u:coordinates = "lon_u lat_u" ;
+	double mask_v(eta_v, xi_v) ;
+		mask_v:long_name = "mask on V-points" ;
+		mask_v:flag_values = 0., 1. ;
+		mask_v:flag_meanings = "land water" ;
+		mask_v:grid = "grid" ;
+		mask_v:location = "edge2" ;
+		mask_v:coordinates = "lon_v lat_v" ;
+	int nHIS ;
+		nHIS:long_name = "number of time-steps between history records" ;
+	int nRST ;
+		nRST:long_name = "number of time-steps between restart records" ;
+		nRST:cycle = "only latest two records are maintained" ;
+	int nSTA ;
+		nSTA:long_name = "number of time-steps between stations records" ;
+	int ndefHIS ;
+		ndefHIS:long_name = "number of time-steps between the creation of history files" ;
+	int ndtfast ;
+		ndtfast:long_name = "number of short time-steps" ;
+	double nl_tnu2(tracer) ;
+		nl_tnu2:long_name = "nonlinear model Laplacian mixing coefficient for tracers" ;
+		nl_tnu2:units = "meter2 second-1" ;
+	double nl_visc2 ;
+		nl_visc2:long_name = "nonlinear model Laplacian mixing coefficient for momentum" ;
+		nl_visc2:units = "meter2 second-1" ;
+	int ntimes ;
+		ntimes:long_name = "number of long time-steps" ;
+	double ocean_time(ocean_time) ;
+		ocean_time:long_name = "time since initialization" ;
+		ocean_time:units = "seconds since 2009-01-01 00:00:00" ;
+		ocean_time:calendar = "proleptic_gregorian" ;
+		ocean_time:field = "time, scalar, series" ;
+	double pm(eta_rho, xi_rho) ;
+		pm:long_name = "curvilinear coordinate metric in XI" ;
+		pm:units = "meter-1" ;
+		pm:grid = "grid" ;
+		pm:location = "face" ;
+		pm:coordinates = "lon_rho lat_rho" ;
+		pm:field = "pm, scalar" ;
+	double pn(eta_rho, xi_rho) ;
+		pn:long_name = "curvilinear coordinate metric in ETA" ;
+		pn:units = "meter-1" ;
+		pn:grid = "grid" ;
+		pn:location = "face" ;
+		pn:coordinates = "lon_rho lat_rho" ;
+		pn:field = "pn, scalar" ;
+	double rdrg ;
+		rdrg:long_name = "linear drag coefficient" ;
+		rdrg:units = "meter second-1" ;
+	double rdrg2 ;
+		rdrg2:long_name = "quadratic drag coefficient" ;
+	double rho0 ;
+		rho0:long_name = "mean density used in Boussinesq approximation" ;
+		rho0:units = "kilogram meter-3" ;
+	double s_rho(s_rho) ;
+		s_rho:long_name = "S-coordinate at RHO-points" ;
+		s_rho:valid_min = -1. ;
+		s_rho:valid_max = 0. ;
+		s_rho:positive = "up" ;
+		s_rho:standard_name = "ocean_s_coordinate_g1" ;
+		s_rho:formula_terms = "s: s_rho C: Cs_r eta: zeta depth: h depth_c: hc" ;
+		s_rho:field = "s_rho, scalar" ;
+	double s_w(s_w) ;
+		s_w:long_name = "S-coordinate at W-points" ;
+		s_w:valid_min = -1. ;
+		s_w:valid_max = 0. ;
+		s_w:positive = "up" ;
+		s_w:standard_name = "ocean_s_coordinate_g1" ;
+		s_w:formula_terms = "s: s_w C: Cs_w eta: zeta depth: h depth_c: hc" ;
+		s_w:field = "s_w, scalar" ;
+	float salt(ocean_time, s_rho, eta_rho, xi_rho) ;
+		salt:long_name = "salinity" ;
+		salt:time = "ocean_time" ;
+		salt:grid = "grid" ;
+		salt:location = "face" ;
+		salt:coordinates = "lon_rho lat_rho s_rho ocean_time" ;
+		salt:field = "salinity, scalar, series" ;
+		salt:_FillValue = 1.e+37f ;
+	int spherical ;
+		spherical:long_name = "grid type logical switch" ;
+		spherical:flag_values = 0, 1 ;
+		spherical:flag_meanings = "Cartesian spherical" ;
+	float temp(ocean_time, s_rho, eta_rho, xi_rho) ;
+		temp:long_name = "potential temperature" ;
+		temp:units = "Celsius" ;
+		temp:time = "ocean_time" ;
+		temp:grid = "grid" ;
+		temp:location = "face" ;
+		temp:coordinates = "lon_rho lat_rho s_rho ocean_time" ;
+		temp:field = "temperature, scalar, series" ;
+		temp:_FillValue = 1.e+37f ;
+	double theta_b ;
+		theta_b:long_name = "S-coordinate bottom control parameter" ;
+	double theta_s ;
+		theta_s:long_name = "S-coordinate surface control parameter" ;
+	float u(ocean_time, s_rho, eta_u, xi_u) ;
+		u:long_name = "u-momentum component" ;
+		u:units = "meter second-1" ;
+		u:time = "ocean_time" ;
+		u:grid = "grid" ;
+		u:location = "edge1" ;
+		u:coordinates = "lon_u lat_u s_rho ocean_time" ;
+		u:field = "u-velocity, scalar, series" ;
+		u:_FillValue = 1.e+37f ;
+	float v(ocean_time, s_rho, eta_v, xi_v) ;
+		v:long_name = "v-momentum component" ;
+		v:units = "meter second-1" ;
+		v:time = "ocean_time" ;
+		v:grid = "grid" ;
+		v:location = "edge2" ;
+		v:coordinates = "lon_v lat_v s_rho ocean_time" ;
+		v:field = "v-velocity, scalar, series" ;
+		v:_FillValue = 1.e+37f ;
+	float w(ocean_time, s_w, eta_rho, xi_rho) ;
+		w:long_name = "vertical momentum component" ;
+		w:units = "meter second-1" ;
+		w:time = "ocean_time" ;
+		w:standard_name = "upward_sea_water_velocity" ;
+		w:grid = "grid" ;
+		w:location = "face" ;
+		w:coordinates = "lon_rho lat_rho s_w ocean_time" ;
+		w:field = "w-velocity, scalar, series" ;
+		w:_FillValue = 1.e+37f ;
+	float wetdry_mask_psi(ocean_time, eta_psi, xi_psi) ;
+		wetdry_mask_psi:long_name = "wet/dry mask on PSI-points" ;
+		wetdry_mask_psi:flag_values = 0.f, 1.f ;
+		wetdry_mask_psi:flag_meanings = "land water" ;
+		wetdry_mask_psi:time = "ocean_time" ;
+		wetdry_mask_psi:grid = "grid" ;
+		wetdry_mask_psi:location = "node" ;
+		wetdry_mask_psi:coordinates = "lon_psi lat_psi ocean_time" ;
+		wetdry_mask_psi:field = "wetdry_mask_psi, scalar, series" ;
+	float wetdry_mask_rho(ocean_time, eta_rho, xi_rho) ;
+		wetdry_mask_rho:long_name = "wet/dry mask on RHO-points" ;
+		wetdry_mask_rho:flag_values = 0.f, 1.f ;
+		wetdry_mask_rho:flag_meanings = "land water" ;
+		wetdry_mask_rho:time = "ocean_time" ;
+		wetdry_mask_rho:grid = "grid" ;
+		wetdry_mask_rho:location = "face" ;
+		wetdry_mask_rho:coordinates = "lon_rho lat_rho ocean_time" ;
+		wetdry_mask_rho:field = "wetdry_mask_rho, scalar, series" ;
+	float wetdry_mask_u(ocean_time, eta_u, xi_u) ;
+		wetdry_mask_u:long_name = "wet/dry mask on U-points" ;
+		wetdry_mask_u:flag_values = 0.f, 1.f ;
+		wetdry_mask_u:flag_meanings = "land water" ;
+		wetdry_mask_u:time = "ocean_time" ;
+		wetdry_mask_u:grid = "grid" ;
+		wetdry_mask_u:location = "edge1" ;
+		wetdry_mask_u:coordinates = "lon_u lat_u ocean_time" ;
+		wetdry_mask_u:field = "wetdry_mask_u, scalar, series" ;
+	float wetdry_mask_v(ocean_time, eta_v, xi_v) ;
+		wetdry_mask_v:long_name = "wet/dry mask on V-points" ;
+		wetdry_mask_v:flag_values = 0.f, 1.f ;
+		wetdry_mask_v:flag_meanings = "land water" ;
+		wetdry_mask_v:time = "ocean_time" ;
+		wetdry_mask_v:grid = "grid" ;
+		wetdry_mask_v:location = "edge2" ;
+		wetdry_mask_v:coordinates = "lon_v lat_v ocean_time" ;
+		wetdry_mask_v:field = "wetdry_mask_v, scalar, series" ;
+	double xl ;
+		xl:long_name = "domain length in the XI-direction" ;
+		xl:units = "meter" ;
+	float zeta(ocean_time, eta_rho, xi_rho) ;
+		zeta:long_name = "free-surface" ;
+		zeta:units = "meter" ;
+		zeta:time = "ocean_time" ;
+		zeta:grid = "grid" ;
+		zeta:location = "face" ;
+		zeta:coordinates = "lon_rho lat_rho ocean_time" ;
+		zeta:field = "free-surface, scalar, series" ;
+
+// global attributes:
+		:file = "nos.tbofs.fields.nowcast.20220620.t18z_0007.nc" ;
+		:format = "netCDF-4/HDF5 file" ;
+		:Conventions = "CF-1.4, SGRID-0.3" ;
+		:type = "ROMS/TOMS history file" ;
+		:title = "tbofs nowcast RUN in operational mode" ;
+		:var_info = "varinfo.dat" ;
+		:rst_file = "nos.tbofs.rst.nowcast.20220620.t18z.nc" ;
+		:his_base = "nos.tbofs.fields.nowcast.20220620.t18z" ;
+		:sta_file = "nos.tbofs.stations.nowcast.20220620.t18z.nc" ;
+		:grd_file = "nos.tbofs.romsgrid.nc" ;
+		:ini_file = "nos.tbofs.init.nowcast.20220620.t18z.nc" ;
+		:tide_file = "nos.tbofs.roms.tides.nc" ;
+		:frc_file_01 = "nos.tbofs.met.nowcast.20220620.t18z.nc" ;
+		:bry_file_01 = "nos.tbofs.obc.20220620.t18z.nc" ;
+		:script_file = "tbofs_ROMS_nowcast.in" ;
+		:spos_file = "nos.tbofs.stations.in" ;
+		:NLM_TADV = "\n",
+			"ADVECTION:   HORIZONTAL   VERTICAL     \n",
+			"temp:        HSIMT        HSIMT        \n",
+			"salt:        HSIMT        HSIMT" ;
+		:NLM_LBC = "\n",
+			"EDGE:  WEST   SOUTH  EAST   NORTH  \n",
+			"zeta:  Clo    Cha    Clo    Clo    \n",
+			"ubar:  Clo    Fla    Clo    Clo    \n",
+			"vbar:  Clo    Fla    Clo    Clo    \n",
+			"u:     Clo    Rad    Clo    Clo    \n",
+			"v:     Clo    Rad    Clo    Clo    \n",
+			"temp:  Clo    RadNud Clo    Clo    \n",
+			"salt:  Clo    RadNud Clo    Clo    \n",
+			"tke:   Clo    Gra    Clo    Clo" ;
+		:svn_url = "https://svnemc.ncep.noaa.gov/projects/nosofs_shared/tags/release-3.2.4/sorc/ROMS.fd" ;
+		:svn_rev = "101201" ;
+		:code_dir = "/gpfs/dell1/nco/ops/nwtest/nosofs.v3.3.5/sorc/ROMS.fd" ;
+		:header_dir = "/gpfs/dell1/nco/ops/nwtest/nosofs.v3.3.5/sorc/ROMS.fd/ROMS/Include" ;
+		:header_file = "tbofs.h" ;
+		:os = "Linux" ;
+		:cpu = "x86_64" ;
+		:compiler_system = "ifort" ;
+		:compiler_command = "/usrx/local/prod/intel/2018UP01/compilers_and_libraries/linux/mpi/bin64/mpif90" ;
+		:compiler_flags = "-fp-model precise -ip -xHost" ;
+		:tiling = "007x014" ;
+		:history = "ROMS/TOMS, Version 3.9, Monday - June 20, 2022 -  7:00:46 PM" ;
+		:ana_file = "ROMS/Functionals/ana_btflux.h, ROMS/Functionals/ana_rain.h, ROMS/Functionals/ana_stflux.h" ;
+		:CPP_options = "mode, ADD_FSOBC, ADD_M2OBC, ANA_BSFLUX, ANA_BTFLUX, ANA_RAIN, ANA_SSFLUX, ASSUMED_SHAPE, ATM_PRESS, !BOUNDARY_ALLGATHER, BULK_FLUXES, !COLLECT_ALL..., CURVGRID, DIFF_GRID, DJ_GRADPS, DOUBLE_PRECISION, EMINUSP, HDF5, LIMIT_BSTRESS, KANTHA_CLAYSON, LONGWAVE_OUT, MASKING, MIX_GEO_TS, MIX_S_UV, MPI, MY25_MIXING, NONLINEAR, NONLIN_EOS, NO_LBC_ATT, N2S2_HORAVG, PERFECT_RESTART, POWER_LAW, PROFILE, K_GSCHEME, RADIATION_2D, REDUCE_ALLREDUCE, !RST_SINGLE, SALINITY, SOLAR_SOURCE, SOLVE3D, SSH_TIDES, STATIONS, TS_DIF2, UV_ADV, UV_COR, UV_U3HADVECTION, UV_C4VADVECTION, UV_LOGDRAG, UV_TIDES, UV_VIS2, VAR_RHO_2D, VISC_GRID, WET_DRY" ;
+data:
+
+ Akk_bak = 5e-06 ;
+
+ Akp_bak = 5e-06 ;
+
+ Akt_bak = 5e-06, 5e-06 ;
+
+ Akv_bak = 5e-05 ;
+
+ Cs_r = -0.985442872037749, -0.952260702955055 ;
+
+ Cs_w = -1, -0.970024521981661 ;
+
+ FSobc_in = 0, 0, 0, 0 ;
+
+ FSobc_out = 0, 0, 0, 0 ;
+
+ Falpha = 2 ;
+
+ Fbeta = 4 ;
+
+ Fgamma = 0.284 ;
+
+ Lm2CLM = 0 ;
+
+ Lm3CLM = 0 ;
+
+ LnudgeM2CLM = 0 ;
+
+ LnudgeM3CLM = 0 ;
+
+ LnudgeTCLM = 0, 0 ;
+
+ LsshCLM = 0 ;
+
+ LtracerCLM = 0, 0 ;
+
+ LtracerSponge = 0, 0 ;
+
+ LtracerSrc = 1, 1 ;
+
+ LuvSponge = 0 ;
+
+ LuvSrc = 1 ;
+
+ LwSrc = 0 ;
+
+ M2nudg = 0 ;
+
+ M2obc_in = 0, 0, 0, 0 ;
+
+ M2obc_out = 0, 0, 0, 0 ;
+
+ M3nudg = 0 ;
+
+ M3obc_in = 0, 0, 0, 0 ;
+
+ M3obc_out = 0, 0, 0, 0 ;
+
+ Pair =
+  1019.32, 1019.328, 1019.329, 1019.33,
+  _, 1019.336, 1019.335, 1019.333,
+  _, 1019.345, 1019.34, 1019.336,
+  _, 1019.353, 1019.346, 1019.34 ;
+
+ Tcline = 10 ;
+
+ Tnudg = 0.0333333333333333, 0.0333333333333333 ;
+
+ Tobc_in =
+  0, 0,
+  2.31481481481481e-05, 2.31481481481481e-05,
+  0, 0,
+  0, 0 ;
+
+ Tobc_out =
+  0, 0,
+  3.85802469135802e-07, 3.85802469135802e-07,
+  0, 0,
+  0, 0 ;
+
+ Uwind =
+  -2.381802, -2.261846, -1.99799, -1.75216,
+  _, -2.210938, -1.953492, -1.712689,
+  _, -2.226852, -1.951401, -1.690849,
+  _, -2.243367, -1.947829, -1.669402 ;
+
+ Vstretching = 1 ;
+
+ Vtransform = 1 ;
+
+ Vwind =
+  2.876698, 2.916552, 3.065944, 3.186917,
+  _, 2.910775, 3.055684, 3.173064,
+  _, 2.854874, 3.019421, 3.151016,
+  _, 2.799221, 2.985445, 3.130119 ;
+
+ Znudg = 0 ;
+
+ Zob = 0.005 ;
+
+ Zos = 0.02 ;
+
+ angle =
+  -3.11210422602332, -3.11210422602332, -3.0777514037659, -3.04881279144939,
+  -3.11210422602332, -3.11210422602332, -3.0777514037659, -3.04881279144939,
+  -3.13568305670102, -3.13568305670102, -3.09182812621757, -3.0542079644772,
+  3.12301024041487, 3.12301024041487, -3.10562902477715, -3.05961059808793 ;
+
+ dstart = 4918.5 ;
+
+ dt = 5 ;
+
+ dtfast = 0.5 ;
+
+ el = 0.954168646809208 ;
+
+ f =
+  6.82504650872169e-05, 6.82496224582436e-05, 6.82485135621328e-05,
+    6.824717440201e-05,
+  6.82374499587907e-05, 6.8237255622061e-05, 6.82364747696064e-05,
+    6.82352729257343e-05,
+  6.82249790954478e-05, 6.82252757083191e-05, 6.82248124601777e-05,
+    6.82237782158287e-05,
+  6.82129285463749e-05, 6.8213715490632e-05, 6.82135448820431e-05,
+    6.82126710363751e-05 ;
+
+ gamma2 = 1 ;
+
+ grid = 1 ;
+
+ h =
+  3.9037, 4.94861, 5.29202, 6.34994,
+  3.14809, 5.10383, 5.51752, 6.4535,
+  2.32089, 4.9, 5.66475, 6.46426,
+  2.45077, 4.77446, 5.66307, 6.09453 ;
+
+ hc = 2 ;
+
+ lat_psi =
+  27.9829702234927, 27.9826438264516, 27.9821496987871,
+  27.9774128857733, 27.9772855509884, 27.9768974512375,
+  27.9720533433215, 27.9721034878773, 27.9718200312383 ;
+
+ lat_rho =
+  27.9859888362101, 27.985612937563, 27.9851182585546, 27.9845208617016,
+  27.9801829048455, 27.9800962153523, 27.9797478943366, 27.9792117805557,
+  27.974620058437, 27.9747523644583, 27.9745457298066, 27.9740844002512,
+  27.9692449730645, 27.9695959773262, 27.9695198799183, 27.9691301149772 ;
+
+ lat_u =
+  27.9858008868866, 27.9853655980588, 27.9848195601281,
+  27.9801395600989, 27.9799220548444, 27.9794798374461,
+  27.9746862114476, 27.9746490471324, 27.9743150650289 ;
+
+ lat_v =
+  27.9830858705278, 27.9828545764577, 27.9824330764456,
+  27.9774014816412, 27.9774242899053, 27.9771468120716,
+  27.9719325157508, 27.9721741708922, 27.9720328048625 ;
+
+ lon_psi =
+  -82.8394986942448, -82.8479699534153, -82.8558164526425,
+  -82.8394655516496, -82.847689518552, -82.8553544891719,
+  -82.8395729002236, -82.8475262259608, -82.8549629911636 ;
+
+ lon_rho =
+  -82.8350314491166, -82.8440652525168, -82.8522158951194, -82.8599147702515,
+  -82.8350884283352, -82.8438096470105, -82.8517890190146, -82.8593461261847,
+  -82.8352616562071, -82.8437024750457, -82.8514569331371, -82.8588258783511,
+  -82.8355965618713, -82.8437309077704, -82.8512145878902, -82.8583545652761 ;
+
+ lon_u =
+  -82.8395483508167, -82.8481405738181, -82.8560653326854,
+  -82.8394490376728, -82.8477993330125, -82.8555675725997,
+  -82.8394820656264, -82.8475797040914, -82.8551414057441 ;
+
+ lon_v =
+  -82.8350599387259, -82.8439374497636, -82.852002457067,
+  -82.8351750422711, -82.8437560610281, -82.8516229760758,
+  -82.8354291090392, -82.8437166914081, -82.8513357605136 ;
+
+ mask_psi =
+  1, 1, 1,
+  2, 1, 1,
+  2, 1, 1 ;
+
+ mask_rho =
+  1, 1, 1, 1,
+  0, 1, 1, 1,
+  0, 1, 1, 1,
+  0, 1, 1, 1 ;
+
+ mask_u =
+  1, 1, 1,
+  0, 1, 1,
+  0, 1, 1 ;
+
+ mask_v =
+  0, 1, 1,
+  0, 1, 1,
+  0, 1, 1 ;
+
+ nHIS = 720 ;
+
+ nRST = 4320 ;
+
+ nSTA = 72 ;
+
+ ndefHIS = 720 ;
+
+ ndtfast = 10 ;
+
+ nl_tnu2 = 3, 3 ;
+
+ nl_visc2 = 10 ;
+
+ ntimes = 4320 ;
+
+ ocean_time = 424980000 ;
+
+ pm =
+  0.0010531526040453, 0.00120427108270341, 0.00128671034609632,
+    0.00134506579722019,
+  0.0011030350118372, 0.00123445537966296, 0.00131207995297567,
+    0.00137038626400991,
+  0.00114062077850987, 0.00127364568777769, 0.00134803293916657,
+    0.00140438733940694,
+  0.00118009285883568, 0.00132234045497256, 0.00139449254121617,
+    0.00144729814165323 ;
+
+ pn =
+  0.00151648123064008, 0.00160982276791086, 0.00164995634312462,
+    0.00166155821373154,
+  0.00159185020625393, 0.00165882107073806, 0.00170270553372376,
+    0.00172336905233835,
+  0.00165113303625918, 0.00171794137704862, 0.00176128238719341,
+    0.00178277430895486,
+  0.00170054181788826, 0.00178180430687625, 0.00182653321562565,
+    0.00184751946869469 ;
+
+ rdrg = 0.0003 ;
+
+ rdrg2 = 0.003 ;
+
+ rho0 = 1025 ;
+
+ s_rho = -0.954545454545455, -0.863636363636364 ;
+
+ s_w = -1, -0.909090909090909 ;
+
+ salt =
+  17.92301, 35.84602, 35.85314, 35.8388,
+  _, 35.87202, 35.86653, 35.84736,
+  _, 35.90925, 35.87674, 35.85037,
+  _, 35.93311, 35.88762, 35.8578,
+  17.923, 35.846, 35.85322, 35.83882,
+  _, 35.87204, 35.8666, 35.84738,
+  _, 35.90928, 35.87684, 35.85042,
+  _, 35.93314, 35.88776, 35.8579 ;
+
+ spherical = 1 ;
+
+ temp =
+  15.91656, 31.83312, 32.02471, 32.17261,
+  _, 32.30302, 32.24392, 32.23294,
+  _, 32.22036, 32.20834, 32.24072,
+  _, 32.17877, 32.19608, 32.24706,
+  15.92526, 31.85053, 32.01554, 32.17187,
+  _, 32.30209, 32.24216, 32.23126,
+  _, 32.21753, 32.20599, 32.23895,
+  _, 32.17443, 32.19374, 32.2452 ;
+
+ theta_b = 0.95 ;
+
+ theta_s = 4.5 ;
+
+ u =
+  -0.08899415, -0.1784968, -0.04588012,
+  _, -0.06802797, -0.01980381,
+  _, -0.0005516891, -0.01532668,
+  -0.08693074, -0.1743699, -0.04373462,
+  _, -0.09697136, -0.0286461,
+  _, -0.0005891085, -0.0211797 ;
+
+ v =
+  _, -0.160957, -0.161581,
+  _, 0.003337483, -0.09245122,
+  _, -0.0118556, -0.0878965,
+  _, -0.156015, -0.1627119,
+  _, 0.003024056, -0.1271444,
+  _, -0.01256379, -0.1222863 ;
+
+ w =
+  3.672548e-05, 3.672548e-05, 6.720654e-05, 2.468746e-05,
+  _, 3.672548e-05, 6.720654e-05, 2.468746e-05,
+  _, -4.167644e-07, 1.807516e-05, -1.727877e-05,
+  _, -4.105564e-06, -1.098022e-07, -1.842695e-05,
+  -1.397476e-05, -1.397476e-05, 2.491655e-05, -2.409402e-05,
+  _, -1.397476e-05, 2.491655e-05, -2.409402e-05,
+  _, 6.971291e-06, 2.6577e-05, -1.718396e-05,
+  _, -7.30901e-06, 8.167702e-07, -2.038588e-05 ;
+
+ wetdry_mask_psi =
+  1, 1, 1,
+  2, 1, 1,
+  2, 1, 1 ;
+
+ wetdry_mask_rho =
+  1, 1, 1, 1,
+  0, 1, 1, 1,
+  0, 1, 1, 1,
+  0, 1, 1, 1 ;
+
+ wetdry_mask_u =
+  1, 1, 1,
+  0, 1, 1,
+  0, 1, 1 ;
+
+ wetdry_mask_v =
+  0, 1, 1,
+  0, 1, 1,
+  0, 1, 1 ;
+
+ xl = 0.818780554158508 ;
+
+ zeta =
+  0.1177663, 0.2355325, 0.2396423, 0.2402215,
+  0, 0.2376918, 0.2416607, 0.2420698,
+  0, 0.2430983, 0.2431339, 0.2430088,
+  0, 0.2457064, 0.2450289, 0.244385 ;
+}

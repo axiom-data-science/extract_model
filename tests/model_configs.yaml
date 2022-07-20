@@ -1,5 +1,5 @@
 MOM6:
-  url: Path(__file__).parent / "test_mom6.nc"
+  url: Path(__file__).parent / "data/test_mom6.nc"
   var: "uo"
   i: 0
   j: 0
@@ -17,7 +17,7 @@ MOM6:
   model_names: [None, "sea_water_x_velocity", None, None, None]
 
 HYCOM_01:
-  url: Path(__file__).parent / "test_hycom.nc"
+  url: Path(__file__).parent / "data/test_hycom.nc"
   var: "water_u"
   i: 0
   j: 30
@@ -35,7 +35,7 @@ HYCOM_01:
   model_names: [None, "eastward_sea_water_velocity", None, None, None]
 
 HYCOM_02:
-  url: Path(__file__).parent / "test_hycom2.nc"
+  url: Path(__file__).parent / "data/test_hycom2.nc"
   var: "u"
   j: 30
   i: 0
@@ -53,7 +53,7 @@ HYCOM_02:
   model_names: [None, "eastward_sea_water_velocity", None, None, None]
 
 ROMS:
-  url: Path(__file__).parent / "test_roms.nc"
+  url: Path(__file__).parent / "data/test_roms.nc"
   var: "zeta"
   j: 50
   i: 10

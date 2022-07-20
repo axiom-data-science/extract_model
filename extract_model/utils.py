@@ -1,63 +1,109 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
 Utilities to help extract_model work better.
 """
+from typing import List
 
 import numpy as np
 import xarray as xr
 
 
-def filter(ds, standard_names):
+def filter(
+    ds: xr.Dataset,
+    standard_names: List[str],
+    keep_horizontal_coords: bool = True,
+    keep_vertical_coords: bool = True,
+    keep_coord_mask: bool = True,
+):
     """Filter Dataset by variables
 
     ... but retain all necessary for decoding vertical coords.
 
     Parameters
     ----------
-    ds: Dataset
+    ds : xr.Dataset
         xarray Dataset to select model output from.
-    standard_names: list
+    standard_names : list of strings
         Standard names of variables to keep in Dataset.
+    keep_horizontal_coords : bool
+        Optionally include all horizontal coordinate variables which can map to lon/lat. Defauls to
+        True.
+    keep_vertical_coords : bool
+        Optionally include vertical coordinate variables describing ocean sigma coordinates.
+        Defaults to True
+    keep_coord_mask : bool
+        Optionally include variables that provide masks of the coordinate features. Defaults to
+        True.
 
     Returns
     -------
-    Dataset with variables from standard_names included as well as variables corresponding to formula_terms needed to decode vertical coordinates using `cf-xarray`.
+    xr.Dataset
+        Dataset with variables from standard_names included as well as variables corresponding to
+        formula_terms needed to decode vertical coordinates using `cf-xarray`.
     """
+    to_merge = []
 
-    # Deal with vertical coord decoding
+    if keep_vertical_coords:
+        # Deal with vertical coord decoding
 
-    # standard_names associated with vertical coordinates
-    s_standard_names_list = [
-        "ocean_s_coordinate_g1",
-        "ocean_s_coordinate_g2",
-        "ocean_sigma_coordinate",
-    ]
+        # standard_names associated with vertical coordinates
+        s_standard_names_list = [
+            "ocean_s_coordinate_g1",
+            "ocean_s_coordinate_g2",
+            "ocean_sigma_coordinate",
+        ]
 
-    # want to find the vertical coord standard_names variables AND those with formula_terms
-    # which should be identical but seems like a good check
-    formula_terms = lambda v: v is not None
-    s_standard_names = lambda v: v in s_standard_names_list
+        # want to find the vertical coord standard_names variables AND those with formula_terms
+        # which should be identical but seems like a good check
+        def formula_terms(value):
+            return value is not None
 
-    # get a Dataset with these coordinates
-    ds1 = ds.filter_by_attrs(
-        formula_terms=formula_terms, standard_name=s_standard_names
-    )
+        def s_standard_names(value):
+            return value in s_standard_names_list
 
-    # For the vertical related coords (e.g. for ROMS these will be `s_rho` and `s_w`
-    # gather all formula term variable names to bring along
-    formula_vars = []
-    for coord in ds1.coords:
-        formula_vars.extend(list(ds1[coord].cf.formula_terms.values()))
-    Vars = list(set(formula_vars))
-    ds2 = ds[Vars]
+        # get a Dataset with these coordinates
+        v_grid_ds = ds.filter_by_attrs(
+            formula_terms=formula_terms, standard_name=s_standard_names
+        )
+        if len(v_grid_ds.variables) > 0:
+            to_merge.append(v_grid_ds)
+
+        # For the vertical related coords (e.g. for ROMS these will be `s_rho` and `s_w`
+        # gather all formula term variable names to bring along
+        formula_vars = []
+        for coord in v_grid_ds.coords:
+            formula_vars.extend(list(v_grid_ds[coord].cf.formula_terms.values()))
+        formula_vars = list(set(formula_vars))
+        if len(formula_vars) > 0:
+            to_merge.append(ds[formula_vars])
+
+    if keep_horizontal_coords:
+        # Get a ds for coordinates
+        h_coords_standard_names = [
+            "longitude",
+            "latitude",
+        ]
+        h_grid_ds = ds.filter_by_attrs(
+            standard_name=lambda v: v in h_coords_standard_names
+        )
+        if len(h_grid_ds.variables) > 0:
+            to_merge.append(h_grid_ds)
+
+    if keep_horizontal_coords and keep_coord_mask:
+        # Keep coordinate masks
+        mask_ds = ds.filter_by_attrs(flag_meanings="land water")
+        if len(mask_ds.variables) > 0:
+            to_merge.append(mask_ds)
 
     # Also get a Dataset for all the requested variables
-    f_standard_names = lambda v: v in standard_names
-    ds3 = ds.filter_by_attrs(standard_name=f_standard_names)
+    def f_standard_names(value):
+        return value in standard_names
+
+    to_merge.append(ds.filter_by_attrs(standard_name=f_standard_names))
 
     # Combine
-    ds = xr.merge([ds1, ds2, ds3])
-
-    return ds
+    return xr.merge(to_merge)
 
 
 def sub_grid(ds, bbox, dask_array_chunks=True):
@@ -79,7 +125,8 @@ def sub_grid(ds, bbox, dask_array_chunks=True):
     bbox: list
         The bounding box for subsetting is defined as [min_lon, min_lat, max_lon, max_lat]
     dask_array_chunks: boolean, optional
-        If True, avoids creating large chunks in slicing operation. If False, accept the large chunk and silence this warning. Comes up if Slicing is producing a large chunk.
+        If True, avoids creating large chunks in slicing operation. If False, accept the large chunk
+        and silence this warning. Comes up if Slicing is producing a large chunk.
 
     Returns
     -------
@@ -103,13 +150,13 @@ def sub_grid(ds, bbox, dask_array_chunks=True):
     # check for ROMS special case
     if "lon_rho" in lon_names:
         # variables with 'lon_rho', just use first one
-        Var = [Var for Var in ds.data_vars if "lon_rho" in ds[Var].coords][0]
+        varname = [v for v in ds.data_vars if "lon_rho" in ds[v].coords][0]
 
         # get xi_rho and eta_rho slice values
         # unfortunately the indices are reset when the array changes size
         # IF the dimensions are dims only and not coords
         if "xi_rho" not in ds.coords:
-            subs = sub_bbox(ds[Var], bbox, other=-500, drop=False)
+            subs = sub_bbox(ds[varname], bbox, other=-500, drop=False)
 
             # index
             i_xi_rho = int((subs != -500).sum(dim="xi_rho").argmax())
@@ -132,7 +179,7 @@ def sub_grid(ds, bbox, dask_array_chunks=True):
         else:  # 'xi_rho' in ds.coords
             # this works in this case because the dimensions as coords can
             # "remember" their original values
-            subsetted = sub_bbox(ds[Var], bbox, drop=True)
+            subsetted = sub_bbox(ds[varname], bbox, drop=True)
             # get xi_rho and eta_rho slice values
             xi_rho, eta_rho = subsetted.xi_rho.values, subsetted.eta_rho.values
 

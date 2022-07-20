@@ -5,6 +5,8 @@ background where possible. No new functions are available only here;
 this connects to functions in other files.
 """
 
+from typing import List
+
 import numpy as np
 import xarray as xr
 
@@ -67,13 +69,45 @@ class emDatasetAccessor:
 
         return ds_out
 
-    def filter(self, standard_names):
-        """Filter Dataset to standard_names, keep imp variables too.
+    def filter(
+        self,
+        standard_names: List[str],
+        *args,
+        keep_horizontal_coords: bool = True,
+        keep_vertical_coords: bool = True,
+        keep_coord_mask: bool = True,
+        **kwargs
+    ):
+        """Filter Dataset to standard_names while keeping coordinate information.
 
+        Parameters
+        ----------
+        standard_names : list of strings
+            Standard names of variables to keep in Dataset.
+        keep_horizontal_coords : bool
+            Optionally include all horizontal coordinate variables which can map to lon/lat. Defauls to
+            True.
+        keep_vertical_coords : bool
+            Optionally include vertical coordinate variables describing ocean sigma coordinates.
+            Defaults to True
+        keep_coord_mask : bool
+            Optionally include variables that provide masks of the coordinate features. Defaults to
+            True.
+
+        Notes
+        -----
         See full docs at `em.utils.filter()`.
         """
 
-        return em.filter(self.ds, standard_names)
+        return em.filter(
+            self.ds,
+            standard_names=standard_names,
+            *args,
+            keep_horizontal_coords=keep_horizontal_coords,
+            keep_vertical_coords=keep_vertical_coords,
+            keep_coord_mask=keep_coord_mask,
+            **kwargs
+        )
 
 
 @xr.register_dataarray_accessor("em")

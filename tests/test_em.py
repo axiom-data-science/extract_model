@@ -19,7 +19,7 @@ def test_T_interp_no_xesmf():
 
     Also test for no xESMF package."""
 
-    url = Path(__file__).parent / "test_roms.nc"
+    url = Path(__file__).parent / "data/test_roms.nc"
     ds = xr.open_dataset(url)
     da_out, _ = em.select(da=ds["zeta"], T=0.5)
     assert np.allclose(da_out[0, 0], -0.12584045)
@@ -34,7 +34,7 @@ def test_T_interp_no_xesmf():
 def test_Z_interp():
     """Test interpolation in depth for one model."""
 
-    url = Path(__file__).parent / "test_hycom.nc"
+    url = Path(__file__).parent / "data/test_hycom.nc"
     ds = xr.open_dataset(url)
     da_out, _ = em.select(da=ds["water_u"], Z=1.0)
     assert np.allclose(da_out[-1, -1], -0.1365)
@@ -105,9 +105,9 @@ def test_grid_point_isel_Z(model):
         assert ta1 > tb1
 
     # this should only run if xESMF is installed
-    except ModuleNotFoundError:
-        if not em.extract_model.XESMF_AVAILABLE:
-            pass
+    except ModuleNotFoundError:  # pragma: no cover
+        if not em.extract_model.XESMF_AVAILABLE:  # pragma: no cover
+            pass  # pragma: no cover
 
 
 @pytest.mark.parametrize("model", models, ids=lambda x: x["name"])
@@ -199,9 +199,9 @@ def test_extrap_False_extrap_val_nan(model):
         da_out = da.em.interp2d(**kwargs)
         assert da_out.isnull()
     # this should only run if xESMF is installed
-    except ModuleNotFoundError:
-        if not em.extract_model.XESMF_AVAILABLE:
-            pass
+    except ModuleNotFoundError:  # pragma: no cover
+        if not em.extract_model.XESMF_AVAILABLE:  # pragma: no cover
+            pass  # pragma: no cover
 
 
 @pytest.mark.parametrize("model", models, ids=lambda x: x["name"])
@@ -239,9 +239,9 @@ def test_locstream(model):
         da_check = da.cf.sel(sel).cf.isel(isel)
         assert np.allclose(da_out.values, da_check.values, equal_nan=True)
     # this should only run if xESMF is installed
-    except ModuleNotFoundError:
-        if not em.extract_model.XESMF_AVAILABLE:
-            pass
+    except ModuleNotFoundError:  # pragma: no cover
+        if not em.extract_model.XESMF_AVAILABLE:  # pragma: no cover
+            pass  # pragma: no cover
 
 
 @pytest.mark.parametrize("model", models, ids=lambda x: x["name"])
@@ -269,9 +269,9 @@ def test_grid(model):
         da_out = da.em.interp2d(**kwargs)
         assert np.allclose(da_out.values, da_check.values)
     # this should only run if xESMF is installed
-    except ModuleNotFoundError:
-        if not em.extract_model.XESMF_AVAILABLE:
-            pass
+    except ModuleNotFoundError:  # pragma: no cover
+        if not em.extract_model.XESMF_AVAILABLE:  # pragma: no cover
+            pass  # pragma: no cover
 
 
 @pytest.mark.parametrize("model", models, ids=lambda x: x["name"])
