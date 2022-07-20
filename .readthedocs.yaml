@@ -7,12 +7,12 @@ build:
 
 conda:
     environment: docs/environment.yml
-#
-# python:
-#    version: "3.8"
-#    install:
-#       - method: setuptools
-#         path: package
+
+python:
+   version: "3.8"
+   install:
+      - method: setuptools
+        path: package
 
 sphinx:
   configuration: docs/conf.py
