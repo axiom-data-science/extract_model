@@ -65,7 +65,7 @@ def test_hor_interp_no_xesmf():
 
 
 @pytest.mark.parametrize("model", models, ids=lambda x: x["name"])
-def test_sel2d(self, model):
+def test_sel2d(model):
     """Test sel2d."""
 
     da = model["da"]

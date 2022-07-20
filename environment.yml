@@ -14,6 +14,7 @@ dependencies:
   - numpy
   - pip
   - requests
+  - scikit-learn
   - xarray
   - xcmocean
   - xesmf  # don't install if on windows
