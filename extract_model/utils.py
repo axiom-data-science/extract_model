@@ -466,12 +466,7 @@ def preprocess_pom(ds):
             raise ValueError("No variable describing latitude is available.")
         lat_varname = ds.cf.standard_names["latitude"][0]
 
-        ds = ds.assign_coords(
-            {
-                lon_varname: ds[lon_varname],
-                lat_varname: ds[lat_varname],
-            }
-        )
+        ds = ds.cf.set_coords(["latitude", "longitude"])
 
     # need to also make this a coordinate to add attributes
     ds["nx"] = ("nx", np.arange(ds.sizes["nx"]), {"axis": "X"})
