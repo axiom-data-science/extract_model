@@ -100,8 +100,8 @@ def filter(
 
     # Also get a Dataset for all the requested variables
     def f_standard_names(value):
-       """loop over standard_names list"""
-       return value in standard_names
+        """loop over standard_names list"""
+        return value in standard_names
 
     to_merge.append(ds.filter_by_attrs(standard_name=f_standard_names))
 
