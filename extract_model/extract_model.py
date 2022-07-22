@@ -512,3 +512,45 @@ def sel2dcf(var, **kwargs):
     new_kwargs.update(kwargs)
 
     return sel2d(var, **new_kwargs)
+
+
+def selZ(var, depths):
+    """Select nearest point in depth.
+
+    This is for when the depth coordinates are 4D, for example in ROMS. This is not a smart algorithm but should be replaced in the future. For now, it simply loops over the times for a single loc and uses xarray's `.sel` with `method='nearest'` to be able to select the closest model output to the desired depth. The resulting DataArray shape is odd if there is more than one depth because depth changes in time.
+
+    Parameters
+    ----------
+    var: DataArray
+        Container from which to extract data.
+    depths: int, float, list, optional
+        Depth(s) at which to return model output.
+        `xarray`'s built-in 1D nearest selection will be used to calculate.
+    """
+
+    # # Make a Dataset out of input lons/lats
+    # # make sure everything is a numpy array
+    # if isinstance(depths, Number):
+    #     depths = np.array([depths])
+    # elif isinstance(depths, list):
+    #     depths = np.array(depths)
+
+    if var.ndim == 1:
+        var = var.swap_dims({var.cf["Z"].name: var.cf["vertical"].name})
+        out = var.cf.sel(vertical=depths, method="nearest")
+    elif var.ndim == 2:
+        # loop over other dimension
+        dim_var_name = list(set(var.dims) - set([var.cf["Z"].name]))[0]
+        new_results = []
+        for i in range(len(var[dim_var_name])):
+            new_results.append(
+                var.isel({dim_var_name: i})
+                .swap_dims({var.cf["Z"].name: var.cf["vertical"].name})
+                .cf.sel(vertical=depths, method="nearest")
+            )
+            # import pdb; pdb.set_trace()
+        out = xr.concat(new_results, dim=dim_var_name)
+    else:
+        raise NotImplementedError("Sorry only works for 1D and 2D so far.")
+
+    return out

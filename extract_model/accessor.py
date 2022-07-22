@@ -125,6 +125,13 @@ class emDataArrayAccessor:
         """
         return em.sel2dcf(self.da, **kwargs)
 
+    def selZ(self, depths):
+        """Select nearest point in depth.
+
+        See `em.selZ()` for full docs.
+        """
+        return em.selZ(self.da, depths)
+
     def interp2d(
         self,
         lons=None,
