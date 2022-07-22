@@ -451,12 +451,23 @@ def preprocess_pom(ds):
 
     Parameters
     ----------
-    ds: xarray Dataset
+    ds : xr.Dataset
+        A dataset containing data described from POM output.
 
     Returns
     -------
-    Same Dataset but with some metadata added and/or altered.
+    xr.Dataset
+        Same Dataset but with some metadata added and/or altered.
     """
+    # The longitude and latitude variables are not recognized as valid coordinates
+    if "longitude" not in ds.cf.coords:
+        if "longitude" not in ds.cf.standard_names:
+            raise ValueError("No variable describing longitude is available.")
+
+        if "latitude" not in ds.cf.standard_names:
+            raise ValueError("No variable describing latitude is available.")
+
+        ds = ds.cf.set_coords(["latitude", "longitude"])
 
     # need to also make this a coordinate to add attributes
     ds["nx"] = ("nx", np.arange(ds.sizes["nx"]), {"axis": "X"})
