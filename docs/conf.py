@@ -32,7 +32,7 @@ import extract_model  # isort:skip
 # -- Project information -----------------------------------------------------
 
 project = "extract_model"
-copyright = "2021, Kristen Thyng"
+copyright = "2022, Kristen Thyng"
 author = "Kristen Thyng"
 
 release = get_distribution("extract_model").version
@@ -76,6 +76,7 @@ extensions = [
 #     "xarray",
 #     "xcmocean",
 #     "xesmf",
+#     "xoak",
 # ]
 
 # Add any paths that contain templates here, relative to this directory.

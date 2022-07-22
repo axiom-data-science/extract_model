@@ -3,7 +3,6 @@ channels:
   - conda-forge
 dependencies:
   - python=3.9
-  - cartopy
   - cf_xarray
   - cmocean
   - dask <=2022.05.0 # https://github.com/axiom-data-science/extract_model/issues/49
@@ -12,9 +11,11 @@ dependencies:
   - numpy
   - pip
   - requests
+  - scikit-learn
   - xarray
   - xcmocean
   - xesmf
+  - xoak
   - pytest
   - pip:
     - codecov

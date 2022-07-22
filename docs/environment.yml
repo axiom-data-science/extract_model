@@ -1,12 +1,12 @@
 name: extract_model_docs
 channels:
   - conda-forge
-  - defaults
+  - nodefaults
 dependencies:
    - python=3.8
    # If your docs code examples depend on other packages add them here
-   - cartopy
    - extract_model
+   - xoak  # need this until it is included with extract_model in next conda-forge release
    # These are needed for the docs themselves
    - numpydoc
    - sphinx

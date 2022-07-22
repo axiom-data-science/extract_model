@@ -1,6 +1,7 @@
 from pathlib import Path
 from time import time
 
+import cf_xarray  # noqa: F401
 import numpy as np
 import pytest
 import xarray as xr
@@ -64,6 +65,37 @@ def test_hor_interp_no_xesmf():
 
 
 @pytest.mark.parametrize("model", models, ids=lambda x: x["name"])
+def test_sel2d(model):
+    """Test sel2d."""
+
+    da = model["da"]
+    i, j = model["i"], model["j"]
+
+    if da.cf["longitude"].ndim == 1:
+        # sel2d is for 2D horizontal grids
+        pass
+        # longitude = float(da.cf["X"][i])
+        # latitude = float(da.cf["Y"][j])
+
+    elif da.cf["longitude"].ndim == 2:
+        longitude = float(da.cf["longitude"][j, i])
+        latitude = float(da.cf["latitude"][j, i])
+
+        # take a nearby point to test function
+        lon_comp = longitude - 0.001
+        lat_comp = latitude - 0.001
+
+        inputs = {
+            da.cf["longitude"].name: lon_comp,
+            da.cf["latitude"].name: lat_comp,
+        }
+        da_sel2d = em.sel2d(da, **inputs)
+        da_check = da.cf.isel(X=i, Y=j)
+
+        assert np.allclose(da_sel2d.squeeze(), da_check)
+
+
+@pytest.mark.parametrize("model", models, ids=lambda x: x["name"])
 def test_grid_point_isel_Z(model):
     """Select and return a grid point.
 
@@ -81,7 +113,12 @@ def test_grid_point_isel_Z(model):
         longitude = float(da.cf["longitude"][j, i])
         latitude = float(da.cf["latitude"][j, i])
 
-    da_check = da.em.sel2d(longitude, latitude, iT=T, iZ=Z)
+    inputs = dict(X=i, Y=j)
+    if "Z" in da.cf.axes and Z is not None:
+        inputs["Z"] = Z
+    if "T" in da.cf.axes and T is not None:
+        inputs["T"] = T
+    da_check = da.cf.isel(**inputs)
 
     # save time required when regridder is being calculated
     try:

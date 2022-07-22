@@ -109,6 +109,20 @@ class emDatasetAccessor:
             **kwargs
         )
 
+    def sel2d(self, **kwargs):
+        """Find nearest value(s) on horizontal grid.
+
+        Can also pass through `xarray` `.sel` information for other dimensions. See `em.sel2d()` for full docs.
+        """
+        return em.sel2d(self.ds, **kwargs)
+
+    def sel2dcf(self, **kwargs):
+        """Find nearest value(s) on horizontal grid.
+
+        Use `cf-xarray` nicknames for horizontal coordinates: 'longitude' and 'latitude'. Can also pass through `xarray` `.sel` information for other dimensions. See `em.sel2d()` for full docs.
+        """
+        return em.sel2dcf(self.ds, **kwargs)
+
 
 @xr.register_dataarray_accessor("em")
 class emDataArrayAccessor:
@@ -118,7 +132,7 @@ class emDataArrayAccessor:
         "Initialize."
 
         self.da = da
-        self.argsel2d_map = {}
+        # self.argsel2d_map = {}
         self.weights_map = {}
 
         # interp2d should be called `select` to be consistent with original
@@ -131,82 +145,26 @@ class emDataArrayAccessor:
     #         else:
     #             self.is_unstructured = False
 
-    def argsel2d(self, lon0, lat0):
-        """Find the indices of coordinate pair closest to another point.
+    def sel2d(self, **kwargs):
+        """Find nearest value(s) on 2D horizontal grid.
 
-        Inputs
-        ------
-        lon0: float, int
-            Longitude of comparison point.
-        lat0: float, int
-            Latitude of comparison point.
-
-        Returns
-        -------
-        Indices in eta, xi of closest location to lon0, lat0.
-
-        Notes
-        -----
-        This function uses Great Circle distance to calculate distances assuming
-        longitudes and latitudes as point coordinates. Uses cartopy function
-        `Geodesic`: https://scitools.org.uk/cartopy/docs/latest/cartopy/geodesic.html
-
-        Example usage
-        -------------
-        >>> ds.temp.xroms.argsel2d(-96, 27)
+        Can also pass through `xarray` `.sel` information for other dimensions. See `em.sel2d()` for full docs.
         """
+        return em.sel2d(self.da, **kwargs)
 
-        # first see if already know the mapping
-        if (lon0, lat0) in self.argsel2d_map:
-            return self.argsel2d_map[(lon0, lat0)]
+    def sel2dcf(self, **kwargs):
+        """Find nearest value(s) on 2D horizontal grid.
 
-        # save location mapping in case requested again:
-        else:
-            inds = em.argsel2d(
-                self.da.cf["longitude"], self.da.cf["latitude"], lon0, lat0
-            )
-            self.argsel2d_map[(lon0, lat0)] = tuple(inds)
-
-            return self.argsel2d_map[(lon0, lat0)]
-
-    def sel2d(self, lon0, lat0, **kwargs):
-        """Find the value of the var at closest location to lon0,lat0.
-
-        Inputs
-        ------
-        lon0: float, int
-            Longitude of comparison point.
-        lat0: float, int
-            Latitude of comparison point.
-        kwargs: see `em.sel2d()` for full docs.
-
-        Returns
-        -------
-        DataArray value(s) of closest location to lon0/lat0.
-
-        Notes
-        -----
-        This function uses Great Circle distance to calculate distances assuming
-        longitudes and latitudes as point coordinates. Uses cartopy function
-        `Geodesic`: https://scitools.org.uk/cartopy/docs/latest/cartopy/geodesic.html
-        This wraps `argsel2d`.
-
-        Example usage
-        -------------
-        >>> ds.temp.em.sel2d(-96, 27)
+        Use `cf-xarray` nicknames for horizontal coordinates: 'longitude' and 'latitude'. Can also pass through `xarray` `.sel` information for other dimensions. See `em.sel2d()` for full docs.
         """
+        return em.sel2dcf(self.da, **kwargs)
 
-        self.argsel2d(lon0, lat0)
+    def selZ(self, depths):
+        """Select nearest point in depth.
 
-        return em.sel2d(
-            self.da,
-            self.da.cf["longitude"],
-            self.da.cf["latitude"],
-            lon0,
-            lat0,
-            inds=self.argsel2d_map[(lon0, lat0)],
-            **kwargs
-        )
+        See `em.selZ()` for full docs.
+        """
+        return em.selZ(self.da, depths)
 
     def interp2d(
         self,
