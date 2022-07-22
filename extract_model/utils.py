@@ -57,9 +57,11 @@ def filter(
         # want to find the vertical coord standard_names variables AND those with formula_terms
         # which should be identical but seems like a good check
         def formula_terms(value):
+            """weed out Nones"""
             return value is not None
 
         def s_standard_names(value):
+            """loop over s coord standard_names"""
             return value in s_standard_names_list
 
         # get a Dataset with these coordinates
@@ -98,7 +100,8 @@ def filter(
 
     # Also get a Dataset for all the requested variables
     def f_standard_names(value):
-        return value in standard_names
+       """loop over standard_names list"""
+       return value in standard_names
 
     to_merge.append(ds.filter_by_attrs(standard_name=f_standard_names))
 
