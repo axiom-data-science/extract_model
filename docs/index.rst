@@ -13,6 +13,7 @@ Use `extract_model` to read select output from model output files by time and/or
 
    models
    ts_work
+   whats_new
    api
 
 
