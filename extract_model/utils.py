@@ -500,6 +500,11 @@ def preprocess(ds):
     This tries to address known model shortcomings in a generic way so that
     `cf-xarray` will work generally, including decoding vertical coordinates.
     """
+    
+    # This is an internal attribute used by netCDF which xarray doesn't know or care about, but can
+    # be returned from THREDDS.
+    if "_NCProperties" in ds.attrs:
+        del ds.attrs["_NCProperties"]
 
     if "ROMS" in "".join([str(val) for val in ds.attrs.values()]):
         return preprocess_roms(ds)
