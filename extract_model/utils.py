@@ -460,11 +460,9 @@ def preprocess_pom(ds):
     if "longitude" not in ds.cf.coords:
         if "longitude" not in ds.cf.standard_names:
             raise ValueError("No variable describing longitude is available.")
-        lon_varname = ds.cf.standard_names["longitude"][0]
 
         if "latitude" not in ds.cf.standard_names:
             raise ValueError("No variable describing latitude is available.")
-        lat_varname = ds.cf.standard_names["latitude"][0]
 
         ds = ds.cf.set_coords(["latitude", "longitude"])
 
