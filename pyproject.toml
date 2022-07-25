@@ -31,6 +31,14 @@ testpaths = [
 
 [tool.pylint.basic]
 good-names = [
-    "fd",
-    "ds",
+    "fd",  # Commonly used to mean file-descriptor
+    "ds",  # Commonly used to mean dataset
+    "nc",  # Commonly used to mean an open netCDF file
+    "i",   # First index of a multi-dimensional array
+    "j",   # Second index of a multi-dimensional array
+    "k",   # Third index of a multi-dimensional array
+    "x",   # A scalar or array representing the first cartesian coordinate
+    "y",   # A scalar or array representing the second cartesian coordinate
+    "p",   # A point
+    "T",   # A matrix characterizing a linear map
 ]
