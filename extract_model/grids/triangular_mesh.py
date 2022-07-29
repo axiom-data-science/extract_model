@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Algorithms and utilties for triangular meshes."""
-from typing import Literal, NewType, Tuple
+import typing
+
+from typing import NewType, Tuple
 
 import numpy as np
 import xarray as xr
@@ -9,8 +11,14 @@ import xarray as xr
 from numba import njit
 
 
+# Literal isn't supported in Python 3.7
+if typing.TYPE_CHECKING:
+    from typing import Literal
+
+    GridType = Literal["fvcom", "selfe"]
+
+
 BBOXType = NewType("BBOXType", Tuple[float, float, float, float])
-GridType = Literal["fvcom", "selfe"]
 
 
 @njit
