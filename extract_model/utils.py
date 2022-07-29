@@ -485,6 +485,11 @@ def preprocess_pom(ds):
             ds[zname].attrs["units"] = "m"
             ds[zname] = order(ds[zname])
 
+    # keep sigma from showing up as "vertical" in cf-xarray
+    for sname in ["sigma"]:  # name_dict.values():
+        if sname in ds:
+            del ds[sname].attrs["positive"]
+
     return ds
 
 
