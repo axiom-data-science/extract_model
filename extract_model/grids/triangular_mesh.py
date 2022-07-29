@@ -1,13 +1,74 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Algorithms and utilties for triangular meshes."""
+import typing
+
+from typing import NewType, Tuple
+
 import numpy as np
+import xarray as xr
+
+from numba import njit
+
+
+# Literal isn't supported in Python 3.7
+if typing.TYPE_CHECKING:  # pragma: no cover
+    from typing import Literal
+
+    GridType = Literal["fvcom", "selfe"]
+
+
+BBOXType = NewType("BBOXType", Tuple[float, float, float, float])
+
+
+@njit
+def index_of_sorted(
+    haystack: np.array, values: np.array
+) -> np.array:  # pragma: no cover
+    """Return an array of indexes for each value in values found in haystack.
+
+    This function uses binary search on haystack to find each value in values and returns an array
+    of indices or -1 if an exact value is not identified. This function behaves similarly to
+    np.searchsorted but will return -1 if there is no exact value.
+
+    Parameters
+    ----------
+    haystack: np.ndarray
+        A _sorted_ array of values from which each value in values array is matched to.
+    values: np.ndarray
+        An array of values to search for.
+
+    Returns
+    -------
+    np.ndarray
+        An array indices which such that
+    """
+    out = np.full_like(values, -1, dtype=np.int32)
+    n = haystack.shape[0]
+
+    for i, search_val in np.ndenumerate(values):
+        left = 0
+        right = n - 1
+        if search_val < haystack[0] or search_val > haystack[-1]:
+            out[i] = -1
+            continue
+        while left <= right:
+            m = (left + right) // 2
+            if haystack[m] < search_val:
+                left = m + 1
+            elif haystack[m] > search_val:
+                right = m - 1
+            else:
+                out[i] = m
+                break
+    return out
 
 
 class UnstructuredGridSubset:
     """A class for subsetting unstructured grids."""
 
     def __init__(self):
+        """Initializes the subsetting class."""
         pass
 
     def _compute_barycentrics_for_triangles(
@@ -305,6 +366,10 @@ class UnstructuredGridSubset:
         return mask
 
     def _double_area_signed(self, a, b, c):
+        """Return the signed area of the vertices multiplied by 2.
+
+        This function is used for fast checking if points reside inside a triangle.
+        """
         # pylint: disable=invalid-name
         # The area of a triangle is related by
         #       | x₁ y₁ 1 |
@@ -344,16 +409,10 @@ class UnstructuredGridSubset:
                 return True
         return False
 
-    def get_intersecting_mask(self, nc, bbox) -> np.ndarray:
-        """Return a mask of only the valid triangles that intersect the bounding box."""
-        # The triangulation indices
-        # FVCOM uses the nv variable to indicate triangle connectivity. It is 1-indexed so in order
-        # to make it work with anything but Fortran we subtract 1 to make it valid indexing.
-        element = np.swapaxes(nc["nv"][:], 0, 1) - 1
-        # Longitude of vertices
-        x = nc["lon"][:]
-        # Latitude of Vertices
-        y = nc["lat"][:]
+    def _get_intersecting_mask(
+        self, x: np.ndarray, y: np.ndarray, element: np.ndarray, bbox
+    ) -> np.ndarray:
+        """Return a mask for the region subsetted by bbox."""
         # The mask that will represent only valid elements
         mask = np.ones((element.shape[0]), dtype=np.bool)
 
@@ -366,3 +425,270 @@ class UnstructuredGridSubset:
             x, y, element, bbox, mask, submask
         )
         return mask
+
+    def get_intersecting_mask(
+        self, ds: xr.Dataset, bbox: BBOXType, grid_type: "GridType"
+    ) -> np.ndarray:
+        """Return a mask of only the valid triangles that intersect the bounding box."""
+        # The triangulation indices
+        # FVCOM uses the nv variable to indicate triangle connectivity. It is 1-indexed so in order
+        # to make it work with anything but Fortran we subtract 1 to make it valid indexing.
+        if grid_type == "fvcom":
+            element = np.swapaxes(ds["nv"][:].to_numpy(), 0, 1) - 1
+            # Longitude of vertices
+            x = ds["lon"][:].to_numpy()
+            # Latitude of Vertices
+            y = ds["lat"][:].to_numpy()
+            return self._get_intersecting_mask(x, y, element, bbox)
+        raise ValueError(f"Unsupported grid type {grid_type}")
+
+    def subset(
+        self, ds: xr.Dataset, bbox: BBOXType, grid_type: "GridType"
+    ) -> xr.Dataset:
+        """Returns a subsetted dataset."""
+        if grid_type == "fvcom":
+            return self._subset_fvcom(ds, bbox)
+
+    def _subset_fvcom(self, ds: xr.Dataset, bbox: BBOXType) -> xr.Dataset:
+        """Return an xarray Dataset that will contain a subsetted version of the data.
+
+        Parameters
+        ----------
+        ds : xr.Dataset
+            An open FVCOM dataset.
+        bbox : Tuple of four floats
+            The axis-aligned bounding box containing (xmin, ymin, xmax, ymax).
+
+        Returns
+        -------
+        xr.Dataset
+            A dataset object containing an entirely subsetted and self-describing dataset conforming
+            to FVCOM metadata.
+
+        Notes
+        -----
+            The variables art1 and art2 are discarded because the area for the faces can't be
+            trivially recomputed.
+        """
+
+        element = ds["nv"][:].to_numpy().T - 1
+        mask = self.get_intersecting_mask(ds, bbox, "fvcom")
+        # Get a sorted array of each node that is in our list of triangles to keep
+        node_indices = np.unique(np.sort(element[mask].flatten()))
+        special_vars = [
+            "nv",
+            "nbe",
+            "ntsn",
+            "nbsn",
+            "ntve",
+            "nbve",
+            "art1",
+            "art2",
+        ]
+        variables = {}
+        for varname in ds.variables:
+            if varname in special_vars:
+                continue
+            if len(ds[varname].dims) < 1:
+                xvar = self._fvcom_copy_variable(ds, varname)
+                variables[varname] = xvar
+            elif ds[varname].dims[-1] == "nele":
+                xvar = self._fvcom_subset_variable(ds, varname, mask)
+                variables[varname] = xvar
+            elif ds[varname].dims[-1] == "node":
+                xvar = self._fvcom_reindex_variable(ds, varname, node_indices)
+                variables[varname] = xvar
+            else:
+                xvar = self._fvcom_copy_variable(ds, varname)
+                variables[varname] = xvar
+
+        variables["nv"] = self._fvcom_recompute_nv(ds, node_indices, mask)
+        variables["nbe"] = self._fvcom_recompute_nbe(ds, mask)
+        variables["nbsn"] = self._fvcom_recompute_nbsn(ds, node_indices)
+        variables["ntsn"] = self._fvcom_recompute_ntsn(ds, node_indices, variables)
+        variables["nbve"] = self._fvcom_recompute_nbve(ds, node_indices, mask)
+        variables["ntve"] = self._fvcom_recompute_ntve(ds, node_indices, variables)
+
+        ds_ = xr.Dataset(variables, attrs=ds.attrs)
+        return ds_
+
+    def _fvcom_copy_variable(self, ds, varname) -> xr.DataArray:
+        """Return an exact copy of the variable as a DataArray"""
+        if len(ds[varname].dims) < 1:
+            data = ds[varname].to_numpy()
+        else:
+            data = ds[varname][:]
+        xvar = xr.DataArray(
+            data=data,
+            dims=ds[varname].dims,
+            attrs=ds[varname].attrs,
+        )
+        return xvar
+
+    def _fvcom_subset_variable(self, ds, varname, mask) -> xr.DataArray:
+        """Return a variable on the face of elements subsetted with mask."""
+        slices = []
+        for dimname in ds[varname].dims:
+            if dimname != "nele":
+                slices.append(slice(None))
+            elif dimname == "nele":
+                slices.append(mask)
+        slices = tuple(slices)
+        data = ds[varname][slices]
+        xvar = xr.DataArray(
+            data=data,
+            dims=ds[varname].dims,
+            attrs=ds[varname].attrs,
+        )
+        return xvar
+
+    def _fvcom_reindex_variable(self, ds, varname, node_indices) -> xr.DataArray:
+        """Return a variable on a node that has been reindexed with new node indices."""
+        slices = []
+        for dimname in ds[varname].dims:
+            if dimname != "node":
+                slices.append(slice(None))
+            elif dimname == "node":
+                slices.append(node_indices)
+        slices = tuple(slices)
+        data = ds[varname][slices]
+        xvar = xr.DataArray(
+            data=data,
+            dims=ds[varname].dims,
+            attrs=ds[varname].attrs,
+        )
+        return xvar
+
+    def _fvcom_recompute_nv(self, ds, node_indices, mask) -> xr.DataArray:
+        """Return the recomputed surrounding elements variable.
+
+        In FVCOM, nv is a variable containing the surrounding nodes (vertices) for a given element
+        (triangle). This function computes a new nv variable after subsetting.
+        """
+        nv = ds["nv"][:].to_numpy().swapaxes(0, 1) - 1
+
+        # Create a new element variable that has the triangle indices by a reverse mapping from the old triangle_ids to the new
+        nv_ = index_of_sorted(node_indices, nv[mask])
+        data = nv_.T + 1
+        xvar = xr.DataArray(
+            data=data,
+            dims=("three", "nele"),
+            attrs=ds["nv"].attrs,
+        )
+        return xvar
+
+    def _fvcom_recompute_nbe(self, ds, mask) -> xr.DataArray:
+        """Return the recomputed element surrounding elements variable.
+
+        In FVCOM, the nbe variable contains the index of each surrounding element (triangle) to a
+        given element (triangle). This function computes a new nbe variable after subsetting.
+        """
+        # A mapping from the new element index to the old index
+        inv_element_lookup = np.where(mask)[0]
+
+        # nbe is the index of the surrounding elements for an element
+        nbe = ds["nbe"][:].to_numpy().swapaxes(0, 1) - 1
+
+        # Surrounding elements, reindexed
+        nbe_ = index_of_sorted(inv_element_lookup, nbe[mask])
+
+        data = nbe_.swapaxes(0, 1) + 1
+        xvar = xr.DataArray(
+            data=data,
+            dims=("three", "nele"),
+            attrs=ds["nbe"].attrs,
+        )
+        return xvar
+
+    def _fvcom_recompute_nbsn(self, ds, node_indices) -> xr.DataArray:
+        """Return the recomputed indices of neighboring nodes (vertices) to a node (vertex).
+
+        In FVCOM, the nbsn variable contains indices of each neighboring node (vertex) to a given
+        node (vertex). This function recomputes the indices of the neighbors if they exist after
+        subsetting.
+        """
+        # nbsn is the index of neighboring vertices to a vertex
+        nbsn = ds["nbsn"][:].to_numpy().swapaxes(0, 1) - 1
+
+        # Compute the index of new neighboring vertices to a new vertex
+        nbsn_ = np.full(
+            (node_indices.shape[0], nbsn.shape[1]), fill_value=-1, dtype=np.int32
+        )
+
+        for new_vert_id in range(node_indices.shape[0]):
+            old_vert_id = node_indices[new_vert_id]
+            neighboring_vertices = nbsn[old_vert_id]
+            reindexed_neighboring_vertices = index_of_sorted(
+                node_indices, neighboring_vertices
+            )
+            nbsn_[new_vert_id] = reindexed_neighboring_vertices
+        data = nbsn_.swapaxes(0, 1) + 1
+        xvar = xr.DataArray(
+            data=data,
+            dims=("maxnode", "node"),
+            attrs=ds["nbsn"].attrs,
+        )
+        return xvar
+
+    def _fvcom_recompute_ntsn(self, ds, node_indices, variables) -> xr.DataArray:
+        """Return the recomputed count of neighboring nodes (vertices) to a given node (vertex).
+
+        In FVCOM, the ntsn variable contains the number of neighboring nodes (vertices) for a given
+        node (vertex). This function recomputes the number of neighbors after subsetting.
+        """
+        nbsn_ = variables["nbsn"][:].to_numpy().swapaxes(0, 1) - 1
+        # ntsn is the number of neighboring vertices to a vertex
+        # ntsn_ is the new number of neighboring vertices to a new vertex
+        ntsn_ = np.zeros(node_indices.shape, dtype=np.int32)
+        for i, neighbors in enumerate(nbsn_):
+            ntsn_[i] = np.sum(neighbors >= 0)
+        xvar = xr.DataArray(
+            data=ntsn_,
+            dims=("node",),
+            attrs=ds["ntsn"].attrs,
+        )
+        return xvar
+
+    def _fvcom_recompute_nbve(self, ds, node_indices, mask) -> xr.DataArray:
+        """Return the recomputed indices of elements (triangles) neighboring a node (vertex).
+
+        In FVCOM, the nbve variable contains the index of neighboring elements (triangles) to a
+        given node (vertex). This function recomputes the indices of neighbors after subsetting.
+        """
+        # Recompute nbve
+        # nbve is an array of indexes of elements neighboring a node (vertex)
+        nbve = ds["nbve"][:].to_numpy().swapaxes(0, 1) - 1
+        # These are the new vertices after subsetting
+        neighbors_of_new_vertices = nbve[node_indices]
+        # An array of old indices of the new elements after the mask
+        new_elements = np.where(mask)[0]
+        # Create an empty (n,maxelem) array to hold new indices
+        nbve_ = np.full((node_indices.shape[0], nbve.shape[1]), -1, dtype=np.int32)
+        for i in range(node_indices.shape[0]):
+            # compute each set of new element indices using index function
+            nbve_[i] = index_of_sorted(new_elements, neighbors_of_new_vertices[i])
+        # Change the indexing strategy and dimension order back to FVCOM format
+        data = nbve_.swapaxes(0, 1) + 1
+        xvar = xr.DataArray(
+            data=data,
+            dims=("maxelem", "node"),
+            attrs=ds["nbve"].attrs,
+        )
+        return xvar
+
+    def _fvcom_recompute_ntve(self, ds, node_indices, variables) -> xr.DataArray:
+        """Return the recomputed count of neighboring elements (triangles) to a given node (vertex).
+
+        In FVCOM, the ntve variable contains the number of neighboring elements (triangles) to a
+        given node (vertex). This function recomputes the neighbors after subsetting.
+        """
+        nbve_ = variables["nbve"][:].to_numpy().swapaxes(0, 1) - 1
+        ntve_ = np.zeros(node_indices.shape, dtype=np.int32)
+        for i, neighbors in enumerate(nbve_):
+            ntve_[i] = np.sum(neighbors >= 0)
+        xvar = xr.DataArray(
+            data=ntve_,
+            dims=("node",),
+            attrs=ds["ntve"].attrs,
+        )
+        return xvar
