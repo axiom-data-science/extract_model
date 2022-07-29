@@ -12,7 +12,7 @@ from numba import njit
 
 
 # Literal isn't supported in Python 3.7
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: no cover
     from typing import Literal
 
     GridType = Literal["fvcom", "selfe"]
@@ -22,7 +22,7 @@ BBOXType = NewType("BBOXType", Tuple[float, float, float, float])
 
 
 @njit
-def index_of_sorted(haystack: np.array, values: np.array) -> np.array:
+def index_of_sorted(haystack: np.array, values: np.array) -> np.array:  # pragma: no cover
     """Return an array of indexes for each value in values found in haystack.
 
     This function uses binary search on haystack to find each value in values and returns an array
