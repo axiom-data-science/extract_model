@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Backend which explicitly supports data defining a triangular mesh."""
-from xarray.backends.netCDF4_ import NetCDF4BackendEntrypoint, NetCDF4DataStore
-from xarray.core.dataset import Dataset
 from xarray import conventions
-from xarray.backends.store import StoreBackendEntrypoint
-from xarray.core.utils import close_on_error
 from xarray.backends.common import _normalize_path
+from xarray.backends.netCDF4_ import NetCDF4BackendEntrypoint, NetCDF4DataStore
+from xarray.backends.store import StoreBackendEntrypoint
+from xarray.core.dataset import Dataset
+from xarray.core.utils import close_on_error
 
 
 class TriangularMeshNetCDF4StoreEntrypoint(StoreBackendEntrypoint):
@@ -31,6 +31,7 @@ class TriangularMeshNetCDF4StoreEntrypoint(StoreBackendEntrypoint):
         decode_timedelta=None,
         preload_varmap=None,
     ):
+        """Return an xr.Dataset after renaming variables described in preload_varmap."""
         vars, attrs = store.load()
         encoding = store.get_encoding()
 
@@ -86,6 +87,7 @@ class TriangularMeshNetCDF4BackendEntrypoint(NetCDF4BackendEntrypoint):
         autoclose=False,
         preload_varmap=None,
     ):
+        """Return an open xr.Dataset object using the TriangularMeshNetCDF4BackendEntrypoint."""
 
         filename_or_obj = _normalize_path(filename_or_obj)
         store = NetCDF4DataStore.open(

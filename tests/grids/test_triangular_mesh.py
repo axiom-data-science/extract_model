@@ -3,18 +3,31 @@
 """Tests for triangular mesh stuff."""
 from pathlib import Path
 
-import netCDF4 as nc4
 import numpy as np
 import pytest
+import xarray as xr
 
 from extract_model.grids.triangular_mesh import UnstructuredGridSubset
 
 
 @pytest.fixture
-def fake_fvcom():
+def fake_fvcom() -> xr.Dataset:
     file_pth = Path(__file__).parent.parent / "data/fake_fvcom.nc"
-    with nc4.Dataset(file_pth) as nc:
-        yield nc
+    with xr.open_dataset(file_pth) as ds:
+        yield ds
+
+
+@pytest.fixture
+def real_fvcom() -> xr.Dataset:
+    file_pth = Path(__file__).parent.parent / "data/test_leofs_fvcom.nc"
+    with xr.open_dataset(
+        file_pth,
+        engine="triangularmesh_netcdf",
+        decode_times=True,
+        preload_varmap={"siglay": "sigma_layers", "siglev": "sigma_levels"},
+        drop_variables=["Itime", "Itime2"],
+    ) as ds:
+        yield ds
 
 
 def test_triangle_algorithms(fake_fvcom):
@@ -25,8 +38,38 @@ def test_triangle_algorithms(fake_fvcom):
     # - An edge intersection
     bbox = [11.5, 2.5, 25, 13]
     subsetter = UnstructuredGridSubset()
-    mask = subsetter.get_intersecting_mask(fake_fvcom, bbox)
+    mask = subsetter.get_intersecting_mask(fake_fvcom, bbox, "fvcom")
     np.testing.assert_equal(
         np.where(mask)[0],
         np.array([3, 10, 12, 13, 14, 15, 54, 55, 57, 85, 87, 88]),
     )
+
+
+def test_subset(real_fvcom):
+    bbox = (276.4, 41.5, 277.4, 42.1)
+    subsetter = UnstructuredGridSubset()
+    ds = subsetter.subset(real_fvcom, bbox, "fvcom")
+    assert ds is not None
+    assert ds.dims["node"] == 1833
+    assert ds.dims["nele"] == 3392
+    # Check a node variable
+    np.testing.assert_allclose(
+        ds["x"][:10],
+        np.array(
+            [
+                543232.0,
+                544512.0,
+                546048.0,
+                547584.0,
+                549056.0,
+                544512.0,
+                543232.0,
+                545920.0,
+                547584.0,
+                549056.0,
+            ],
+            dtype=np.float32,
+        ),
+    )
+
+    np.testing.assert_array_equal(ds["nv"][:, 0], np.array([6, 7, 1], dtype=np.int32))
