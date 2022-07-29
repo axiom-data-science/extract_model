@@ -22,7 +22,9 @@ BBOXType = NewType("BBOXType", Tuple[float, float, float, float])
 
 
 @njit
-def index_of_sorted(haystack: np.array, values: np.array) -> np.array:  # pragma: no cover
+def index_of_sorted(
+    haystack: np.array, values: np.array
+) -> np.array:  # pragma: no cover
     """Return an array of indexes for each value in values found in haystack.
 
     This function uses binary search on haystack to find each value in values and returns an array
