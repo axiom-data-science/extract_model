@@ -425,7 +425,7 @@ class UnstructuredGridSubset:
         return mask
 
     def get_intersecting_mask(
-        self, ds: xr.Dataset, bbox: BBOXType, grid_type: GridType
+        self, ds: xr.Dataset, bbox: BBOXType, grid_type: "GridType"
     ) -> np.ndarray:
         """Return a mask of only the valid triangles that intersect the bounding box."""
         # The triangulation indices
@@ -440,7 +440,9 @@ class UnstructuredGridSubset:
             return self._get_intersecting_mask(x, y, element, bbox)
         raise ValueError(f"Unsupported grid type {grid_type}")
 
-    def subset(self, ds: xr.Dataset, bbox: BBOXType, grid_type: GridType) -> xr.Dataset:
+    def subset(
+        self, ds: xr.Dataset, bbox: BBOXType, grid_type: "GridType"
+    ) -> xr.Dataset:
         """Returns a subsetted dataset."""
         if grid_type == "fvcom":
             return self._subset_fvcom(ds, bbox)
