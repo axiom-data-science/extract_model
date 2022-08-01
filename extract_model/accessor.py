@@ -12,6 +12,9 @@ import xarray as xr
 
 import extract_model as em
 
+from extract_model import utils
+from extract_model.grids.triangular_mesh import UnstructuredGridSubset
+
 
 xr.set_options(keep_attrs=True)
 
@@ -43,6 +46,10 @@ class emDatasetAccessor:
 
         See full docs at `em.sub_bbox()`.
         """
+        model_type_guess = utils.guess_model_type(self.ds)
+        if model_type_guess == "FVCOM":
+            subsetter = UnstructuredGridSubset()
+            return subsetter.subset(ds=self.ds, bbox=bbox, grid_type="fvcom")
 
         attrs = self.ds.attrs
 

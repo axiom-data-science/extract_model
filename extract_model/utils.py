@@ -3,7 +3,7 @@
 """
 Utilities to help extract_model work better.
 """
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 import xarray as xr
@@ -414,8 +414,7 @@ def preprocess_roms(ds):
 
 def preprocess_fvcom(ds):
     """Preprocess FVCOM model output."""
-
-    raise NotImplementedError
+    return ds
 
 
 def preprocess_selfe(ds):
@@ -506,17 +505,34 @@ def preprocess(ds):
     if "_NCProperties" in ds.attrs:
         del ds.attrs["_NCProperties"]
 
-    if "ROMS" in "".join([str(val) for val in ds.attrs.values()]):
-        return preprocess_roms(ds)
-    elif "FVCOM" in "".join([str(val) for val in ds.attrs.values()]):
-        return preprocess_fvcom(ds)
-    elif "SELFE" in "".join([str(val) for val in ds.attrs.values()]):
-        return preprocess_selfe(ds)
-    elif "HYCOM" in "".join([str(val) for val in ds.attrs.values()]):
-        return preprocess_hycom(ds)
-    elif "POM" in "".join([str(val) for val in ds.attrs.values()]):
-        return preprocess_pom(ds)
-    elif "RTOFS" in "".join([str(val) for val in ds.attrs.values()]):
-        return preprocess_rtofs(ds)
+    preprocess_map = {
+        "ROMS": preprocess_roms,
+        "FVCOM": preprocess_fvcom,
+        "SELFE": preprocess_selfe,
+        "HYCOM": preprocess_hycom,
+        "POM": preprocess_pom,
+        "RTOFS": preprocess_rtofs,
+    }
+
+    model_type = guess_model_type(ds)
+    if model_type in preprocess_map:
+        return preprocess_map[model_type](ds)
 
     return ds
+
+
+def guess_model_type(ds: xr.Dataset) -> Optional[str]:
+    """Returns a guess as to which model produced the dataset."""
+    model_types = [
+        "ROMS",
+        "FVCOM",
+        "SELFE",
+        "HYCOM",
+        "RTOFS",
+        "GFS",
+        "ADCIRC",
+    ]
+    for model_type in model_types:
+        if model_type in "".join([str(val) for val in ds.attrs.values()]):
+            return model_type
+    return None
