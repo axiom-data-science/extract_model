@@ -102,3 +102,8 @@ def test_subset_accessor(real_fvcom):
     )
 
     np.testing.assert_array_equal(ds["nv"][:, 0], np.array([6, 7, 1], dtype=np.int32))
+
+    ds = real_fvcom.em.sub_bbox(bbox, model_type="FVCOM")
+    assert ds is not None
+    assert ds.dims["node"] == 1833
+    assert ds.dims["nele"] == 3392

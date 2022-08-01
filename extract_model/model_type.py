@@ -6,11 +6,12 @@ from enum import Enum
 
 class ModelType(str, Enum):
     """Supported Models."""
-    ROMS = 'ROMS'
-    FVCOM = 'FVCOM'
-    SELFE = 'SELFE'
-    HYCOM = 'HYCOM'
-    POM = 'POM'
-    RTOFS = 'RTOFS'
-    GFS = 'GFS'
-    ADCIRC = 'ADCIRC'
+
+    ROMS = "ROMS"
+    FVCOM = "FVCOM"
+    SELFE = "SELFE"
+    HYCOM = "HYCOM"
+    POM = "POM"
+    RTOFS = "RTOFS"
+    GFS = "GFS"
+    ADCIRC = "ADCIRC"
