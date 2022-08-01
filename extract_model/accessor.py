@@ -5,7 +5,7 @@ background where possible. No new functions are available only here;
 this connects to functions in other files.
 """
 
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 import xarray as xr
@@ -14,6 +14,7 @@ import extract_model as em
 
 from extract_model import utils
 from extract_model.grids.triangular_mesh import UnstructuredGridSubset
+from extract_model.model_type import ModelType
 
 
 xr.set_options(keep_attrs=True)
@@ -41,12 +42,21 @@ class emDatasetAccessor:
 
         return em.sub_grid(self.ds, bbox)
 
-    def sub_bbox(self, bbox, drop=True, dask_array_chunks=True):
+    def sub_bbox(
+        self,
+        bbox,
+        drop=True,
+        dask_array_chunks=True,
+        model_type: Optional[ModelType] = None,
+    ):
         """Subset DataArray in space defined by bbox.
 
         See full docs at `em.sub_bbox()`.
         """
-        model_type_guess = utils.guess_model_type(self.ds)
+        if model_type is not None and not isinstance(model_type, ModelType):
+            model_type = ModelType(model_type)
+
+        model_type_guess = model_type or utils.guess_model_type(self.ds)
         if model_type_guess == "FVCOM":
             subsetter = UnstructuredGridSubset()
             return subsetter.subset(ds=self.ds, bbox=bbox, grid_type="fvcom")

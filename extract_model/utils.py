@@ -8,6 +8,8 @@ from typing import List, Optional
 import numpy as np
 import xarray as xr
 
+from extract_model.model_type import ModelType
+
 
 def filter(
     ds: xr.Dataset,
@@ -521,18 +523,9 @@ def preprocess(ds):
     return ds
 
 
-def guess_model_type(ds: xr.Dataset) -> Optional[str]:
+def guess_model_type(ds: xr.Dataset) -> Optional[ModelType]:
     """Returns a guess as to which model produced the dataset."""
-    model_types = [
-        "ROMS",
-        "FVCOM",
-        "SELFE",
-        "HYCOM",
-        "RTOFS",
-        "GFS",
-        "ADCIRC",
-    ]
-    for model_type in model_types:
+    for model_type in ModelType:
         if model_type in "".join([str(val) for val in ds.attrs.values()]):
-            return model_type
+            return ModelType(model_type)
     return None
