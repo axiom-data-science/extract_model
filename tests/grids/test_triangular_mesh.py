@@ -141,3 +141,12 @@ def test_sub_grid_accessor(real_fvcom):
     assert ds is not None
     assert ds.dims["node"] == 1833
     assert ds.dims["nele"] == 3392
+
+
+def test_filter(real_fvcom):
+
+    standard_names = ["sea_water_temperature"]
+    ds_filtered = real_fvcom.em.filter(standard_names=standard_names)
+    varnames = sorted(ds_filtered.variables)
+    for coord_var in UnstructuredGridSubset.FVCOM_COORDINATE_VARIABLES:
+        assert coord_var in varnames
