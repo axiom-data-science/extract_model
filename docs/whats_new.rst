@@ -9,3 +9,4 @@ v0.7.0 (July 22, 2022)
 * Improvement to unit test setup.
 * `em.preprocess()` will implicitly assign horizontal coordinates longitude and latitude for POM
   datasets, even if the data do not specify `coordinates` attributes explicitly.
+* `em.sub_bbox()` supports subsetting FVCOM model output.
