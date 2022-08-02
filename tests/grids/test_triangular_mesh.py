@@ -150,3 +150,6 @@ def test_filter(real_fvcom):
     varnames = sorted(ds_filtered.variables)
     for coord_var in UnstructuredGridSubset.FVCOM_COORDINATE_VARIABLES:
         assert coord_var in varnames
+
+    for coord_var in ("x", "y", "xc", "yc"):
+        assert coord_var in varnames

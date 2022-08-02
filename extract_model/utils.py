@@ -102,6 +102,11 @@ def filter(
         )
         if len(h_grid_ds.variables) > 0:
             to_merge.append(h_grid_ds)
+        if model_type_guess == "FVCOM":
+            if "x" in ds.variables and "y" in ds.variables:
+                to_merge.append(ds[["x", "y"]])
+            if "xc" in ds.variables and "yc" in ds.variables:
+                to_merge.append(ds[["xc", "yc"]])
 
     if keep_horizontal_coords and keep_coord_mask:
         # Keep coordinate masks
