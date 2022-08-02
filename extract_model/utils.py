@@ -8,6 +8,7 @@ from typing import List, Optional
 import numpy as np
 import xarray as xr
 
+from extract_model.grids.triangular_mesh import UnstructuredGridSubset
 from extract_model.model_type import ModelType
 
 
@@ -111,7 +112,7 @@ def filter(
     return xr.merge(to_merge)
 
 
-def sub_grid(ds, bbox, dask_array_chunks=True):
+def sub_grid(ds, bbox, dask_array_chunks=True, model_type: Optional[ModelType] = None):
     """Subset Dataset grids.
 
     Preserves horizontal grid structure, which matters for ROMS.
@@ -132,6 +133,9 @@ def sub_grid(ds, bbox, dask_array_chunks=True):
     dask_array_chunks: boolean, optional
         If True, avoids creating large chunks in slicing operation. If False, accept the large chunk
         and silence this warning. Comes up if Slicing is producing a large chunk.
+    model_type : ModelType, optional
+        Clients may explicitly specify the model type for the grid and data in `ds`. If this
+        parameter isn't specified, it is guessed based on the metadata available.
 
     Returns
     -------
@@ -140,7 +144,16 @@ def sub_grid(ds, bbox, dask_array_chunks=True):
     """
 
     assertion = "Input should be `xarray` Dataset. For DataArray, try `sub_bbox()`."
-    assert isinstance(ds, xr.Dataset), assertion
+    if not isinstance(ds, xr.Dataset):
+        raise ValueError(assertion)
+
+    if model_type is not None and not isinstance(model_type, ModelType):
+        model_type = ModelType(model_type)
+
+    model_type_guess = model_type or guess_model_type(ds)
+    if model_type_guess == "FVCOM":
+        subsetter = UnstructuredGridSubset()
+        return subsetter.subset(ds=ds, bbox=bbox, grid_type="fvcom")
 
     attrs = ds.attrs
 

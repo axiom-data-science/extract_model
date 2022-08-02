@@ -32,15 +32,14 @@ class emDatasetAccessor:
         # extra for getting coordinates but changes variables
         self._ds = ds.copy(deep=True)
 
-    def sub_grid(self, bbox, drop=True):
+    def sub_grid(self, bbox, drop=True, **kwargs):
         """Subset Dataset in space defined by bbox.
 
         Returns full set of grids that preserve structure.
 
         See full docs at `em.sub_grid()`.
         """
-
-        return em.sub_grid(self.ds, bbox)
+        return em.sub_grid(self.ds, bbox, **kwargs)
 
     def sub_bbox(
         self,

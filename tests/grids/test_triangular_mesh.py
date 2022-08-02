@@ -107,3 +107,37 @@ def test_subset_accessor(real_fvcom):
     assert ds is not None
     assert ds.dims["node"] == 1833
     assert ds.dims["nele"] == 3392
+
+
+def test_sub_grid_accessor(real_fvcom):
+    bbox = (276.4, 41.5, 277.4, 42.1)
+    ds = real_fvcom.em.sub_grid(bbox=bbox)
+    assert ds is not None
+    assert ds.dims["node"] == 1833
+    assert ds.dims["nele"] == 3392
+    # Check a node variable
+    np.testing.assert_allclose(
+        ds["x"][:10],
+        np.array(
+            [
+                543232.0,
+                544512.0,
+                546048.0,
+                547584.0,
+                549056.0,
+                544512.0,
+                543232.0,
+                545920.0,
+                547584.0,
+                549056.0,
+            ],
+            dtype=np.float32,
+        ),
+    )
+
+    np.testing.assert_array_equal(ds["nv"][:, 0], np.array([6, 7, 1], dtype=np.int32))
+
+    ds = real_fvcom.em.sub_grid(bbox=bbox, model_type="FVCOM")
+    assert ds is not None
+    assert ds.dims["node"] == 1833
+    assert ds.dims["nele"] == 3392
