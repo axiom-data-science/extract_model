@@ -14,6 +14,8 @@ import xarray as xr
 
 import extract_model as em
 
+from extract_model.utils import sub_grid
+
 from .utils import read_model_configs
 
 
@@ -148,3 +150,16 @@ def test_sub_grid_ds(model):
         ds_new = ds.cf.sel(sel_dict)
 
         assert ds_out.equals(ds_new)
+
+
+def test_sub_grid_assert():
+    """Ensures that sub_grid will raise if passed an xr.DataArray."""
+    xvar = xr.DataArray(data=np.arange(20), dims=("time",))
+    bbox = (
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+    )
+    with pytest.raises(ValueError):
+        sub_grid(ds=xvar, bbox=bbox)
