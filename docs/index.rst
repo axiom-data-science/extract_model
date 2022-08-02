@@ -12,9 +12,11 @@ Use `extract_model` to read select output from model output files by time and/or
    :maxdepth: 2
 
    models
+   unstructured_subsetting
    ts_work
    whats_new
    api
+
 
 
 Indices and tables
