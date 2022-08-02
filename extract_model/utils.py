@@ -86,7 +86,10 @@ def filter(
         # gather all formula term variable names to bring along
         formula_vars = []
         for coord in v_grid_ds.coords:
-            formula_vars.extend(list(v_grid_ds[coord].cf.formula_terms.values()))
+            # It's possible to have coordinates of the filtered variables which do not define
+            # formula_terms, like in FVCOM.
+            if "formula_terms" in v_grid_ds[coord].attrs:
+                formula_vars.extend(list(v_grid_ds[coord].cf.formula_terms.values()))
         formula_vars = list(set(formula_vars))
         if len(formula_vars) > 0:
             to_merge.append(ds[formula_vars])
