@@ -15,6 +15,7 @@ Use `extract_model` to read select output from model output files by time and/or
    ts_work
    whats_new
    api
+   unstructured_subsetting
 
 
 Indices and tables
