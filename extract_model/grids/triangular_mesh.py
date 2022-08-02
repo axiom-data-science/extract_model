@@ -67,6 +67,15 @@ def index_of_sorted(
 class UnstructuredGridSubset:
     """A class for subsetting unstructured grids."""
 
+    FVCOM_COORDINATE_VARIABLES = [
+        "nv",
+        "nbe",
+        "ntsn",
+        "nbsn",
+        "ntve",
+        "nbve",
+    ]
+
     def __init__(self):
         """Initializes the subsetting class."""
         pass

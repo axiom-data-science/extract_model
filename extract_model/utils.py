@@ -18,6 +18,7 @@ def filter(
     keep_horizontal_coords: bool = True,
     keep_vertical_coords: bool = True,
     keep_coord_mask: bool = True,
+    model_type: Optional[ModelType] = None,
 ):
     """Filter Dataset by variables
 
@@ -46,6 +47,13 @@ def filter(
         formula_terms needed to decode vertical coordinates using `cf-xarray`.
     """
     to_merge = []
+    if model_type is not None and not isinstance(model_type, ModelType):
+        model_type = ModelType(model_type)
+
+    model_type_guess = model_type or guess_model_type(ds)
+
+    if model_type_guess == "FVCOM":
+        to_merge.append(ds[UnstructuredGridSubset.FVCOM_COORDINATE_VARIABLES])
 
     if keep_vertical_coords:
         # Deal with vertical coord decoding
