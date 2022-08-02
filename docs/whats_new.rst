@@ -11,3 +11,4 @@ v0.7.0 (July 22, 2022)
   datasets, even if the data do not specify `coordinates` attributes explicitly.
 * `em.sub_bbox()` supports subsetting FVCOM model output.
 * A new jupyter notebook demonstrating subsetting of FVCOM model output is now available in docs.
+* `em.sub_grid()` supports subsetting FVCOM model output.
