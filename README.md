@@ -8,7 +8,7 @@ extract_model
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/extract_model.svg?style=for-the-badge)](https://anaconda.org/conda-forge/extract_model)
 
 
-Facilitates read-in and extraction for ocean model output.
+Facilitates read-in and extraction for ocean model output. Most functions work on both structured and unstructured model output. Unstructured functionality has been tested with FVCOM output only so far.
 
 In particular this package can:
 - interpolate a model time series to a longitude, latitude location on a 2D grid, while bringing along the calculated z coordinates, with `select()`
@@ -16,10 +16,10 @@ In particular this package can:
  - uses [`xESMF`](https://pangeo-xesmf.readthedocs.io/en/latest/index.html) for fast interpolation that respects longitude/latitude grids
 - find the nearest grid point to a longitude, latitude location on a horizontal grid (structured or unstructured) in `sel2d()` using [`xoak`](https://xoak.readthedocs.io/en/latest/index.html)
  - `xoak` saves the calculated index so that subsequent searches are faster
-- select a sub-region of a structured grid in two ways with `sub_bbox()` and `sub_grid()`
+- select a sub-region of a structured or unstructured grid in two ways with `sub_bbox()` and `sub_grid()`
 - has an `xarray` accessor for convenient access to methods
 - uses `cf-xarray` to understand `xarray` Dataset metadata and allow for generic axis and coordinate names as well as calculate vertical coordinates
-- can preprocess a variety of model output types (including ROMS, HYCOM, and POM) to improve metadata and ease of use
+- can preprocess a variety of model output types (including ROMS, HYCOM, POM, and FVCOM) to improve metadata and ease of use
 
 > :warning: **If you are using Windows**: Horizontal interpolation currently will not work in `extract_model` until `xESMF` is installable on Windows. Other functions will work.
 
