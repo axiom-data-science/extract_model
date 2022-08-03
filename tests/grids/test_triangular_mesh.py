@@ -144,9 +144,29 @@ def test_sub_grid_accessor(real_fvcom):
 
 
 def test_filter(real_fvcom):
+    real_fvcom["sigma_layers"].attrs[
+        "formula_terms"
+    ] = "sigma: sigma_layers eta: zeta depth: h"
+    real_fvcom["sigma_levels"].attrs[
+        "formula_terms"
+    ] = "sigma: sigma_levels eta: zeta depth: h"
+    real_fvcom = real_fvcom.assign_coords(
+        {
+            "time": real_fvcom["time"],
+            "sigma_layers": real_fvcom["sigma_layers"],
+            "sigma_levels": real_fvcom["sigma_levels"],
+            "lat": real_fvcom["lat"],
+            "lon": real_fvcom["lon"],
+            "latc": real_fvcom["latc"],
+            "lonc": real_fvcom["lonc"],
+        }
+    )
 
     standard_names = ["sea_water_temperature"]
     ds_filtered = real_fvcom.em.filter(standard_names=standard_names)
     varnames = sorted(ds_filtered.variables)
     for coord_var in UnstructuredGridSubset.FVCOM_COORDINATE_VARIABLES:
+        assert coord_var in varnames
+
+    for coord_var in ("x", "y", "xc", "yc"):
         assert coord_var in varnames
