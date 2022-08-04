@@ -54,6 +54,8 @@ def filter(
 
     if model_type_guess == "FVCOM":
         to_merge.append(ds[UnstructuredGridSubset.FVCOM_COORDINATE_VARIABLES])
+    elif model_type_guess == "SELFE":
+        to_merge.append(ds[UnstructuredGridSubset.SELFE_COORDINATE_VARIABLES])
 
     if keep_vertical_coords:
         # Deal with vertical coord decoding
@@ -110,6 +112,9 @@ def filter(
                 to_merge.append(ds[["x", "y"]])
             if "xc" in ds.variables and "yc" in ds.variables:
                 to_merge.append(ds[["xc", "yc"]])
+        elif model_type_guess == "SELFE":
+            if "x" in ds.variables and "y" in ds.variables:
+                to_merge.append(ds[["x", "y"]])
 
     if keep_horizontal_coords and keep_coord_mask:
         # Keep coordinate masks
@@ -170,6 +175,9 @@ def sub_grid(ds, bbox, dask_array_chunks=True, model_type: Optional[ModelType] =
     if model_type_guess == "FVCOM":
         subsetter = UnstructuredGridSubset()
         return subsetter.subset(ds=ds, bbox=bbox, grid_type="fvcom")
+    if model_type_guess == "SELFE":
+        subsetter = UnstructuredGridSubset()
+        return subsetter.subset(ds=ds, bbox=bbox, grid_type="selfe")
 
     attrs = ds.attrs
 
@@ -450,8 +458,7 @@ def preprocess_fvcom(ds):
 
 def preprocess_selfe(ds):
     """Preprocess SELFE model output."""
-
-    raise NotImplementedError
+    return ds
 
 
 def preprocess_hycom(ds):

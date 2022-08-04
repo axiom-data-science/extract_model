@@ -76,6 +76,8 @@ class UnstructuredGridSubset:
         "nbve",
     ]
 
+    SELFE_COORDINATE_VARIABLES = ["ele"]
+
     def __init__(self):
         """Initializes the subsetting class."""
         pass
@@ -449,6 +451,13 @@ class UnstructuredGridSubset:
             # Latitude of Vertices
             y = ds["lat"][:].to_numpy()
             return self._get_intersecting_mask(x, y, element, bbox)
+        if grid_type == "selfe":
+            element = np.swapaxes(ds["ele"][:].to_numpy(), 0, 1) - 1
+            # Longitude of vertices
+            x = ds["lon"][:].to_numpy()
+            # Latitude of Vertices
+            y = ds["lat"][:].to_numpy()
+            return self._get_intersecting_mask(x, y, element, bbox)
         raise ValueError(f"Unsupported grid type {grid_type}")
 
     def subset(
@@ -457,6 +466,9 @@ class UnstructuredGridSubset:
         """Returns a subsetted dataset."""
         if grid_type == "fvcom":
             return self._subset_fvcom(ds, bbox)
+        if grid_type == "selfe":
+            return self._subset_selfe(ds, bbox)
+        raise ValueError(f"Unsupported grid type {grid_type}")
 
     def _subset_fvcom(self, ds: xr.Dataset, bbox: BBOXType) -> xr.Dataset:
         """Return an xarray Dataset that will contain a subsetted version of the data.
@@ -699,5 +711,96 @@ class UnstructuredGridSubset:
             data=ntve_,
             dims=("node",),
             attrs=ds["ntve"].attrs,
+        )
+        return xvar
+
+    def _subset_selfe(self, ds: xr.Dataset, bbox: BBOXType) -> xr.Dataset:
+        """Return an xarray Dataset that will contain a subsetted version of the data.
+
+        Parameters
+        ----------
+        ds : xr.Dataset
+            An open SELFE dataset.
+        bbox : Tuple of four floats
+            The axis-aligned bounding box containing (xmin, ymin, xmax, ymax).
+
+        Returns
+        -------
+        xr.Dataset
+            A dataset object containing an entirely subsetted and self-describing dataset conforming
+            to SELFE metadata.
+
+        Notes
+        -----
+            The variables art1 and art2 are discarded because the area for the faces can't be
+            trivially recomputed.
+        """
+        element = ds["ele"][:].to_numpy().T - 1
+        mask = self.get_intersecting_mask(ds, bbox, "selfe")
+        # Get a sorted array of each node that is in our list of triangles to keep
+        node_indices = np.unique(np.sort(element[mask].flatten()))
+        special_vars = ["ele"]
+        variables = {}
+        for varname in ds.variables:
+            if varname in special_vars:
+                continue
+            if len(ds[varname].dims) < 1:
+                xvar = self._selfe_copy_variable(ds, varname)
+                variables[varname] = xvar
+            elif ds[varname].dims[-1] == "node":
+                xvar = self._selfe_reindex_variable(ds, varname, node_indices)
+                variables[varname] = xvar
+            else:
+                xvar = self._selfe_copy_variable(ds, varname)
+                variables[varname] = xvar
+        variables["ele"] = self._selfe_recompute_ele(ds, node_indices, mask)
+        ds_ = xr.Dataset(variables, attrs=ds.attrs)
+        return ds_
+
+    def _selfe_copy_variable(self, ds, varname) -> xr.DataArray:
+        """Return an exact copy of the variable as a DataArray"""
+        if len(ds[varname].dims) < 1:
+            data = ds[varname].to_numpy()
+        else:
+            data = ds[varname][:]
+        xvar = xr.DataArray(
+            data=data,
+            dims=ds[varname].dims,
+            attrs=ds[varname].attrs,
+        )
+        return xvar
+
+    def _selfe_reindex_variable(self, ds, varname, node_indices) -> xr.DataArray:
+        """Return a variable on a node that has been reindexed with new node indices."""
+        slices = []
+        for dimname in ds[varname].dims:
+            if dimname != "node":
+                slices.append(slice(None))
+            elif dimname == "node":
+                slices.append(node_indices)
+        slices = tuple(slices)
+        data = ds[varname][slices]
+        xvar = xr.DataArray(
+            data=data,
+            dims=ds[varname].dims,
+            attrs=ds[varname].attrs,
+        )
+        return xvar
+
+    def _selfe_recompute_ele(self, ds, node_indices, mask) -> xr.DataArray:
+        """Return the recomputed surrounding elements variable.
+
+        In SELFE, ele is a variable containing the surrounding nodes (vertices) for a given element
+        (triangle). This function computes a new nv variable after subsetting.
+        """
+        element = ds["ele"][:].to_numpy().swapaxes(0, 1) - 1
+        # Create a new element variable that has the triangle indices by a reverse mapping from the
+        # old triangle_ids to the new
+        element_ = index_of_sorted(node_indices, element[mask])
+        data = element_.T + 1
+        xvar = xr.DataArray(
+            data=data,
+            dims=("nface", "nele"),
+            attrs=ds["ele"].attrs,
         )
         return xvar
