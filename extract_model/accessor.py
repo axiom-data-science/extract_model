@@ -59,6 +59,9 @@ class emDatasetAccessor:
         if model_type_guess == "FVCOM":
             subsetter = UnstructuredGridSubset()
             return subsetter.subset(ds=self.ds, bbox=bbox, grid_type="fvcom")
+        elif model_type_guess == "SELFE":
+            subsetter = UnstructuredGridSubset()
+            return subsetter.subset(ds=self.ds, bbox=bbox, grid_type="selfe")
 
         attrs = self.ds.attrs
 

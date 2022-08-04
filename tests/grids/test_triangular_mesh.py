@@ -26,6 +26,19 @@ def real_fvcom() -> xr.Dataset:
         decode_times=True,
         preload_varmap={"siglay": "sigma_layers", "siglev": "sigma_levels"},
         drop_variables=["Itime", "Itime2"],
+        chunks={"time": 1},
+    ) as ds:
+        yield ds
+
+
+@pytest.fixture
+def selfe_data() -> xr.Dataset:
+    """Fixture for CREOFS SELFE data."""
+    file_pth = Path(__file__).parent.parent / "data/test_creofs_selfe.nc"
+    with xr.open_dataset(
+        file_pth,
+        decode_times=True,
+        chunks={"time": 1},
     ) as ds:
         yield ds
 
@@ -45,7 +58,7 @@ def test_triangle_algorithms(fake_fvcom):
     )
 
 
-def test_subset(real_fvcom):
+def test_fvcom_subset(real_fvcom):
     bbox = (276.4, 41.5, 277.4, 42.1)
     subsetter = UnstructuredGridSubset()
     ds = subsetter.subset(real_fvcom, bbox, "fvcom")
@@ -75,7 +88,7 @@ def test_subset(real_fvcom):
     np.testing.assert_array_equal(ds["nv"][:, 0], np.array([6, 7, 1], dtype=np.int32))
 
 
-def test_subset_accessor(real_fvcom):
+def test_fvcom_subset_accessor(real_fvcom):
     bbox = (276.4, 41.5, 277.4, 42.1)
     ds = real_fvcom.em.sub_bbox(bbox)
     assert ds is not None
@@ -109,7 +122,7 @@ def test_subset_accessor(real_fvcom):
     assert ds.dims["nele"] == 3392
 
 
-def test_sub_grid_accessor(real_fvcom):
+def test_fvcom_sub_grid_accessor(real_fvcom):
     bbox = (276.4, 41.5, 277.4, 42.1)
     ds = real_fvcom.em.sub_grid(bbox=bbox)
     assert ds is not None
@@ -143,7 +156,7 @@ def test_sub_grid_accessor(real_fvcom):
     assert ds.dims["nele"] == 3392
 
 
-def test_filter(real_fvcom):
+def test_fvcom_filter(real_fvcom):
     real_fvcom["sigma_layers"].attrs[
         "formula_terms"
     ] = "sigma: sigma_layers eta: zeta depth: h"
@@ -170,3 +183,35 @@ def test_filter(real_fvcom):
 
     for coord_var in ("x", "y", "xc", "yc"):
         assert coord_var in varnames
+
+
+def test_selfe_sub_grid_accessor(selfe_data):
+    bbox = (-123.8, 46.2, -123.6, 46.3)
+    ds_ss = selfe_data.em.sub_grid(bbox=bbox)
+    assert ds_ss is not None
+    assert ds_ss.dims["node"] == 4273
+    assert ds_ss.dims["nele"] == 8178
+    np.testing.assert_allclose(
+        ds_ss["x"][:10],
+        np.array(
+            [
+                370944.0,
+                370944.0,
+                370752.0,
+                370688.0,
+                370624.0,
+                370688.0,
+                370880.0,
+                370880.0,
+                370816.0,
+                370816.0,
+            ],
+            dtype=np.float32,
+        ),
+    )
+
+
+def test_unsupported_grid():
+    subsetter = UnstructuredGridSubset()
+    with pytest.raises(ValueError):
+        subsetter.subset(None, (0, 0, 1, 1), "unreal")
