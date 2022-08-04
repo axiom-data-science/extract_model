@@ -458,8 +458,7 @@ def preprocess_fvcom(ds):
 
 def preprocess_selfe(ds):
     """Preprocess SELFE model output."""
-
-    raise NotImplementedError
+    return ds
 
 
 def preprocess_hycom(ds):
