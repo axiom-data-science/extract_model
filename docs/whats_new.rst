@@ -1,7 +1,8 @@
 :mod:`What's New`
 ----------------------------
-v0.8.1
-======
+
+v0.8.1 (Unreleased)
+===================
 
 * Support for SELFE datasets is now incorporated into `em.sub_grid()` `em.sub_bbox()` and
   `em.filter()`.
