@@ -186,6 +186,18 @@ def test_fvcom_filter(real_fvcom):
         assert coord_var in varnames
 
 
+def test_fvcom_subset_scalars(real_fvcom):
+    bbox = (276.4, 41.5, 277.4, 42.1)
+    xvar = xr.DataArray(data=np.array(0.0), attrs={"long_name": "Example Data"})
+    ds = real_fvcom.assign(variables={"example": xvar})
+    ds_ss = ds.em.sub_grid(bbox=bbox)
+    assert ds_ss is not None
+    assert ds_ss.dims["node"] == 1833
+    assert ds_ss.dims["nele"] == 3392
+    assert "example" in ds_ss.variables
+    assert len(ds_ss["example"].dims) < 1
+
+
 def test_fvcom_preprocess(real_fvcom):
     ds = utils.preprocess(real_fvcom)
     assert ds is not None
@@ -243,6 +255,18 @@ def test_selfe_sub_grid_accessor(selfe_data):
     )
 
 
+def test_selfe_subset_scalars(selfe_data):
+    xvar = xr.DataArray(data=np.array(0.0), attrs={"long_name": "Example Data"})
+    ds = selfe_data.assign(variables={"example": xvar})
+    bbox = (-123.8, 46.2, -123.6, 46.3)
+    ds_ss = ds.em.sub_grid(bbox=bbox)
+    assert ds_ss is not None
+    assert ds_ss.dims["node"] == 4273
+    assert ds_ss.dims["nele"] == 8178
+    assert "example" in ds_ss.variables
+    assert len(ds_ss["example"].dims) < 1
+
+
 def test_selfe_filter(selfe_data):
     standard_names = ["sea_water_temperature"]
     filtered_ds = selfe_data.em.filter(standard_names=standard_names)
@@ -254,7 +278,9 @@ def test_selfe_preprocess(selfe_data):
     assert ds is not None
 
 
-def test_unsupported_grid():
+def test_unsupported_grid(selfe_data):
     subsetter = UnstructuredGridSubset()
     with pytest.raises(ValueError):
         subsetter.subset(None, (0, 0, 1, 1), "unreal")
+    with pytest.raises(ValueError):
+        subsetter.get_intersecting_mask(None, (0, 0, 1, 1), "unreal")
