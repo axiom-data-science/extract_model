@@ -8,7 +8,7 @@ from typing import NewType, Tuple
 import numpy as np
 import xarray as xr
 
-from numba import njit
+from extract_model.sorting import index_of_sorted
 
 
 # Literal isn't supported in Python 3.7
@@ -19,49 +19,6 @@ if typing.TYPE_CHECKING:  # pragma: no cover
 
 
 BBOXType = NewType("BBOXType", Tuple[float, float, float, float])
-
-
-@njit
-def index_of_sorted(
-    haystack: np.array, values: np.array
-) -> np.array:  # pragma: no cover
-    """Return an array of indexes for each value in values found in haystack.
-
-    This function uses binary search on haystack to find each value in values and returns an array
-    of indices or -1 if an exact value is not identified. This function behaves similarly to
-    np.searchsorted but will return -1 if there is no exact value.
-
-    Parameters
-    ----------
-    haystack: np.ndarray
-        A _sorted_ array of values from which each value in values array is matched to.
-    values: np.ndarray
-        An array of values to search for.
-
-    Returns
-    -------
-    np.ndarray
-        An array indices which such that
-    """
-    out = np.full_like(values, -1, dtype=np.int32)
-    n = haystack.shape[0]
-
-    for i, search_val in np.ndenumerate(values):
-        left = 0
-        right = n - 1
-        if search_val < haystack[0] or search_val > haystack[-1]:
-            out[i] = -1
-            continue
-        while left <= right:
-            m = (left + right) // 2
-            if haystack[m] < search_val:
-                left = m + 1
-            elif haystack[m] > search_val:
-                right = m - 1
-            else:
-                out[i] = m
-                break
-    return out
 
 
 class UnstructuredGridSubset:
