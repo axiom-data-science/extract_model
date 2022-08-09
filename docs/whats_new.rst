@@ -6,6 +6,7 @@ v0.8.1 (Unreleased)
 
 * Support for SELFE datasets is now incorporated into `em.sub_grid()` `em.sub_bbox()` and
   `em.filter()`.
+* Support for numba and numpy implementations of `index_of_sorted()`.
 
 v0.8.0 (August 3, 2022)
 =======================

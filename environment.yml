@@ -5,6 +5,7 @@ dependencies:
   - python>=3.7,<3.10
   # Required for full project functionality (dont remove)
   - pytest
+  - pytest-benchmark
   # Examples (remove and add as needed)
   - cf_xarray
   - cmocean
@@ -12,7 +13,7 @@ dependencies:
   - matplotlib
   - netcdf4
   - numpy
-  - numba
+  - numba  # required by xesmf
   - pip
   - requests
   - scikit-learn
