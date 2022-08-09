@@ -17,6 +17,7 @@ dependencies:
   - xcmocean
   - xoak
   - pytest
+  - pytest-benchmark
   - pip:
     - codecov
     - pytest-cov

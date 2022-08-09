@@ -18,6 +18,7 @@ dependencies:
   - xesmf
   - xoak
   - pytest
+  - pytest-benchmark
   - pip:
     - codecov
     - pytest-cov
