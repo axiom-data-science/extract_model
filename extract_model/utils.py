@@ -417,10 +417,10 @@ def preprocess_roms(ds):
             ds[zname].attrs["units"] = "m"
             ds[zname] = order(ds[zname])
 
-    # easier to remove "coordinates" attribute from any variables than add it to all
-    for var in ds.data_vars:
-        if "coordinates" in ds[var].encoding:
-            del ds[var].encoding["coordinates"]
+    # # easier to remove "coordinates" attribute from any variables than add it to all
+    # for var in ds.data_vars:
+    #     if "coordinates" in ds[var].encoding:
+    #         del ds[var].encoding["coordinates"]
 
     #     # add attribute "coordinates" to all variables with at least 2 dimensions
     #     # and the dimensions have to be the regular types (time, Z, Y, X)
@@ -536,7 +536,7 @@ def preprocess_rtofs(ds):
     raise NotImplementedError
 
 
-def preprocess(ds):
+def preprocess(ds, model_type=None):
     """A preprocess function for reading in with xarray.
 
     This tries to address known model shortcomings in a generic way so that
@@ -557,7 +557,9 @@ def preprocess(ds):
         "RTOFS": preprocess_rtofs,
     }
 
-    model_type = guess_model_type(ds)
+    if model_type is None:
+        model_type = guess_model_type(ds)
+
     if model_type in preprocess_map:
         return preprocess_map[model_type](ds)
 
