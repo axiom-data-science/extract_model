@@ -3,18 +3,14 @@ channels:
   - conda-forge
 dependencies:
   - python=3.8
-  - cf_xarray
-  - cmocean
-  - dask <=2022.05.0 # https://github.com/axiom-data-science/extract_model/issues/49
-  - matplotlib
+  - cf_xarray>=0.6
+  - dask <=2022.05.0 # for xESMF, https://github.com/axiom-data-science/extract_model/issues/49
   - netcdf4
   - numpy
-  - numba
   - pip
   - requests
-  - scikit-learn
+  - scikit-learn  # used by xoak for tree
   - xarray
-  - xcmocean
   - xesmf
   - xoak
   - pytest

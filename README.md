@@ -35,12 +35,18 @@ This will install for all operating systems:
 ``` bash
 conda install -c conda-forge extract_model
 ```
-
-However, users will need to additionally install the `xESMF` package to use horizontal functionality. `xESMF` will only run for Mac and Linux/Unix; for those users who want to be able to horizontally interpolate (but aren't on Windows), additionally install with:
+but it includes only minimal requirements. If you want to install packages for visualization functionality, and to make unstructured grid subsetting faster, you can additionally install for Windows:
 
 ``` bash
-$ conda install --file conda-requirements.txt
+$ conda install --file conda-requirements-opt-win.txt
 ```
+
+For visualization functionality, horizontal interpolation (with `xESMF`), and to make horizontal subsetting faster, install additional packages for Mac and Linux:
+
+``` bash
+$ conda install --file conda-requirements-opt.txt
+```
+
 
 ### With environment
 
@@ -49,9 +55,13 @@ Clone the repo:
 $ git clone https://github.com/axiom-data-science/extract_model.git
 ```
 
-In the `extract_model` directory, install conda environment:
+In the `extract_model` directory, install conda environment (for Mac or Linux):
 ``` bash
 $ conda env create -f environment.yml
+```
+or for Windows:
+``` bash
+$ conda env create -f environment-win.yml
 ```
 
 ### Local
