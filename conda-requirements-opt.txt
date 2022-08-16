@@ -1,0 +1,6 @@
+cmocean
+matplotlib-base
+numba  # makes unstructured grid subsetting faster, also required for xesmf
+pooch
+xcmocean
+xesmf

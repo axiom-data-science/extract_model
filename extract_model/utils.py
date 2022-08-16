@@ -417,10 +417,23 @@ def preprocess_roms(ds):
             ds[zname].attrs["units"] = "m"
             ds[zname] = order(ds[zname])
 
-    # easier to remove "coordinates" attribute from any variables than add it to all
-    for var in ds.data_vars:
-        if "coordinates" in ds[var].encoding:
-            del ds[var].encoding["coordinates"]
+    # replace s_rho with z_rho, etc, to make z_rho the vertical coord
+    for sname, zname in name_dict.items():
+        for var in ds.data_vars:
+            if ds[var].ndim == 4:
+                if "coordinates" in ds[var].encoding:
+                    coords = ds[var].encoding["coordinates"]
+                    if sname in coords:  # replace if present
+                        coords = coords.replace(sname, zname)
+                    else:  # still add z_rho or z_w
+                        if zname in ds.coords and ds[zname].shape == ds[var].shape:
+                            coords += f" {zname}"
+                    ds[var].encoding["coordinates"] = coords
+
+    # # easier to remove "coordinates" attribute from any variables than add it to all
+    # for var in ds.data_vars:
+    #     if "coordinates" in ds[var].encoding:
+    #         del ds[var].encoding["coordinates"]
 
     #     # add attribute "coordinates" to all variables with at least 2 dimensions
     #     # and the dimensions have to be the regular types (time, Z, Y, X)
@@ -510,6 +523,13 @@ def preprocess_pom(ds):
     ds["nx"] = ("nx", np.arange(ds.sizes["nx"]), {"axis": "X"})
     ds["ny"] = ("ny", np.arange(ds.sizes["ny"]), {"axis": "Y"})
 
+    # need to add coordinates to each data variable too
+    for var in ds.data_vars:
+        if ds[var].ndim == 3:
+            ds[var].encoding["coordinates"] = "time lat lon"
+        elif ds[var].ndim == 4:
+            ds[var].encoding["coordinates"] = "time depth lat lon"
+
     ds.cf.decode_vertical_coords(outnames={"sigma": "z"})
 
     # fix attrs
@@ -536,7 +556,7 @@ def preprocess_rtofs(ds):
     raise NotImplementedError
 
 
-def preprocess(ds):
+def preprocess(ds, model_type=None):
     """A preprocess function for reading in with xarray.
 
     This tries to address known model shortcomings in a generic way so that
@@ -557,7 +577,9 @@ def preprocess(ds):
         "RTOFS": preprocess_rtofs,
     }
 
-    model_type = guess_model_type(ds)
+    if model_type is None:
+        model_type = guess_model_type(ds)
+
     if model_type in preprocess_map:
         return preprocess_map[model_type](ds)
 

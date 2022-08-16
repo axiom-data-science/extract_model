@@ -1,7 +1,7 @@
 :mod:`What's New`
 ----------------------------
 
-v0.8.1 (Unreleased)
+v0.8.1 (August 16, 2022)
 ===================
 
 * Support for SELFE datasets is now incorporated into `em.sub_grid()` `em.sub_bbox()` and

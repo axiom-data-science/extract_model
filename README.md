@@ -8,7 +8,7 @@ extract_model
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/extract_model.svg?style=for-the-badge)](https://anaconda.org/conda-forge/extract_model)
 
 
-Facilitates read-in and extraction for ocean model output. Most functions work on both structured and unstructured model output. Unstructured functionality has been tested with FVCOM output only so far.
+Facilitates read-in and extraction for ocean model output. Most functions work on both structured and unstructured model output. Unstructured functionality has been tested with FVCOM and SELFE output.
 
 In particular this package can:
 - interpolate a model time series to a longitude, latitude location on a 2D grid, while bringing along the calculated z coordinates, with `select()`
@@ -35,12 +35,18 @@ This will install for all operating systems:
 ``` bash
 conda install -c conda-forge extract_model
 ```
-
-However, users will need to additionally install the `xESMF` package to use horizontal functionality. `xESMF` will only run for Mac and Linux/Unix; for those users who want to be able to horizontally interpolate (but aren't on Windows), additionally install with:
+but it includes only minimal requirements. If you want to install packages to run the example docs notebooks and to make unstructured grid subsetting faster, you can additionally install for Windows:
 
 ``` bash
-$ conda install --file conda-requirements.txt
+$ conda install --file conda-requirements-opt-win.txt
 ```
+
+For running the example docs notebooks, horizontal interpolation (with `xESMF`), and to make horizontal subsetting faster, install additional packages for Mac and Linux:
+
+``` bash
+$ conda install --file conda-requirements-opt.txt
+```
+
 
 ### With environment
 
@@ -49,9 +55,13 @@ Clone the repo:
 $ git clone https://github.com/axiom-data-science/extract_model.git
 ```
 
-In the `extract_model` directory, install conda environment:
+In the `extract_model` directory, install conda environment (for Mac or Linux):
 ``` bash
 $ conda env create -f environment.yml
+```
+or for Windows:
+``` bash
+$ conda env create -f environment-win.yml
 ```
 
 ### Local
