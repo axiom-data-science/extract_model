@@ -8,7 +8,7 @@ extract_model
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/extract_model.svg?style=for-the-badge)](https://anaconda.org/conda-forge/extract_model)
 
 
-Facilitates read-in and extraction for ocean model output. Most functions work on both structured and unstructured model output. Unstructured functionality has been tested with FVCOM output only so far.
+Facilitates read-in and extraction for ocean model output. Most functions work on both structured and unstructured model output. Unstructured functionality has been tested with FVCOM and SELFE output.
 
 In particular this package can:
 - interpolate a model time series to a longitude, latitude location on a 2D grid, while bringing along the calculated z coordinates, with `select()`
