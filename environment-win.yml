@@ -16,6 +16,7 @@ dependencies:
   - numpy
   - numba  # not required but improves unstructured subsetting speed
   - pip
+  - pooch
   - requests
   - scikit-learn  # used by xoak for tree
   - xarray

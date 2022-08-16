@@ -16,6 +16,7 @@ dependencies:
   - numpy
   - numba  # required by xesmf
   - pip
+  - pooch
   - requests
   - scikit-learn  # used by xoak for tree
   - xarray

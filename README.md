@@ -35,13 +35,13 @@ This will install for all operating systems:
 ``` bash
 conda install -c conda-forge extract_model
 ```
-but it includes only minimal requirements. If you want to install packages for visualization functionality, and to make unstructured grid subsetting faster, you can additionally install for Windows:
+but it includes only minimal requirements. If you want to install packages to run the example docs notebooks and to make unstructured grid subsetting faster, you can additionally install for Windows:
 
 ``` bash
 $ conda install --file conda-requirements-opt-win.txt
 ```
 
-For visualization functionality, horizontal interpolation (with `xESMF`), and to make horizontal subsetting faster, install additional packages for Mac and Linux:
+For running the example docs notebooks, horizontal interpolation (with `xESMF`), and to make horizontal subsetting faster, install additional packages for Mac and Linux:
 
 ``` bash
 $ conda install --file conda-requirements-opt.txt
