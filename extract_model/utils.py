@@ -417,6 +417,19 @@ def preprocess_roms(ds):
             ds[zname].attrs["units"] = "m"
             ds[zname] = order(ds[zname])
 
+    # replace s_rho with z_rho, etc, to make z_rho the vertical coord
+    for sname, zname in name_dict.items():
+        for var in ds.data_vars:
+            if ds[var].ndim == 4:
+                if "coordinates" in ds[var].encoding:
+                    coords = ds[var].encoding["coordinates"]
+                    if sname in coords:  # replace if present
+                        coords = coords.replace(sname, zname)
+                    else:  # still add z_rho or z_w
+                        if zname in ds.coords and ds[zname].shape == ds[var].shape:
+                            coords += f" {zname}"
+                    ds[var].encoding["coordinates"] = coords
+
     # # easier to remove "coordinates" attribute from any variables than add it to all
     # for var in ds.data_vars:
     #     if "coordinates" in ds[var].encoding:
@@ -509,6 +522,13 @@ def preprocess_pom(ds):
     # need to also make this a coordinate to add attributes
     ds["nx"] = ("nx", np.arange(ds.sizes["nx"]), {"axis": "X"})
     ds["ny"] = ("ny", np.arange(ds.sizes["ny"]), {"axis": "Y"})
+
+    # need to add coordinates to each data variable too
+    for var in ds.data_vars:
+        if ds[var].ndim == 3:
+            ds[var].encoding["coordinates"] = "time lat lon"
+        elif ds[var].ndim == 4:
+            ds[var].encoding["coordinates"] = "time depth lat lon"
 
     ds.cf.decode_vertical_coords(outnames={"sigma": "z"})
 
