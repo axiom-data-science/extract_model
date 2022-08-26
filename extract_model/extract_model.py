@@ -14,6 +14,7 @@ import xoak  # noqa: F401
 
 try:
     import xesmf as xe
+
     XESMF_AVAILABLE = True
 except ImportError:  # pragma: no cover
     XESMF_AVAILABLE = False  # pragma: no cover
