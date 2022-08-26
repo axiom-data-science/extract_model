@@ -18,7 +18,7 @@ try:
     XESMF_AVAILABLE = True
 except ImportError:  # pragma: no cover
     XESMF_AVAILABLE = False  # pragma: no cover
-    warnings.warn("xESMF not found. Interpolation will not work.")  # pragma: no cover
+
 
 # try:
 # except ImportError:
