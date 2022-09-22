@@ -7,6 +7,8 @@ v0.8.1 (August 16, 2022)
 * Support for SELFE datasets is now incorporated into `em.sub_grid()` `em.sub_bbox()` and
   `em.filter()`.
 * Support for numba and numpy implementations of `index_of_sorted()`.
+* Adds `preload` argument for unstructured grid subsetting. Radically improves xarray resolution
+  times after subsetting.
 
 v0.8.0 (August 3, 2022)
 =======================
