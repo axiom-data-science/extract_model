@@ -320,3 +320,11 @@ def test_unsupported_grid(selfe_data):
         subsetter.subset(None, (0, 0, 1, 1), "unreal")
     with pytest.raises(ValueError):
         subsetter.get_intersecting_mask(None, (0, 0, 1, 1), "unreal")
+
+
+def test_non_intersecting_subset(real_fvcom, selfe_data):
+    bbox = (0, 0, 10, 10)
+    with pytest.raises(ValueError):
+        real_fvcom.em.sub_grid(bbox=bbox)
+    with pytest.raises(ValueError):
+        selfe_data.em.sub_grid(bbox=bbox)
