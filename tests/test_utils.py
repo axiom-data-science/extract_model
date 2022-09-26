@@ -201,3 +201,17 @@ def test_naive_subbox_illegal_grid():
     with pytest.raises(ValueError) as err:
         em.utils.naive_subbox(ds=ds, bbox=(0, 0, 5, 5))
         assert str(err) == 'Invalid grid detected'
+
+
+def test_filter_with_angle():
+    """Ensure that em.filter will keep an angle variable even without an appropriate standard_name."""
+    eta = np.arange(40)
+    xi = np.arange(20)
+    angle = np.arange(40 * 20).reshape(40, 20)
+    data_dict = {}
+    data_dict['eta'] = xr.DataArray(eta, dims=('eta',))
+    data_dict['xi'] = xr.DataArray(xi, dims=('xi',))
+    data_dict['angle'] = xr.DataArray(angle, dims=('eta', 'xi'))
+    ds = xr.Dataset(data_dict)
+    ds = ds.em.filter([])
+    assert 'angle' in ds.variables
