@@ -184,7 +184,7 @@ def test_sub_grid_assert():
 
 def test_naive_subbox_illegal_grid():
     """Ensure that we raise when the grid is invalid.
-    
+
     An invalid grid can sometimes arise from someone mislabling a variable as a
     coordinate or other copypasta errors.
     """
@@ -193,14 +193,22 @@ def test_naive_subbox_illegal_grid():
     lon = np.linspace(-30, 40, 100)
     _, lat = np.meshgrid(lon, np.linspace(-20, 20, 100))
     data_dict = {}
-    data_dict['eta'] = xr.DataArray(eta, dims=('eta',))
-    data_dict['xi'] = xr.DataArray(xi, dims=('xi',))
-    data_dict['lon'] = xr.DataArray(lon, dims=('lon',), attrs={'standard_name': 'longitude', 'units': 'degrees_east'})
-    data_dict['lat'] = xr.DataArray(lat, dims=('eta', 'xi'), attrs={'standard_name': 'latitude', 'units': 'degrees_north'})
+    data_dict["eta"] = xr.DataArray(eta, dims=("eta",))
+    data_dict["xi"] = xr.DataArray(xi, dims=("xi",))
+    data_dict["lon"] = xr.DataArray(
+        lon,
+        dims=("lon",),
+        attrs={"standard_name": "longitude", "units": "degrees_east"},
+    )
+    data_dict["lat"] = xr.DataArray(
+        lat,
+        dims=("eta", "xi"),
+        attrs={"standard_name": "latitude", "units": "degrees_north"},
+    )
     ds = xr.Dataset(data_dict)
     with pytest.raises(ValueError) as err:
         em.utils.naive_subbox(ds=ds, bbox=(0, 0, 5, 5))
-        assert str(err) == 'Invalid grid detected'
+        assert str(err) == "Invalid grid detected"
 
 
 def test_filter_with_angle():
@@ -209,9 +217,9 @@ def test_filter_with_angle():
     xi = np.arange(20)
     angle = np.arange(40 * 20).reshape(40, 20)
     data_dict = {}
-    data_dict['eta'] = xr.DataArray(eta, dims=('eta',))
-    data_dict['xi'] = xr.DataArray(xi, dims=('xi',))
-    data_dict['angle'] = xr.DataArray(angle, dims=('eta', 'xi'))
+    data_dict["eta"] = xr.DataArray(eta, dims=("eta",))
+    data_dict["xi"] = xr.DataArray(xi, dims=("xi",))
+    data_dict["angle"] = xr.DataArray(angle, dims=("eta", "xi"))
     ds = xr.Dataset(data_dict)
     ds = ds.em.filter([])
-    assert 'angle' in ds.variables
+    assert "angle" in ds.variables

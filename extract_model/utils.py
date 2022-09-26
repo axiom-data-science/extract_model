@@ -62,8 +62,8 @@ def filter(
     elif model_type_guess == "SELFE":
         to_merge.append(ds[UnstructuredGridSubset.SELFE_COORDINATE_VARIABLES])
 
-    if 'angle' in ds.variables:
-        to_merge.append(ds['angle'])
+    if "angle" in ds.variables:
+        to_merge.append(ds["angle"])
 
     if keep_vertical_coords:
         # Deal with vertical coord decoding
