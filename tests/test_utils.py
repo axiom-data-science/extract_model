@@ -130,6 +130,23 @@ def test_sub_bbox(model):
 
 
 @pytest.mark.parametrize("model", models, ids=lambda x: x["name"])
+def test_naive_sub_bbox(model):
+    if model["name"] == "MOM6":
+        # MOM6 doesn't provide a CF-compliant grid description, clients
+        # shouldn't use naive_subbox for MOM6.
+        pytest.skip("MOM6 is not supported by naive_subbox")
+        return
+    var_name, bbox = model["var"], model["sub_bbox"]
+    pth = eval(model["url"])
+
+    # Dataset
+    ds = xr.open_mfdataset([pth], preprocess=em.preprocess)
+    ds_out = ds.em.sub_grid(bbox=bbox, naive=True)
+    for dim, value in model["naive_subbox"].items():
+        assert ds_out.dims[dim] == value
+
+
+@pytest.mark.parametrize("model", models, ids=lambda x: x["name"])
 def test_sub_grid_ds(model):
     """Test subset on Dataset."""
 
