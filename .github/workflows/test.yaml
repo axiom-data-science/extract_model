@@ -18,7 +18,7 @@ jobs:
 
       - name: Cache Linux/macOS (x86) Conda environment
         if: ${{ runner.os != 'Windows' }}
-        uses: actions/cache@v1
+        uses: actions/cache@v3
         env:
           # Increase this value to reset cache if ci/environment.yml has not changed
           CACHE_NUMBER: 0
@@ -28,7 +28,7 @@ jobs:
 
       - name: Cache Windows Conda environment
         if: ${{ runner.os == 'Windows' }}
-        uses: actions/cache@v1
+        uses: actions/cache@v3
         env:
           # Increase this value to reset cache if ci/environment.yml has not changed
           CACHE_NUMBER: 0
