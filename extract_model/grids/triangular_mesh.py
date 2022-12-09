@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """Algorithms and utilties for triangular meshes."""
 import typing
+import warnings
 
 from typing import NewType, Tuple
 
@@ -418,16 +419,39 @@ class UnstructuredGridSubset:
         raise ValueError(f"Unsupported grid type {grid_type}")
 
     def subset(
-        self, ds: xr.Dataset, bbox: BBOXType, grid_type: "GridType"
+        self,
+        ds: xr.Dataset,
+        bbox: BBOXType,
+        grid_type: "GridType",
+        preload: bool = False,
     ) -> xr.Dataset:
-        """Returns a subsetted dataset."""
+        """Return an xarray Dataset that will contain a subsetted version of the data.
+
+        Parameters
+        ----------
+        ds : xr.Dataset
+            An open unstructured gridded dataset.
+        bbox : Tuple of four floats
+            The axis-aligned bounding box containing (xmin, ymin, xmax, ymax).
+        preload : bool
+            True if the dataset should be downloaded into memory before
+            reindexing. This can ensure that future calls to to_netcdf wil make
+            smaller sliced DAP calls.
+
+        Returns
+        -------
+        xr.Dataset
+            A dataset object containing an entirely subsetted and self-describing dataset.
+        """
         if grid_type == "fvcom":
-            return self._subset_fvcom(ds, bbox)
+            return self._subset_fvcom(ds, bbox, preload=preload)
         if grid_type == "selfe":
-            return self._subset_selfe(ds, bbox)
+            return self._subset_selfe(ds, bbox, preload=preload)
         raise ValueError(f"Unsupported grid type {grid_type}")
 
-    def _subset_fvcom(self, ds: xr.Dataset, bbox: BBOXType) -> xr.Dataset:
+    def _subset_fvcom(
+        self, ds: xr.Dataset, bbox: BBOXType, preload: bool = False
+    ) -> xr.Dataset:
         """Return an xarray Dataset that will contain a subsetted version of the data.
 
         Parameters
@@ -436,6 +460,10 @@ class UnstructuredGridSubset:
             An open FVCOM dataset.
         bbox : Tuple of four floats
             The axis-aligned bounding box containing (xmin, ymin, xmax, ymax).
+        preload : bool
+            True if the dataset should be downloaded into memory before
+            reindexing. This can ensure that future calls to to_netcdf wil make
+            smaller sliced DAP calls.
 
         Returns
         -------
@@ -451,8 +479,35 @@ class UnstructuredGridSubset:
 
         element = ds["nv"][:].to_numpy().T - 1
         mask = self.get_intersecting_mask(ds, bbox, "fvcom")
-        # Get a sorted array of each node that is in our list of triangles to keep
+
+        if not np.any(mask):
+            raise ValueError("Bounded region does not intersect domain.")
+
         node_indices = np.unique(np.sort(element[mask].flatten()))
+        if preload:
+            mask_i = np.where(mask)
+            i0 = np.min(mask_i)
+            i1 = np.max(mask_i) + 1
+
+            # Get a sorted array of each node that is in our list of triangles to keep
+            j0 = np.min(node_indices)
+            j1 = np.max(node_indices) + 1
+            ds_ = ds.isel(nele=slice(i0, i1), node=slice(j0, j1))
+            # If the in-memory representation exceeds 2 GiB, don't preload
+            if ds_.nbytes > 0x80000000:
+                warnings.warn(
+                    "Subsetted Grid is larger than 2 GiB, falling back to lazy-loading which may be slower."
+                )
+            else:
+                mask = mask[i0:i1]
+                node_indices = node_indices - j0
+                ds = ds_
+                ds.load()
+                for indexvar in ["nv", "nbsn"]:
+                    ds[indexvar][:] = ds[indexvar][:] - j0
+                for indexvar in ["nbe", "nbve"]:
+                    ds[indexvar][:] = ds[indexvar][:] - i0
+
         special_vars = [
             "nv",
             "nbe",
@@ -671,7 +726,9 @@ class UnstructuredGridSubset:
         )
         return xvar
 
-    def _subset_selfe(self, ds: xr.Dataset, bbox: BBOXType) -> xr.Dataset:
+    def _subset_selfe(
+        self, ds: xr.Dataset, bbox: BBOXType, preload: bool = False
+    ) -> xr.Dataset:
         """Return an xarray Dataset that will contain a subsetted version of the data.
 
         Parameters
@@ -680,6 +737,10 @@ class UnstructuredGridSubset:
             An open SELFE dataset.
         bbox : Tuple of four floats
             The axis-aligned bounding box containing (xmin, ymin, xmax, ymax).
+        preload : bool
+            True if the dataset should be downloaded into memory before
+            reindexing. This can ensure that future calls to to_netcdf wil make
+            smaller sliced DAP calls.
 
         Returns
         -------
@@ -694,8 +755,31 @@ class UnstructuredGridSubset:
         """
         element = ds["ele"][:].to_numpy().T - 1
         mask = self.get_intersecting_mask(ds, bbox, "selfe")
+        if not np.any(mask):
+            raise ValueError("Bounded region does not intersect domain.")
         # Get a sorted array of each node that is in our list of triangles to keep
         node_indices = np.unique(np.sort(element[mask].flatten()))
+        if preload:
+            mask_i = np.where(mask)
+            i0 = np.min(mask_i)
+            i1 = np.max(mask_i) + 1
+
+            # Get a sorted array of each node that is in our list of triangles to keep
+            j0 = np.min(node_indices)
+            j1 = np.max(node_indices) + 1
+            ds_ = ds.isel(nele=slice(i0, i1), node=slice(j0, j1))
+            # If the in-memory representation exceeds 2 GiB, don't preload
+            if ds_.nbytes > 0x80000000:
+                warnings.warn(
+                    "Subsetted Grid is larger than 2 GiB, falling back to lazy-loading which may be slower."
+                )
+            else:
+                mask = mask[i0:i1]
+                node_indices = node_indices - j0
+                ds = ds_
+                ds.load()
+                ds["ele"][:] = ds["ele"][:] - j0
+
         special_vars = ["ele"]
         variables = {}
         for varname in ds.variables:

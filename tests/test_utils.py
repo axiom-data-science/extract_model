@@ -130,6 +130,23 @@ def test_sub_bbox(model):
 
 
 @pytest.mark.parametrize("model", models, ids=lambda x: x["name"])
+def test_naive_sub_bbox(model):
+    if model["name"] == "MOM6":
+        # MOM6 doesn't provide a CF-compliant grid description, clients
+        # shouldn't use naive_subbox for MOM6.
+        pytest.skip("MOM6 is not supported by naive_subbox")
+        return
+    var_name, bbox = model["var"], model["sub_bbox"]
+    pth = eval(model["url"])
+
+    # Dataset
+    ds = xr.open_mfdataset([pth], preprocess=em.preprocess)
+    ds_out = ds.em.sub_grid(bbox=bbox, naive=True)
+    for dim, value in model["naive_subbox"].items():
+        assert ds_out.dims[dim] == value
+
+
+@pytest.mark.parametrize("model", models, ids=lambda x: x["name"])
 def test_sub_grid_ds(model):
     """Test subset on Dataset."""
 
@@ -179,3 +196,46 @@ def test_adding_axis_Z():
 
     ds = em.preprocess(ds)
     assert "Z" in ds.cf.axes
+
+
+def test_naive_subbox_illegal_grid():
+    """Ensure that we raise when the grid is invalid.
+
+    An invalid grid can sometimes arise from someone mislabling a variable as a
+    coordinate or other copypasta errors.
+    """
+    eta = np.arange(100)
+    xi = np.arange(100)
+    lon = np.linspace(-30, 40, 100)
+    _, lat = np.meshgrid(lon, np.linspace(-20, 20, 100))
+    data_dict = {}
+    data_dict["eta"] = xr.DataArray(eta, dims=("eta",))
+    data_dict["xi"] = xr.DataArray(xi, dims=("xi",))
+    data_dict["lon"] = xr.DataArray(
+        lon,
+        dims=("lon",),
+        attrs={"standard_name": "longitude", "units": "degrees_east"},
+    )
+    data_dict["lat"] = xr.DataArray(
+        lat,
+        dims=("eta", "xi"),
+        attrs={"standard_name": "latitude", "units": "degrees_north"},
+    )
+    ds = xr.Dataset(data_dict)
+    with pytest.raises(ValueError) as err:
+        em.utils.naive_subbox(ds=ds, bbox=(0, 0, 5, 5))
+        assert str(err) == "Invalid grid detected"
+
+
+def test_filter_with_angle():
+    """Ensure that em.filter will keep an angle variable even without an appropriate standard_name."""
+    eta = np.arange(40)
+    xi = np.arange(20)
+    angle = np.arange(40 * 20).reshape(40, 20)
+    data_dict = {}
+    data_dict["eta"] = xr.DataArray(eta, dims=("eta",))
+    data_dict["xi"] = xr.DataArray(xi, dims=("xi",))
+    data_dict["angle"] = xr.DataArray(angle, dims=("eta", "xi"))
+    ds = xr.Dataset(data_dict)
+    ds = ds.em.filter([])
+    assert "angle" in ds.variables

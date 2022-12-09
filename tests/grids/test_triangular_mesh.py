@@ -59,10 +59,11 @@ def test_triangle_algorithms(fake_fvcom):
     )
 
 
-def test_fvcom_subset(real_fvcom):
+@pytest.mark.parametrize("preload", [False, True], ids=lambda x: f"preload={x}")
+def test_fvcom_subset(real_fvcom, preload):
     bbox = (276.4, 41.5, 277.4, 42.1)
     subsetter = UnstructuredGridSubset()
-    ds = subsetter.subset(real_fvcom, bbox, "fvcom")
+    ds = subsetter.subset(real_fvcom, bbox, "fvcom", preload=preload)
     assert ds is not None
     assert ds.dims["node"] == 1833
     assert ds.dims["nele"] == 3392
@@ -87,6 +88,7 @@ def test_fvcom_subset(real_fvcom):
     )
 
     np.testing.assert_array_equal(ds["nv"][:, 0], np.array([6, 7, 1], dtype=np.int32))
+    assert not np.any(ds["nv"][:] < 1)
 
 
 def test_fvcom_subset_accessor(real_fvcom):
@@ -123,9 +125,10 @@ def test_fvcom_subset_accessor(real_fvcom):
     assert ds.dims["nele"] == 3392
 
 
-def test_fvcom_sub_grid_accessor(real_fvcom):
+@pytest.mark.parametrize("preload", [False, True], ids=lambda x: f"preload={x}")
+def test_fvcom_sub_grid_accessor(real_fvcom, preload):
     bbox = (276.4, 41.5, 277.4, 42.1)
-    ds = real_fvcom.em.sub_grid(bbox=bbox)
+    ds = real_fvcom.em.sub_grid(bbox=bbox, preload=preload)
     assert ds is not None
     assert ds.dims["node"] == 1833
     assert ds.dims["nele"] == 3392
@@ -151,7 +154,7 @@ def test_fvcom_sub_grid_accessor(real_fvcom):
 
     np.testing.assert_array_equal(ds["nv"][:, 0], np.array([6, 7, 1], dtype=np.int32))
 
-    ds = real_fvcom.em.sub_grid(bbox=bbox, model_type="FVCOM")
+    ds = real_fvcom.em.sub_grid(bbox=bbox, model_type="FVCOM", preload=preload)
     assert ds is not None
     assert ds.dims["node"] == 1833
     assert ds.dims["nele"] == 3392
@@ -186,16 +189,36 @@ def test_fvcom_filter(real_fvcom):
         assert coord_var in varnames
 
 
-def test_fvcom_subset_scalars(real_fvcom):
+@pytest.mark.parametrize("preload", [False, True], ids=lambda x: f"preload={x}")
+def test_fvcom_subset_scalars(real_fvcom, preload):
     bbox = (276.4, 41.5, 277.4, 42.1)
     xvar = xr.DataArray(data=np.array(0.0), attrs={"long_name": "Example Data"})
     ds = real_fvcom.assign(variables={"example": xvar})
-    ds_ss = ds.em.sub_grid(bbox=bbox)
+    ds_ss = ds.em.sub_grid(bbox=bbox, preload=preload)
     assert ds_ss is not None
     assert ds_ss.dims["node"] == 1833
     assert ds_ss.dims["nele"] == 3392
     assert "example" in ds_ss.variables
     assert len(ds_ss["example"].dims) < 1
+
+
+@pytest.mark.parametrize("preload", [False, True], ids=lambda x: f"preload={x}")
+def test_fvcom_nv_reindexing(real_fvcom, preload):
+    bbox = (280, 42.2, 281, 43)
+    ds_ss = real_fvcom.em.sub_grid(bbox=bbox, preload=preload)
+    expected = np.array([[1, 11, 11], [10, 10, 1], [9, 1, 2]])
+    np.testing.assert_equal(expected, ds_ss["nv"].to_numpy()[:, :3])
+
+
+def test_fvcom_preload(real_fvcom):
+    """Test preloading vs normal reindexing."""
+    bbox = (280, 42.2, 281, 43)
+    ds_ss_norm = real_fvcom.em.sub_grid(bbox=bbox, preload=False)
+    ds_ss_preload = real_fvcom.em.sub_grid(bbox=bbox, preload=True)
+    for variable in sorted(ds_ss_norm.variables):
+        raw_data_norm = ds_ss_norm[variable].to_numpy()
+        raw_data_preload = ds_ss_preload[variable].to_numpy()
+        np.testing.assert_equal(raw_data_norm, raw_data_preload)
 
 
 def test_fvcom_preprocess(real_fvcom):
@@ -229,9 +252,10 @@ def test_selfe_sub_bbox_accessor(selfe_data):
     )
 
 
-def test_selfe_sub_grid_accessor(selfe_data):
+@pytest.mark.parametrize("preload", [False, True], ids=lambda x: f"preload={x}")
+def test_selfe_sub_grid_accessor(selfe_data, preload):
     bbox = (-123.8, 46.2, -123.6, 46.3)
-    ds_ss = selfe_data.em.sub_grid(bbox=bbox)
+    ds_ss = selfe_data.em.sub_grid(bbox=bbox, preload=preload)
     assert ds_ss is not None
     assert ds_ss.dims["node"] == 4273
     assert ds_ss.dims["nele"] == 8178
@@ -255,16 +279,28 @@ def test_selfe_sub_grid_accessor(selfe_data):
     )
 
 
-def test_selfe_subset_scalars(selfe_data):
+@pytest.mark.parametrize("preload", [False, True], ids=lambda x: f"preload={x}")
+def test_selfe_subset_scalars(selfe_data, preload):
     xvar = xr.DataArray(data=np.array(0.0), attrs={"long_name": "Example Data"})
     ds = selfe_data.assign(variables={"example": xvar})
     bbox = (-123.8, 46.2, -123.6, 46.3)
-    ds_ss = ds.em.sub_grid(bbox=bbox)
+    ds_ss = ds.em.sub_grid(bbox=bbox, preload=preload)
     assert ds_ss is not None
     assert ds_ss.dims["node"] == 4273
     assert ds_ss.dims["nele"] == 8178
     assert "example" in ds_ss.variables
     assert len(ds_ss["example"].dims) < 1
+
+
+def test_selfe_preload(selfe_data: xr.Dataset):
+    """Test preloading vs normal reindexing."""
+    bbox = (-123.8, 46.2, -123.6, 46.3)
+    ds_ss_norm = selfe_data.em.sub_grid(bbox=bbox, preload=False)
+    ds_ss_preload = selfe_data.em.sub_grid(bbox=bbox, preload=True)
+    for variable in sorted(ds_ss_norm.variables):
+        raw_data_norm = ds_ss_norm[variable].to_numpy()
+        raw_data_preload = ds_ss_preload[variable].to_numpy()
+        np.testing.assert_equal(raw_data_norm, raw_data_preload)
 
 
 def test_selfe_filter(selfe_data):
@@ -284,3 +320,11 @@ def test_unsupported_grid(selfe_data):
         subsetter.subset(None, (0, 0, 1, 1), "unreal")
     with pytest.raises(ValueError):
         subsetter.get_intersecting_mask(None, (0, 0, 1, 1), "unreal")
+
+
+def test_non_intersecting_subset(real_fvcom, selfe_data):
+    bbox = (0, 0, 10, 10)
+    with pytest.raises(ValueError):
+        real_fvcom.em.sub_grid(bbox=bbox)
+    with pytest.raises(ValueError):
+        selfe_data.em.sub_grid(bbox=bbox)
