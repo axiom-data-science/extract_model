@@ -47,6 +47,11 @@ For running the example docs notebooks, horizontal interpolation (with `xESMF`),
 $ conda install --file conda-requirements-opt.txt
 ```
 
+### From PyPI
+
+``` bash
+pip install extract_model
+```
 
 ### With environment
 
