@@ -1,6 +1,11 @@
 :mod:`What's New`
 ----------------------------
 
+v1.0.0 (December 9, 2022)
+=========================
+* Simplified dependencies
+* Now available on PyPI!
+
 v0.9.0 (September 26, 2022)
 ===========================
 * An optional subsetting option that enables subsetting directly on the target
