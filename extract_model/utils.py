@@ -568,6 +568,14 @@ def preprocess(ds, model_type=None):
     if "_NCProperties" in ds.attrs:
         del ds.attrs["_NCProperties"]
 
+    # Preprocess for all models: if cf-xarray has not identifed axes Z but has identified coordinate vertical
+    # and the vertical coordinate is 1D, add `axis="Z"` to its attributes so it will also be recognized as
+    # the Z axes.
+    if "vertical" in ds.cf.coordinates and "Z" not in ds.cf.axes:
+        if ds.cf["vertical"].ndim == 1 and len(ds.cf.coordinates["vertical"]) == 1:
+            key = ds.cf.coordinates["vertical"][0]
+            ds[key].attrs["axis"] = "Z"
+
     preprocess_map = {
         "ROMS": preprocess_roms,
         "FVCOM": preprocess_fvcom,

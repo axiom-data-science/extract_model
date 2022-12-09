@@ -163,3 +163,19 @@ def test_sub_grid_assert():
     )
     with pytest.raises(ValueError):
         sub_grid(ds=xvar, bbox=bbox)
+
+
+def test_adding_axis_Z():
+    """Check for specific case where Z is added in preprocessing."""
+
+    ds = xr.Dataset()
+    attrs = {
+        "standard_name": "depth",
+        "units": "m",
+        "long_name": "Depth",
+        "positive": "down",
+    }
+    ds["depth"] = ("depth", np.arange(10), attrs)
+
+    ds = em.preprocess(ds)
+    assert "Z" in ds.cf.axes
