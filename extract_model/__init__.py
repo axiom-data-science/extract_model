@@ -2,10 +2,7 @@
 Select model output using xarray and `isel` or interpolation through xarray or xesmf.
 """
 
-import ast  # noqa: F401
-
 import cf_xarray as cfxr  # noqa: F401
-import requests  # noqa: F401
 
 from pkg_resources import DistributionNotFound, get_distribution
 
