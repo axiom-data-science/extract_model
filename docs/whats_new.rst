@@ -1,8 +1,16 @@
 :mod:`What's New`
 ----------------------------
 
+v0.9.0 (September 26, 2022)
+===========================
+* An optional subsetting option that enables subsetting directly on the target
+  dataset's dimensions. For remote datasets, this ensures that remote requests
+  ask for minimal slices. `em.sub_grid(..., naive=True)`.
+* Adds `preload` argument for unstructured grid subsetting. Radically improves xarray resolution
+  times after subsetting.
+
 v0.8.1 (August 16, 2022)
-===================
+========================
 
 * Support for SELFE datasets is now incorporated into `em.sub_grid()` `em.sub_bbox()` and
   `em.filter()`.
@@ -20,7 +28,7 @@ v0.8.0 (August 3, 2022)
   variables.
 
 v0.7 (July 22, 2022)
-======================
+====================
 
 * `em.sel2d()` now uses `xoak` to find the nearest neighbor grid point on ND grids. Due to this change, `em.argsel2d()` doesn't exist anymore. Note that vertical functionality that was previously in `em.sel2d()` is now in `em.selZ()`.
 * Provide more options in `em.filter()` for keeping different coordinates in a `Dataset`.

@@ -3,13 +3,18 @@
 """
 Utilities to help extract_model work better.
 """
-from typing import List, Optional
+from itertools import product
+from typing import List, Mapping, NewType, Optional, Tuple
 
+import dask
 import numpy as np
 import xarray as xr
 
 from extract_model.grids.triangular_mesh import UnstructuredGridSubset
 from extract_model.model_type import ModelType
+
+
+BBoxType = NewType("BBoxType", Tuple[float, float, float, float])
 
 
 def filter(
@@ -56,6 +61,9 @@ def filter(
         to_merge.append(ds[UnstructuredGridSubset.FVCOM_COORDINATE_VARIABLES])
     elif model_type_guess == "SELFE":
         to_merge.append(ds[UnstructuredGridSubset.SELFE_COORDINATE_VARIABLES])
+
+    if "angle" in ds.variables:
+        to_merge.append(ds["angle"])
 
     if keep_vertical_coords:
         # Deal with vertical coord decoding
@@ -133,7 +141,141 @@ def filter(
     return xr.merge(to_merge)
 
 
-def sub_grid(ds, bbox, dask_array_chunks=True, model_type: Optional[ModelType] = None):
+def naive_subbox(ds: xr.Dataset, bbox: BBoxType, dask_array_chunks: bool = False):
+    """Perform subsetting directly using dimension slicing.
+
+    naive_subbox performs subsetting by means of directly slicing along the grid
+    dimensions in lieu of using a mask combined with da.where. Slicing along the
+    dimensions directly is useful when access data remotely where bandwidth is a
+    significant concern. This approach ensures that requests for data will
+    request the minimal set of data possible.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        The gridded data to subset.
+    bbox : BBoxType (tuple)
+        The desired codomain.
+    dask_array_chunks : bool
+        Set to True to use dask array chunking for large grids that don't fit
+        into memory.
+    """
+    model_type = guess_model_type(ds)
+    lons = ds.cf[["longitude"]]
+    lon_coords = sorted(set(lons.coords) - set(lons.dims))
+
+    lats = ds.cf[["latitude"]]
+    lat_coords = sorted(set(lats.coords) - set(lats.dims))
+
+    lon_is_coordinate_variable = False
+    lat_is_coordinate_variable = False
+    # Check if lon is a coordinate variable
+    if len(ds.cf.standard_names["longitude"]) == 1:
+        varname = ds.cf.standard_names["longitude"][0]
+        if ds[varname].dims == (varname,):
+            lon_is_coordinate_variable = True
+    if len(ds.cf.standard_names["latitude"]) == 1:
+        varname = ds.cf.standard_names["latitude"][0]
+        if ds[varname].dims == (varname,):
+            lat_is_coordinate_variable = True
+
+    if lon_is_coordinate_variable != lat_is_coordinate_variable:
+        raise ValueError("Invalid grid detected")
+
+    if lon_is_coordinate_variable:
+        lon_data = ds.cf["longitude"][:]
+        lat_data = ds.cf["latitude"][:]
+        lon_mask = np.where((lon_data >= bbox[0]) & (lon_data <= bbox[2]))[0]
+        lat_mask = np.where((lat_data >= bbox[1]) & (lat_data <= bbox[3]))[0]
+        x0 = np.min(lon_mask)
+        x1 = np.max(lon_mask)
+        y0 = np.min(lat_mask)
+        y1 = np.max(lat_mask)
+        with dask.config.set(**{"array.slicing.split_large_chunks": dask_array_chunks}):
+            return ds.cf.isel(longitude=slice(x0, x1), latitude=slice(y0, y1))
+
+    grid_mappings = []
+
+    for lon_coord in lon_coords:
+        for lat_coord in lat_coords:
+            if ds[lon_coord].dims == ds[lat_coord].dims:
+                grid_mappings.append(
+                    {"lon": lon_coord, "lat": lat_coord, "dims": ds[lon_coord].dims}
+                )
+                break
+    slices = {}
+
+    # Staggered grid case for ROMS
+    roms_native_coords = ["eta", "xi"]
+    roms_cell_coords = ["rho", "u", "v", "psi"]
+    roms_coords = [
+        f"{native}_{cell}"
+        for cell, native in product(roms_cell_coords, roms_native_coords)
+    ]
+    if (
+        model_type == "ROMS"
+        and all([i in ds.coords for i in ["lon_rho", "lat_rho"]])
+        and all([coord in ds.dims for coord in roms_coords])
+    ):
+        slices = _slice_grid_mapping(
+            ds, "lon_rho", "lat_rho", ["eta_rho", "xi_rho"], bbox
+        )
+        eta_rho: slice = slices["eta_rho"]
+        xi_rho: slice = slices["xi_rho"]
+        slices["eta_u"] = eta_rho
+        slices["xi_u"] = slice(xi_rho.start, xi_rho.stop - 1)
+
+        slices["eta_v"] = slice(eta_rho.start, eta_rho.stop - 1)
+        slices["xi_v"] = xi_rho
+
+        slices["eta_psi"] = slice(eta_rho.start, eta_rho.stop - 1)
+        slices["xi_psi"] = slice(xi_rho.start, xi_rho.stop - 1)
+
+        with dask.config.set(**{"array.slicing.split_large_chunks": dask_array_chunks}):
+            return ds.isel(**slices)
+
+    for grid_mapping in grid_mappings:
+        lon = grid_mapping["lon"]
+        lat = grid_mapping["lat"]
+        dims = grid_mapping["dims"]
+        grid_slices = _slice_grid_mapping(ds, lon, lat, dims, bbox)
+        slices.update(grid_slices)
+
+    with dask.config.set(**{"array.slicing.split_large_chunks": dask_array_chunks}):
+        return ds.isel(**slices)
+
+
+def _slice_grid_mapping(
+    ds: xr.Dataset, lon: str, lat: str, dims: List[str], bbox: BBoxType
+) -> Mapping[str, slice]:
+    slices = {}
+    lon_data = ds[lon][:].to_numpy()
+    lat_data = ds[lat][:].to_numpy()
+
+    mask = (
+        (lon_data >= bbox[0])
+        & (lon_data <= bbox[2])
+        & (lat_data >= bbox[1])
+        & (lat_data <= bbox[3])
+    )
+    if not np.any(mask):
+        raise ValueError("Bounding box does not intersect dataset domain")
+    mask_i = np.where(mask)
+    x0, y0 = np.min(mask_i[0]), np.min(mask_i[1])
+    x1, y1 = np.max(mask_i[0]) + 1, np.max(mask_i[1]) + 1
+    slices[dims[0]] = slice(x0, x1)
+    slices[dims[1]] = slice(y0, y1)
+    return slices
+
+
+def sub_grid(
+    ds: xr.Dataset,
+    bbox: BBoxType,
+    dask_array_chunks=True,
+    model_type: Optional[ModelType] = None,
+    naive: bool = False,
+    preload: bool = False,
+):
     """Subset Dataset grids.
 
     Preserves horizontal grid structure, which matters for ROMS.
@@ -157,6 +299,12 @@ def sub_grid(ds, bbox, dask_array_chunks=True, model_type: Optional[ModelType] =
     model_type : ModelType, optional
         Clients may explicitly specify the model type for the grid and data in `ds`. If this
         parameter isn't specified, it is guessed based on the metadata available.
+    naive : bool
+        Causes the subetting method to use naive_subset which has better performance over DAP.
+    preload : bool
+        If the subsetting algorithm supports it, the data will be preloaded
+        before reindexed (only applicable to unstructured grids). Defaults to
+        False.
 
     Returns
     -------
@@ -174,10 +322,13 @@ def sub_grid(ds, bbox, dask_array_chunks=True, model_type: Optional[ModelType] =
     model_type_guess = model_type or guess_model_type(ds)
     if model_type_guess == "FVCOM":
         subsetter = UnstructuredGridSubset()
-        return subsetter.subset(ds=ds, bbox=bbox, grid_type="fvcom")
+        return subsetter.subset(ds=ds, bbox=bbox, grid_type="fvcom", preload=preload)
     if model_type_guess == "SELFE":
         subsetter = UnstructuredGridSubset()
-        return subsetter.subset(ds=ds, bbox=bbox, grid_type="selfe")
+        return subsetter.subset(ds=ds, bbox=bbox, grid_type="selfe", preload=preload)
+
+    if naive:
+        return naive_subbox(ds=ds, bbox=bbox, dask_array_chunks=dask_array_chunks)
 
     attrs = ds.attrs
 
@@ -203,7 +354,6 @@ def sub_grid(ds, bbox, dask_array_chunks=True, model_type: Optional[ModelType] =
             # index
             i_xi_rho = int((subs != -500).sum(dim="xi_rho").argmax())
             xi_rho_bool = subs.isel(eta_rho=i_xi_rho) != -500
-            # import pdb; pdb.set_trace()
             if "T" in subs.cf.axes:
                 xi_rho_bool = xi_rho_bool.cf.isel(T=0)
             if "Z" in subs.cf.axes:
@@ -596,7 +746,14 @@ def preprocess(ds, model_type=None):
 
 def guess_model_type(ds: xr.Dataset) -> Optional[ModelType]:
     """Returns a guess as to which model produced the dataset."""
+    selfe_dims = ["nele", "node"]
     for model_type in ModelType:
         if model_type in "".join([str(val) for val in ds.attrs.values()]):
+            if model_type == "FVCOM" and not all(
+                ["nv" in ds.variables, "node" in ds.dims]
+            ):
+                return None
+            if model_type == "SELFE" and not all([i in ds.dims for i in selfe_dims]):
+                return None
             return ModelType(model_type)
     return None
