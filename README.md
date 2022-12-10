@@ -6,7 +6,7 @@ extract_model
 [![Documentation Status](https://img.shields.io/readthedocs/extract_model/latest.svg?style=for-the-badge)](https://extract_model.readthedocs.io/en/latest/?badge=latest)
 [![Code Style Status](https://img.shields.io/github/workflow/status/axiom-data-science/extract_model/linting%20with%20pre-commit?label=Code%20Style&style=for-the-badge)](https://github.com/axiom-data-science/extract_model/actions)
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/extract_model.svg?style=for-the-badge)](https://anaconda.org/conda-forge/extract_model)
-
+[![Python Package Index](https://img.shields.io/pypi/v/extract_model.svg?style=for-the-badge)](https://pypi.org/project/extract_model)
 
 Facilitates read-in and extraction for ocean model output. Most functions work on both structured and unstructured model output. Unstructured functionality has been tested with FVCOM and SELFE output.
 
