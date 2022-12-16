@@ -1,10 +1,10 @@
 extract_model
 ==============================
-[![Build Status](https://img.shields.io/github/workflow/status/axiom-data-science/extract_model/Tests?logo=github&style=for-the-badge)](https://github.com/axiom-data-science/extract_model/actions)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/axiom-data-science/extract_model/test.yaml?branch=main&logo=github&style=for-the-badge)](https://github.com/axiom-data-science/extract_model/actions/workflows/test.yaml)
 [![Code Coverage](https://img.shields.io/codecov/c/github/axiom-data-science/extract_model.svg?style=for-the-badge)](https://codecov.io/gh/axiom-data-science/extract_model)
 [![License:MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 [![Documentation Status](https://img.shields.io/readthedocs/extract_model/latest.svg?style=for-the-badge)](https://extract_model.readthedocs.io/en/latest/?badge=latest)
-[![Code Style Status](https://img.shields.io/github/workflow/status/axiom-data-science/extract_model/linting%20with%20pre-commit?label=Code%20Style&style=for-the-badge)](https://github.com/axiom-data-science/extract_model/actions)
+[![Code Style Status](https://img.shields.io/github/actions/workflow/status/axiom-data-science/extract_model/linting.yaml?branch=main&label=Code%20Style&style=for-the-badge)](https://github.com/axiom-data-science/extract_model/actions/workflows/linting.yaml)
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/extract_model.svg?style=for-the-badge)](https://anaconda.org/conda-forge/extract_model)
 [![Python Package Index](https://img.shields.io/pypi/v/extract_model.svg?style=for-the-badge)](https://pypi.org/project/extract_model)
 
