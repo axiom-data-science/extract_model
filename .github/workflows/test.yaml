@@ -40,7 +40,8 @@ jobs:
         if: ${{ runner.os != 'Windows' }}
         uses: conda-incubator/setup-miniconda@v2
         with:
-          mamba-version: "*" # activate this to build with mamba.
+          miniforge-variant: Mambaforge
+          python-version: ${{ matrix.python-version }}
           channels: conda-forge, defaults # These need to be specified to use mamba
           channel-priority: true
           environment-file: ci/environment-py${{ matrix.python-version }}.yml
