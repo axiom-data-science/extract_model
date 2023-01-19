@@ -2,7 +2,7 @@ name: test-env-win
 channels:
   - conda-forge
 dependencies:
-  - python=3.7
+  - python=3.10
   - cf_xarray>=0.6
   - dask
   - netcdf4
