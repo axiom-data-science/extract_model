@@ -1,6 +1,14 @@
 :mod:`What's New`
 ----------------------------
 
+v1.1.0 (January 19, 2023)
+=========================
+
+Two main changes in `sel2d` / `sel2dcf`:
+
+* a mask can be input to limit the lons/lats from the DataArray/Dataset that are used in searching for the nearest point, in case the nearest model point is on land but we still want a valid model point returned.
+* incorporating changes from xoak that optional return distance of the model point(s) from the requested point(s).
+
 v1.0.0 (December 9, 2022)
 =========================
 * Simplified dependencies
