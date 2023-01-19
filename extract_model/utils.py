@@ -490,14 +490,14 @@ def preprocess_roms(ds, interp_vertical: bool = True):
     Parameters
     ----------
     ds: xarray Dataset
-    
+
     interp_vertical=True
 
     Returns
     -------
     Same Dataset but with some metadata added and/or altered.
     """
-    
+
     # add axes attributes for dimensions
     dims = [dim for dim in ds.dims if dim.startswith("s_")]
     for dim in dims:
@@ -565,7 +565,9 @@ def preprocess_roms(ds, interp_vertical: bool = True):
             if zname in ds:
                 ds[
                     zname
-                ].attrs = {}  # coord inherits from one of the vars going into calculation
+                ].attrs = (
+                    {}
+                )  # coord inherits from one of the vars going into calculation
                 ds[zname].attrs["positive"] = "up"
                 ds[zname].attrs["units"] = "m"
                 ds[zname] = order(ds[zname])
@@ -715,7 +717,7 @@ def preprocess(ds, model_type=None, kwargs=None):
     This tries to address known model shortcomings in a generic way so that
     `cf-xarray` will work generally, including decoding vertical coordinates.
     """
-    
+
     kwargs = kwargs or {}
 
     # This is an internal attribute used by netCDF which xarray doesn't know or care about, but can

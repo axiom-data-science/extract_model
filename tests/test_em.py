@@ -101,7 +101,7 @@ def test_sel2d(model):
 
         assert np.allclose(da_sel2d[varname].squeeze(), da_check)
         # 6371 is radius of earth in km
-        assert np.allclose(da_sel2d["distance"], np.deg2rad(dlat)*6371)
+        assert np.allclose(da_sel2d["distance"], np.deg2rad(dlat) * 6371)
 
 
 @pytest.mark.parametrize("model", models, ids=lambda x: x["name"])
@@ -339,10 +339,18 @@ def test_sel2d_simple_2D():
 
     ds = xr.Dataset(
         coords={
-            'lon': (('eta','xi'), np.array([[0, 1],[2, 3]]), {"standard_name": "longitude"}),
-            'lat': (('eta','xi'), np.array([[4, 5],[6, 7]]), {"standard_name": "latitude"}),
-            'eta': (('eta'), [0,1], {"axis": "Y"}),
-            'xi': (('xi'), [0,1], {"axis": "X"}),
+            "lon": (
+                ("eta", "xi"),
+                np.array([[0, 1], [2, 3]]),
+                {"standard_name": "longitude"},
+            ),
+            "lat": (
+                ("eta", "xi"),
+                np.array([[4, 5], [6, 7]]),
+                {"standard_name": "latitude"},
+            ),
+            "eta": (("eta"), [0, 1], {"axis": "Y"}),
+            "xi": (("xi"), [0, 1], {"axis": "X"}),
         }
     )
 
@@ -362,7 +370,7 @@ def test_sel2d_simple_2D():
 
     ds_outcf = em.sel2dcf(ds, longitude=0, latitude=4, mask=mask)
     assert ds_out == ds_outcf
-    
+
     # if distance_name=None, no distance returned
     ds_out = em.sel2d(ds, lon=0, lat=4, distances_name=None)
     assert "distance" not in ds_out.variables

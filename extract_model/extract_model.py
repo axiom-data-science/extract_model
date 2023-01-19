@@ -2,10 +2,10 @@
 Main file for this code. The main code is in `select`, and the rest is to help with variable name management.
 """
 
-from typing import Optional
 import warnings
 
 from numbers import Number
+from typing import Optional
 
 import cf_xarray  # noqa: F401
 import numpy as np
@@ -370,7 +370,9 @@ def select(
     return da.squeeze(), weights
 
 
-def sel2d(var, mask: Optional[DataArray] = None, distances_name: str="distance", **kwargs):
+def sel2d(
+    var, mask: Optional[DataArray] = None, distances_name: str = "distance", **kwargs
+):
     """Find the value of the var at closest location to inputs, optionally respecting mask.
 
     This is meant to mimic `xarray` `.sel()` in API and idea, except that the horizontal selection is done for 2D coordinates instead of 1D coordinates, since `xarray` cannot yet handle 2D coordinates. This wraps `xoak`.
@@ -383,7 +385,7 @@ def sel2d(var, mask: Optional[DataArray] = None, distances_name: str="distance",
     Like in `xarray.sel()`, input values can be numbers, lists, or arrays, and arrays can be single or multidimensional. For longitude and latitude, however, input values cannot be slices.
 
     Can also pass through `xarray.sel()` information for other dimension selections.
-    
+
     Optionally input mask so that if requested lon/lat is on land, the nearest valid model point will be returned. Otherwise nan's will be returned. If requested lon/lat is outside domain but not on land, the nearest model output will be returned regardless.
 
     Parameters
@@ -455,17 +457,19 @@ def sel2d(var, mask: Optional[DataArray] = None, distances_name: str="distance",
     ds_to_find = xr.Dataset({"lat_to_find": (dims, lats), "lon_to_find": (dims, lons)})
 
     if mask is not None:
-        
+
         # Assume mask is 2D — but not true for wetting/drying
-    
+
         # find indices representing mask
         eta, xi = np.where(mask.values)
-    
+
         # make advanced indexer to flatten arrays
-        var_flat = var.cf.isel(X=xr.DataArray(xi, dims="loc"), Y=xr.DataArray(eta, dims="loc"))
-    
+        var_flat = var.cf.isel(
+            X=xr.DataArray(xi, dims="loc"), Y=xr.DataArray(eta, dims="loc")
+        )
+
         var = var_flat.copy()
-    
+
     if var.xoak.index is None:
         var.xoak.set_index([latname, lonname], "sklearn_geo_balltree")
     elif (latname, lonname) != var.xoak._index_coords:
@@ -480,12 +484,12 @@ def sel2d(var, mask: Optional[DataArray] = None, distances_name: str="distance",
             RuntimeWarning,
         )
 
-
     # perform selection
     output = var.xoak.sel(
-        {latname: ds_to_find.lat_to_find, lonname: ds_to_find.lon_to_find}, distances_name=distances_name
+        {latname: ds_to_find.lat_to_find, lonname: ds_to_find.lon_to_find},
+        distances_name=distances_name,
     )
-    
+
     # distances between input points and nearest points
     # distances = var.xoak._index.query(np.array([*zip(lats,lons)]))['distances'][:,0]
     # import pdb; pdb.set_trace()
@@ -494,7 +498,9 @@ def sel2d(var, mask: Optional[DataArray] = None, distances_name: str="distance",
         return output.sel(**kwargs)
 
 
-def sel2dcf(var, mask: Optional[DataArray] = None, distances_name: str="distance", **kwargs):
+def sel2dcf(
+    var, mask: Optional[DataArray] = None, distances_name: str = "distance", **kwargs
+):
     """Find nearest value(s) on 2D horizontal grid using cf-xarray names.
 
     Use "longitude" and "latitude" for those coordinate names.
