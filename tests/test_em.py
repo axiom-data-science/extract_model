@@ -75,6 +75,7 @@ def test_sel2d(model):
 
     da = model["da"]
     i, j = model["i"], model["j"]
+    varname = da.name
 
     if da.cf["longitude"].ndim == 1:
         # sel2d is for 2D horizontal grids
@@ -87,8 +88,9 @@ def test_sel2d(model):
         latitude = float(da.cf["latitude"][j, i])
 
         # take a nearby point to test function
-        lon_comp = longitude - 0.001
-        lat_comp = latitude - 0.001
+        lon_comp = longitude
+        dlat = 0.001
+        lat_comp = latitude - dlat
 
         inputs = {
             da.cf["longitude"].name: lon_comp,
@@ -97,7 +99,9 @@ def test_sel2d(model):
         da_sel2d = em.sel2d(da, **inputs)
         da_check = da.cf.isel(X=i, Y=j)
 
-        assert np.allclose(da_sel2d.squeeze(), da_check)
+        assert np.allclose(da_sel2d[varname].squeeze(), da_check)
+        # 6371 is radius of earth in km
+        assert np.allclose(da_sel2d["distance"], np.deg2rad(dlat)*6371)
 
 
 @pytest.mark.parametrize("model", models, ids=lambda x: x["name"])
@@ -329,3 +333,36 @@ def test_preprocess(model):
     conds = [True if axis in da.cf.axes else axis for axis in axes]
 
     assert all(conds)
+
+
+def test_sel2d_simple_2D():
+
+    ds = xr.Dataset(
+        coords={
+            'lon': (('eta','xi'), np.array([[0, 1],[2, 3]]), {"standard_name": "longitude"}),
+            'lat': (('eta','xi'), np.array([[4, 5],[6, 7]]), {"standard_name": "latitude"}),
+            'eta': (('eta'), [0,1], {"axis": "Y"}),
+            'xi': (('xi'), [0,1], {"axis": "X"}),
+        }
+    )
+
+    # check distance when ran with exact grid point
+    ds_out = em.sel2d(ds, lon=0, lat=4)
+    assert np.allclose(ds_out["distance"], 0)
+
+    # check that alternative function call returns exact results
+    ds_outcf = em.sel2dcf(ds, longitude=0, latitude=4)
+    assert ds_out == ds_outcf
+
+    # use mask leaving one valid point to check behavior with mask
+    mask = (ds.cf["longitude"] == 3).astype(int)
+    ds_out = em.sel2d(ds, lon=0, lat=4, mask=mask)
+    assert ds_out.lon == 3
+    assert ds_out.lat == 7
+
+    ds_outcf = em.sel2dcf(ds, longitude=0, latitude=4, mask=mask)
+    assert ds_out == ds_outcf
+    
+    # if distance_name=None, no distance returned
+    ds_out = em.sel2d(ds, lon=0, lat=4, distances_name=None)
+    assert "distance" not in ds_out.variables

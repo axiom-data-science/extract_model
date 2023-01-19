@@ -27,9 +27,9 @@ da = model["da"]
 i, j = model["i"], model["j"]
 lon = float(da.cf["longitude"][j, i])
 lat = float(da.cf["latitude"][j, i])
+varname = da.name
 
 
-# import pdb; pdb.set_trace()
 def test_lon_lat_types():
     """Test sel2d with different types for lon/lat"""
 
@@ -37,15 +37,15 @@ def test_lon_lat_types():
 
     # Floats
     da_test = em.sel2d(da, lon_rho=lon, lat_rho=lat).squeeze()
-    assert np.allclose(da_check, da_test)
+    assert np.allclose(da_check, da_test[varname])
 
     # List
     da_test = em.sel2d(da, lon_rho=[lon], lat_rho=[lat]).squeeze()
-    assert np.allclose(da_check, da_test)
+    assert np.allclose(da_check, da_test[varname])
 
     # Array
     da_test = em.sel2d(da, lon_rho=np.array([lon]), lat_rho=np.array([lat])).squeeze()
-    assert np.allclose(da_check, da_test)
+    assert np.allclose(da_check, da_test[varname])
 
 
 def test_2D():
@@ -62,7 +62,7 @@ def test_2D():
 
     da_test = em.sel2d(da, lon_rho=Lon, lat_rho=Lat).squeeze()
 
-    assert np.allclose(da_check, da_test)
+    assert np.allclose(da_check, da_test[varname])
 
 
 def test_index_reuse():
@@ -95,7 +95,8 @@ def test_ll_name_reversal():
 
     da1 = em.sel2d(da, lon_rho=lon, lat_rho=lat).squeeze()
     da2 = em.sel2d(da, lat_rho=lat, lon_rho=lon).squeeze()
-    assert np.allclose(da1, da2)
+    assert np.allclose(da1[varname], da2[varname])
+    assert np.allclose(da1["distance"], da2["distance"])
 
 
 def test_sel_time():
@@ -106,7 +107,7 @@ def test_sel_time():
 
     da_test = em.sel2d(da, lon_rho=lon, lat_rho=lat, ocean_time=0)
 
-    assert np.allclose(da_check, da_test)
+    assert np.allclose(da_check, da_test[varname])
 
     # Won't run in different input order
     with pytest.raises(ValueError):
@@ -118,14 +119,15 @@ def test_cf_versions():
 
     da_check = em.sel2d(da, lon_rho=lon, lat_rho=lat)
     da_test = em.sel2dcf(da, longitude=lon, latitude=lat)
-    assert np.allclose(da_check, da_test)
+    assert np.allclose(da_check[varname], da_test[varname])
+    assert np.allclose(da_check["distance"], da_test["distance"])
 
     da_test = em.sel2dcf(da, latitude=lat, longitude=lon)
-    assert np.allclose(da_check, da_test)
+    assert np.allclose(da_check[varname], da_test[varname])
 
     da_check = em.sel2d(da, lon_rho=lon, lat_rho=lat, ocean_time=0)
     da_test = em.sel2dcf(da, latitude=lat, longitude=lon, T=0)
-    assert np.allclose(da_check, da_test)
+    assert np.allclose(da_check[varname], da_test[varname])
 
     da_test = em.sel2dcf(da, T=0, longitude=lon, latitude=lat)
-    assert np.allclose(da_check, da_test)
+    assert np.allclose(da_check[varname], da_test[varname])
