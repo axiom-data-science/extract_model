@@ -2,9 +2,9 @@
 Select model output using xarray and `isel` or interpolation through xarray or xesmf.
 """
 
-import cf_xarray as cfxr  # noqa: F401
+from importlib.metadata import PackageNotFoundError, version
 
-from importlib.metadata import version, PackageNotFoundError
+import cf_xarray as cfxr  # noqa: F401
 
 import extract_model.accessor  # noqa: F401
 
