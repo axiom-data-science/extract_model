@@ -19,4 +19,4 @@ dependencies:
     - codecov
     - pytest-cov
     - coverage[toml]
-    - git+https://github.com/xarray-contrib/xoak
+    - git+https://github.com/kthyng/xoak@include_distances
