@@ -482,7 +482,7 @@ def order(da):
     )
 
 
-def preprocess_roms(ds):
+def preprocess_roms(ds, interp_vertical: bool = True):
     """Preprocess ROMS model output for use with cf-xarray.
 
     Also fixes any other known issues with model output.
@@ -490,6 +490,8 @@ def preprocess_roms(ds):
     Parameters
     ----------
     ds: xarray Dataset
+
+    interp_vertical=True
 
     Returns
     -------
@@ -546,39 +548,42 @@ def preprocess_roms(ds):
             ds["s_w"].attrs["standard_name"] = "ocean_s_coordinate_g2"
 
     # calculate vertical coord
-    name_dict = {}
-    if "s_rho" in ds.dims:
-        name_dict["s_rho"] = "z_rho"
-        if "positive" in ds.s_rho.attrs:
-            ds.s_rho.attrs.pop("positive")
-    if "s_w" in ds.dims:
-        name_dict["s_w"] = "z_w"
-        if "positive" in ds.s_w.attrs:
-            ds.s_w.attrs.pop("positive")
-    ds.cf.decode_vertical_coords(outnames=name_dict)
+    if interp_vertical:
+        name_dict = {}
+        if "s_rho" in ds.dims:
+            name_dict["s_rho"] = "z_rho"
+            if "positive" in ds.s_rho.attrs:
+                ds.s_rho.attrs.pop("positive")
+        if "s_w" in ds.dims:
+            name_dict["s_w"] = "z_w"
+            if "positive" in ds.s_w.attrs:
+                ds.s_w.attrs.pop("positive")
+        ds.cf.decode_vertical_coords(outnames=name_dict)
 
-    # fix attrs
-    for zname in ["z_rho", "z_w"]:  # name_dict.values():
-        if zname in ds:
-            ds[
-                zname
-            ].attrs = {}  # coord inherits from one of the vars going into calculation
-            ds[zname].attrs["positive"] = "up"
-            ds[zname].attrs["units"] = "m"
-            ds[zname] = order(ds[zname])
+        # fix attrs
+        for zname in ["z_rho", "z_w"]:  # name_dict.values():
+            if zname in ds:
+                ds[
+                    zname
+                ].attrs = (
+                    {}
+                )  # coord inherits from one of the vars going into calculation
+                ds[zname].attrs["positive"] = "up"
+                ds[zname].attrs["units"] = "m"
+                ds[zname] = order(ds[zname])
 
-    # replace s_rho with z_rho, etc, to make z_rho the vertical coord
-    for sname, zname in name_dict.items():
-        for var in ds.data_vars:
-            if ds[var].ndim == 4:
-                if "coordinates" in ds[var].encoding:
-                    coords = ds[var].encoding["coordinates"]
-                    if sname in coords:  # replace if present
-                        coords = coords.replace(sname, zname)
-                    else:  # still add z_rho or z_w
-                        if zname in ds.coords and ds[zname].shape == ds[var].shape:
-                            coords += f" {zname}"
-                    ds[var].encoding["coordinates"] = coords
+        # replace s_rho with z_rho, etc, to make z_rho the vertical coord
+        for sname, zname in name_dict.items():
+            for var in ds.data_vars:
+                if ds[var].ndim == 4:
+                    if "coordinates" in ds[var].encoding:
+                        coords = ds[var].encoding["coordinates"]
+                        if sname in coords:  # replace if present
+                            coords = coords.replace(sname, zname)
+                        else:  # still add z_rho or z_w
+                            if zname in ds.coords and ds[zname].shape == ds[var].shape:
+                                coords += f" {zname}"
+                        ds[var].encoding["coordinates"] = coords
 
     # # easier to remove "coordinates" attribute from any variables than add it to all
     # for var in ds.data_vars:
@@ -706,12 +711,14 @@ def preprocess_rtofs(ds):
     raise NotImplementedError
 
 
-def preprocess(ds, model_type=None):
+def preprocess(ds, model_type=None, kwargs=None):
     """A preprocess function for reading in with xarray.
 
     This tries to address known model shortcomings in a generic way so that
     `cf-xarray` will work generally, including decoding vertical coordinates.
     """
+
+    kwargs = kwargs or {}
 
     # This is an internal attribute used by netCDF which xarray doesn't know or care about, but can
     # be returned from THREDDS.
@@ -739,7 +746,7 @@ def preprocess(ds, model_type=None):
         model_type = guess_model_type(ds)
 
     if model_type in preprocess_map:
-        return preprocess_map[model_type](ds)
+        return preprocess_map[model_type](ds, **kwargs)
 
     return ds
 

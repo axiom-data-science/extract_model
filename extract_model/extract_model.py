@@ -5,11 +5,14 @@ Main file for this code. The main code is in `select`, and the rest is to help w
 import warnings
 
 from numbers import Number
+from typing import Optional
 
 import cf_xarray  # noqa: F401
 import numpy as np
 import xarray as xr
 import xoak  # noqa: F401
+
+from xarray import DataArray
 
 
 try:
@@ -367,8 +370,10 @@ def select(
     return da.squeeze(), weights
 
 
-def sel2d(var, **kwargs):
-    """Find the value of the var at closest location to inputs.
+def sel2d(
+    var, mask: Optional[DataArray] = None, distances_name: str = "distance", **kwargs
+):
+    """Find the value of the var at closest location to inputs, optionally respecting mask.
 
     This is meant to mimic `xarray` `.sel()` in API and idea, except that the horizontal selection is done for 2D coordinates instead of 1D coordinates, since `xarray` cannot yet handle 2D coordinates. This wraps `xoak`.
 
@@ -381,6 +386,8 @@ def sel2d(var, **kwargs):
 
     Can also pass through `xarray.sel()` information for other dimension selections.
 
+    Optionally input mask so that if requested lon/lat is on land, the nearest valid model point will be returned. Otherwise nan's will be returned. If requested lon/lat is outside domain but not on land, the nearest model output will be returned regardless.
+
     Parameters
     ----------
     var: DataArray, Dataset
@@ -389,10 +396,14 @@ def sel2d(var, **kwargs):
         >>> em.sel2d(da, ...)
         instead of `ds.variable` directly. Then subsequent calls will be faster. See `xoak` for more information.
         A Dataset will "remember" the index calculated for whichever grid coordinates were first requested and subsequently run faster for requests on that grid (and not run for other grids).
+    mask : DataArray, optional
+        If input, mask is applied to lon/lat so that if requested lon/lat is on land, the nearest valid model point will be returned. Otherwise nan's will be returned. If requested lon/lat is outside domain but not on land, the nearest model output will be returned regardless.
+    distances_name : str, optional
+        Provide a name in which to save the distances from xoak; there will be one per lon/lat location found. If None, distances won't be returned in object.
 
     Returns
     -------
-    An xarray object of the same type as input as var which is selected in horizontal coordinates to input locations and, in input, to time and vertical selections. If not selected, other dimensions are brought along.
+    An xarray object of the same type as input as var which is selected in horizontal coordinates to input locations and, in input, to time and vertical selections. If not selected, other dimensions are brought along. If distances_name is not None, Dataset is returned.
 
     Notes
     -----
@@ -445,23 +456,51 @@ def sel2d(var, **kwargs):
     # create Dataset
     ds_to_find = xr.Dataset({"lat_to_find": (dims, lats), "lon_to_find": (dims, lons)})
 
+    if mask is not None:
+
+        # Assume mask is 2D — but not true for wetting/drying
+
+        # find indices representing mask
+        eta, xi = np.where(mask.values)
+
+        # make advanced indexer to flatten arrays
+        var_flat = var.cf.isel(
+            X=xr.DataArray(xi, dims="loc"), Y=xr.DataArray(eta, dims="loc")
+        )
+
+        var = var_flat.copy()
+
     if var.xoak.index is None:
         var.xoak.set_index([latname, lonname], "sklearn_geo_balltree")
     elif (latname, lonname) != var.xoak._index_coords:
         raise ValueError(
             f"Index has been built for grid with coords {var.xoak._index_coords} but coord names input are ({latname}, {lonname})."
         )
+    elif var.xoak.index is not None:
+        pass
+    else:
+        warnings.warn(
+            "Maybe a mask is not present or being properly identified in var. You could use `use_mask=False`.",
+            RuntimeWarning,
+        )
 
     # perform selection
     output = var.xoak.sel(
-        {latname: ds_to_find.lat_to_find, lonname: ds_to_find.lon_to_find}
+        {latname: ds_to_find.lat_to_find, lonname: ds_to_find.lon_to_find},
+        distances_name=distances_name,
     )
+
+    # distances between input points and nearest points
+    # distances = var.xoak._index.query(np.array([*zip(lats,lons)]))['distances'][:,0]
+    # import pdb; pdb.set_trace()
 
     with xr.set_options(keep_attrs=True):
         return output.sel(**kwargs)
 
 
-def sel2dcf(var, **kwargs):
+def sel2dcf(
+    var, mask: Optional[DataArray] = None, distances_name: str = "distance", **kwargs
+):
     """Find nearest value(s) on 2D horizontal grid using cf-xarray names.
 
     Use "longitude" and "latitude" for those coordinate names.
@@ -511,7 +550,7 @@ def sel2dcf(var, **kwargs):
 
     new_kwargs.update(kwargs)
 
-    return sel2d(var, **new_kwargs)
+    return sel2d(var, mask=mask, distances_name=distances_name, **new_kwargs)
 
 
 def selZ(var, depths):

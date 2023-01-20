@@ -11,10 +11,11 @@ dependencies:
   - requests
   - scikit-learn  # used by xoak for tree
   - xarray
-  - xoak
+  # - xoak
   - pytest
   - pytest-benchmark
   - pip:
     - codecov
     - pytest-cov
     - coverage[toml]
+    - git+https://github.com/kthyng/xoak@include_distances

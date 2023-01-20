@@ -19,6 +19,7 @@ def test_2dsel():
     model = models[3]
     da = model["da"]
     i, j = model["i"], model["j"]
+    varname = da.name
 
     if da.cf["longitude"].ndim == 1:
         longitude = float(da.cf["X"][i])
@@ -37,7 +38,8 @@ def test_2dsel():
     da_check = da.cf.isel(X=i, Y=j)
 
     # checks that the resultant model output is the same
-    assert np.allclose(da_sel2d.squeeze(), da_check)
+    assert np.allclose(da_sel2d[varname].squeeze(), da_check)
 
     da_test = da.em.sel2dcf(longitude=lon_comp, latitude=lat_comp)
-    assert np.allclose(da_sel2d, da_test)
+    assert np.allclose(da_sel2d[varname], da_test[varname])
+    assert np.allclose(da_sel2d["distance"], da_test["distance"])
