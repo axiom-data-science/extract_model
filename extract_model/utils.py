@@ -693,7 +693,9 @@ def preprocess_pom(ds, interp_vertical: bool = True):
             if zname in ds:
                 ds[
                     zname
-                ].attrs = {}  # coord inherits from one of the vars going into calculation
+                ].attrs = (
+                    {}
+                )  # coord inherits from one of the vars going into calculation
                 ds[zname].attrs["positive"] = "up"
                 ds[zname].attrs["units"] = "m"
                 ds[zname] = order(ds[zname])

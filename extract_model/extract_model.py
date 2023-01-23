@@ -372,7 +372,10 @@ def select(
 
 
 def sel2d(
-    var, mask: Optional[DataArray] = None, distances_name: Optional[str] = None, **kwargs
+    var,
+    mask: Optional[DataArray] = None,
+    distances_name: Optional[str] = None,
+    **kwargs,
 ):
     """Find the value of the var at closest location to inputs, optionally respecting mask.
 
@@ -452,13 +455,18 @@ def sel2d(
 
     # 1D or 2D
     if lons.ndim == lats.ndim == 1:
-        dims = ("loc")
+        dims = "loc"
     elif lons.ndim == lats.ndim == 2:
         dims = ("loc_y", "loc_x")
     # else: Raise exception
 
     # create Dataset
-    ds_to_find = xr.Dataset({"lat_to_find": (dims, lats, {"standard_name": "latitude"}), "lon_to_find": (dims, lons, {"standard_name": "longitude"})})
+    ds_to_find = xr.Dataset(
+        {
+            "lat_to_find": (dims, lats, {"standard_name": "latitude"}),
+            "lon_to_find": (dims, lons, {"standard_name": "longitude"}),
+        }
+    )
 
     if mask is not None:
 
@@ -505,13 +513,13 @@ def sel2d(
         if ds_to_find.lat_to_find.ndim > 1:
             with xr.set_options(keep_attrs=True):
                 return output.sel(**kwargs)
-        
+
         # distances between input points and nearest points - this won'tbe needed with new version of xoak once merged
         # * 6371 to convert from radians to km
         index = var.xoak._index
         if isinstance(index, tuple):
             index = index[0]
-        distances = index.query(np.array([*zip(lats,lons)]))['distances'][:,0] * 6371
+        distances = index.query(np.array([*zip(lats, lons)]))["distances"][:, 0] * 6371
         if isinstance(distances, Delayed):
             # import pdb; pdb.set_trace()
             distances = distances.compute()
@@ -520,14 +528,19 @@ def sel2d(
         attrs = {"units": "km"}
         indexer_dim = ds_to_find.lat_to_find.dims
         indexer_shape = ds_to_find.lat_to_find.shape
-        output[distances_name] = xr.Variable(indexer_dim, distances.reshape(indexer_shape), attrs)
+        output[distances_name] = xr.Variable(
+            indexer_dim, distances.reshape(indexer_shape), attrs
+        )
 
     with xr.set_options(keep_attrs=True):
         return output.sel(**kwargs)
 
 
 def sel2dcf(
-    var, mask: Optional[DataArray] = None, distances_name: Optional[str] = None, **kwargs
+    var,
+    mask: Optional[DataArray] = None,
+    distances_name: Optional[str] = None,
+    **kwargs,
 ):
     """Find nearest value(s) on 2D horizontal grid using cf-xarray names.
 

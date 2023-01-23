@@ -180,7 +180,7 @@ dacheck = ds.cf[varname].cf.isel(isel)
 fig, axes = plt.subplots(1, 2, figsize=(15,5))
 
 dacheck.cmo.cfplot(ax=axes[0], x='longitude', y='latitude')
-axes[0].scatter(da_out.cf['longitude'], da_out.cf['latitude'], s=50, c=da_out, 
+axes[0].scatter(da_out.cf['longitude'], da_out.cf['latitude'], s=50, c=da_out,
            vmin=dacheck.min().values, vmax=dacheck.max().values, cmap=cmap, edgecolors='k')
 
 # make smaller area of model to show
@@ -188,12 +188,12 @@ axes[0].scatter(da_out.cf['longitude'], da_out.cf['latitude'], s=50, c=da_out,
 dacheck_min = dacheck.em.sub_bbox([-91.52, 28.49, -91.49, 28.525], drop=True)
 dacheck_min.cmo.cfplot(ax=axes[1], x='longitude', y='latitude')
 # interpolation
-axes[1].scatter(da_out.cf['longitude'], da_out.cf['latitude'], s=50, c=da_out, 
-           vmin=dacheck_min.min().values, vmax=dacheck_min.max().values, 
+axes[1].scatter(da_out.cf['longitude'], da_out.cf['latitude'], s=50, c=da_out,
+           vmin=dacheck_min.min().values, vmax=dacheck_min.max().values,
                 cmap=cmap, edgecolors='k')
 # selection
-axes[1].scatter(da_sel.cf['longitude'], da_sel.cf['latitude'], s=50, c=da_sel.cf[varname], 
-           vmin=dacheck_min.min().values, vmax=dacheck_min.max().values, 
+axes[1].scatter(da_sel.cf['longitude'], da_sel.cf['latitude'], s=50, c=da_sel.cf[varname],
+           vmin=dacheck_min.min().values, vmax=dacheck_min.max().values,
                 cmap=cmap, edgecolors='k', marker='s')
 ```
 
@@ -252,7 +252,7 @@ cmap = ds.cf[varname].cmo.seq
 dacheck = ds.cf[varname].cf.isel(isel)
 fig, ax = plt.subplots(1,1)
 dacheck.cmo.cfplot(ax=ax, x='longitude', y='latitude')
-ax.scatter(da_out.cf['longitude'], da_out.cf['latitude'], s=50, c=da_out, 
+ax.scatter(da_out.cf['longitude'], da_out.cf['latitude'], s=50, c=da_out,
            vmin=dacheck.min().values, vmax=dacheck.max().values, cmap=cmap, edgecolors='k')
 ```
 
@@ -266,8 +266,8 @@ Interpolate to unstructured pairs of lon/lat locations instead of grids of lon/l
 varname = zeta
 
 # sel
-# this creates 12 pairs of lon/lat points that 
-# align with grid points so we can check the 
+# this creates 12 pairs of lon/lat points that
+# align with grid points so we can check the
 # interpolation
 longitude = ds.cf[varname].cf['longitude'].isel(eta_rho=60, xi_rho=slice(None,None,10))
 latitude = ds.cf[varname].cf['latitude'].isel(eta_rho=60, xi_rho=slice(None,None,10))
@@ -286,7 +286,7 @@ da_check = ds.cf[varname].cf.isel(isel).cf.sel(sel)
 assert np.allclose(da_out, da_check, equal_nan=True)
 ```
 
-It is not currently possible to interpolate in depth with both more than one time and location. 
+It is not currently possible to interpolate in depth with both more than one time and location.
 
 This cell is commented out because it purposefully returns an error:
 > NotImplementedError: Currently it is not possible to interpolate in depth with more than 1 other (time) dimension.
@@ -413,7 +413,7 @@ cmap = cmo.delta
 dacheck = ds.cf[varname].cf.isel(isel)
 fig, ax = plt.subplots(1,1)
 dacheck.cmo.plot(ax=ax)
-ax.scatter(da_out.cf['longitude'], da_out.cf['latitude'], s=50, c=da_out, 
+ax.scatter(da_out.cf['longitude'], da_out.cf['latitude'], s=50, c=da_out,
            vmin=dacheck.min().values, vmax=dacheck.max().values, cmap=cmap, edgecolors='k')
 ```
 
@@ -467,7 +467,7 @@ cmap = cmo.delta
 dacheck = ds.cf[varname].cf.isel(isel)
 fig, ax = plt.subplots(1,1)
 dacheck.cmo.plot(ax=ax)
-ax.scatter(da_out.cf['longitude'], da_out.cf['latitude'], s=50, c=da_out, 
+ax.scatter(da_out.cf['longitude'], da_out.cf['latitude'], s=50, c=da_out,
            vmin=dacheck.min().values, vmax=dacheck.max().values, cmap=cmap, edgecolors='k')
 
 ax.set_xlim(138,190)
@@ -483,8 +483,8 @@ Unstructured pairs of lon/lat locations instead of grids of lon/lat locations, u
 varname = u
 
 # sel
-# this creates 12 pairs of lon/lat points that 
-# align with grid points so we can check the 
+# this creates 12 pairs of lon/lat points that
+# align with grid points so we can check the
 # interpolation
 longitude = ds.cf[varname].cf['X'][::40].values
 latitude = ds.cf[varname].cf['Y'][::80].values
@@ -639,7 +639,7 @@ cmap = ds.cf[varname].cmo.seq
 dacheck = ds.cf[varname].cf.isel(isel)
 fig, ax = plt.subplots(1,1)
 dacheck.cmo.cfplot(ax=ax, x='longitude', y='latitude')
-ax.scatter(da_out.cf['longitude'], da_out.cf['latitude'], s=50, c=da_out, 
+ax.scatter(da_out.cf['longitude'], da_out.cf['latitude'], s=50, c=da_out,
            vmin=dacheck.min().values, vmax=dacheck.max().values, cmap=cmap, edgecolors='k')
 ```
 
@@ -653,8 +653,8 @@ Unstructured pairs of lon/lat locations instead of grids of lon/lat locations, u
 varname = zeta
 
 # sel
-# this creates 12 pairs of lon/lat points that 
-# align with grid points so we can check the 
+# this creates 12 pairs of lon/lat points that
+# align with grid points so we can check the
 # interpolation
 longitude = ds.cf[varname].cf['longitude'].cf.isel(Y=20, X=slice(None, None, 10))
 latitude = ds.cf[varname].cf['latitude'].cf.isel(Y=20, X=slice(None, None, 10))

@@ -369,7 +369,9 @@ def test_sel2d_simple_2D():
     assert ds_out.lon == 3
     assert ds_out.lat == 7
 
-    ds_outcf = em.sel2dcf(ds, longitude=0, latitude=4, mask=mask, distances_name="distance")
+    ds_outcf = em.sel2dcf(
+        ds, longitude=0, latitude=4, mask=mask, distances_name="distance"
+    )
     assert ds_out == ds_outcf
 
     # if distance_name=None, no distance returned

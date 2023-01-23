@@ -232,7 +232,7 @@ class emDataArrayAccessor:
         To return 2D pairs of points, in this case a 3x3 array of points:
         >>> da.em.interp2d([-96, -97, -96.5], [26.5, 27, 26.5], locstream=False)
         """
-        
+
         # for now need to change to a dataset
         varname = self.da.name
 
