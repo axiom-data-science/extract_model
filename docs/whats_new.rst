@@ -1,6 +1,11 @@
 :mod:`What's New`
 ----------------------------
 
+v1.1.1 (January 23, 2023)
+=========================
+* Updated the docs so that the notebooks are compiled with `myst-nb`.
+* Updated pull_request_template.md.
+
 v1.1.0 (January 19, 2023)
 =========================
 

@@ -5,13 +5,31 @@ channels:
 dependencies:
    - python=3.8
    # If your docs code examples depend on other packages add them here
+   - cf_xarray
+   - cmocean
+   - dask <=2022.05.0 # for xESMF, https://github.com/axiom-data-science/extract_model/issues/49
    - extract_model
+   - matplotlib
+   - netcdf4
+   - numpy <1.24  # https://github.com/numba/numba/issues/8615#issuecomment-1360792615
+   - numba  # required by xesmf
+   - pip
+   - pooch
+   - requests
+   - scikit-learn  # used by xoak for tree
+   - xarray
+   - xcmocean
+   - xesmf  # don't install if on windows
+   - xoak
    # These are needed for the docs themselves
+   - furo
+   - jupytext
    - numpydoc
    - sphinx
    - sphinx_rtd_theme
    - ipython
    - jinja2 #<3.1
+   - myst-nb
    - nbconvert
    - nbformat
    - ipykernel
