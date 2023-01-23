@@ -413,13 +413,16 @@ def sel2d(
     Examples
     --------
     Select grid node of DataArray nearest to location (-96, 27). The DataArray `ds.temp` has coordinates `lon_rho` and `lat_rho`:
+
     >>> da = ds.temp
     >>> em.sel2d(da, lon_rho=-96, lat_rho=27)
 
     To additionally select from the time and depth dimensions, call as:
+
     >>> em.sel2d(da, lon_rho=-96, lat_rho=27, time='2022-07-19', s_rho=0.0)
 
     You may also input other keywords to pass onto `xarray.sel()`:
+
     >>> em.sel2d(da, lon_rho=-96, lat_rho=27, s_rho=0.0, method='nearest')
     """
 
@@ -494,6 +497,7 @@ def sel2d(
     #     {latname: ds_to_find.lat_to_find, lonname: ds_to_find.lon_to_find},
     #     distances_name=distances_name,
     # )
+    # output[distances_name] *= 6371  # convert from radians to km
 
     if distances_name is not None:
         # only calculate distances this way (outside of xoak itself) if not doing 2D since we just need distances
@@ -501,7 +505,6 @@ def sel2d(
         if ds_to_find.lat_to_find.ndim > 1:
             with xr.set_options(keep_attrs=True):
                 return output.sel(**kwargs)
-
         
         # distances between input points and nearest points - this won'tbe needed with new version of xoak once merged
         # * 6371 to convert from radians to km
@@ -537,13 +540,16 @@ def sel2dcf(
     Examples
     --------
     Select grid node of DataArray nearest to location (-96, 27):
+
     >>> da = ds.temp
     >>> em.sel2d(da, longitude=-96, latitude=27)
 
     To additionally select from the time and depth dimensions, call as:
+
     >>> em.sel2d(da, longitude=-96, latitude=27, T='2022-07-19', Z=0.0)
 
     You may also input other keywords to pass onto `xarray.sel()`:
+
     >>> em.sel2d(da, longitude=-96, latitude=27, Z=0.0, method='nearest')
     """
 

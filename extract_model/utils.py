@@ -649,7 +649,7 @@ def preprocess_hycom(ds):
     return ds
 
 
-def preprocess_pom(ds):
+def preprocess_pom(ds, interp_vertical: bool = True):
     """Preprocess POM model output for use with cf-xarray.
 
     Also fixes any other known issues with model output.
@@ -685,17 +685,18 @@ def preprocess_pom(ds):
         elif ds[var].ndim == 4:
             ds[var].encoding["coordinates"] = "time depth lat lon"
 
-    ds.cf.decode_vertical_coords(outnames={"sigma": "z"})
+    if interp_vertical:
+        ds.cf.decode_vertical_coords(outnames={"sigma": "z"})
 
-    # fix attrs
-    for zname in ["z"]:  # name_dict.values():
-        if zname in ds:
-            ds[
-                zname
-            ].attrs = {}  # coord inherits from one of the vars going into calculation
-            ds[zname].attrs["positive"] = "up"
-            ds[zname].attrs["units"] = "m"
-            ds[zname] = order(ds[zname])
+        # fix attrs
+        for zname in ["z"]:  # name_dict.values():
+            if zname in ds:
+                ds[
+                    zname
+                ].attrs = {}  # coord inherits from one of the vars going into calculation
+                ds[zname].attrs["positive"] = "up"
+                ds[zname].attrs["units"] = "m"
+                ds[zname] = order(ds[zname])
 
     # keep sigma from showing up as "vertical" in cf-xarray
     for sname in ["sigma"]:  # name_dict.values():

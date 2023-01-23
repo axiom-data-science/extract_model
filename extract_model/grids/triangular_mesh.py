@@ -383,7 +383,7 @@ class UnstructuredGridSubset:
     ) -> np.ndarray:
         """Return a mask for the region subsetted by bbox."""
         # The mask that will represent only valid elements
-        mask = np.ones((element.shape[0]), dtype=np.bool)
+        mask = np.ones((element.shape[0]), dtype=bool)
 
         self._mask_disjoint_triangles(x, y, element, bbox, mask)
         submask, _ = self._mask_triangles_with_no_points_in_box(
