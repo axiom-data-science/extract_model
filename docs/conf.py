@@ -48,19 +48,25 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.viewcode",
     "sphinx.ext.napoleon",
-    "nbsphinx",
+    # "nbsphinx",
     "recommonmark",
     "sphinx.ext.mathjax",
     "sphinx.ext.autosummary",
     "sphinx.ext.extlinks",
     "sphinx.ext.intersphinx",
     "numpydoc",
-    "nbsphinx",
+    # "nbsphinx",
     "IPython.sphinxext.ipython_directive",
     "IPython.sphinxext.ipython_console_highlighting",
     "sphinxcontrib.srclinks",
+    "myst_nb",
 ]
 
+# for compiling notebooks with mystnb
+# https://docs.readthedocs.io/en/stable/guides/jupyter.html#using-notebooks-in-other-formats
+nb_custom_formats = {
+    ".md": ["jupytext.reads", {"fmt": "mystnb"}],
+}
 # packages that I don't want to install for docs but package depends on
 # autodoc_mock_imports = [
 #     "cf_xarray",
@@ -93,7 +99,10 @@ exclude_patterns = ["_build", "**.ipynb_checkpoints", "Thumbs.db", ".DS_Store"]
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "pangeo"
+# html_theme = "pangeo"
+html_theme = "furo"
+
+html_title = "extract_model documentation"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

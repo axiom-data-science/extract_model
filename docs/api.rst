@@ -1,12 +1,17 @@
-:mod:`API`
-----------------------------
+API
+===
 
-`extract_model` Python API
-==========================
+.. currentmodule:: extract_model
 
 
-.. automodule:: extract_model.extract_model
-   :members:
-   :inherited-members:
-   :undoc-members:
-   :show-inheritance:
+.. autosummary::
+   :toctree: generated/
+   :recursive:
+
+   extract_model
+   utils
+   accessor
+   sorting
+   model_type
+   grids.triangular_mesh
+   xr.triangular_mesh_netcdf
