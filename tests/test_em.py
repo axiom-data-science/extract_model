@@ -95,6 +95,7 @@ def test_sel2d(model):
         inputs = {
             da.cf["longitude"].name: lon_comp,
             da.cf["latitude"].name: lat_comp,
+            "distances_name": "distance",
         }
         da_sel2d = em.sel2d(da, **inputs)
         da_check = da.cf.isel(X=i, Y=j)
@@ -355,20 +356,20 @@ def test_sel2d_simple_2D():
     )
 
     # check distance when ran with exact grid point
-    ds_out = em.sel2d(ds, lon=0, lat=4)
+    ds_out = em.sel2d(ds, lon=0, lat=4, distances_name="distance")
     assert np.allclose(ds_out["distance"], 0)
 
     # check that alternative function call returns exact results
-    ds_outcf = em.sel2dcf(ds, longitude=0, latitude=4)
+    ds_outcf = em.sel2dcf(ds, longitude=0, latitude=4, distances_name="distance")
     assert ds_out == ds_outcf
 
     # use mask leaving one valid point to check behavior with mask
     mask = (ds.cf["longitude"] == 3).astype(int)
-    ds_out = em.sel2d(ds, lon=0, lat=4, mask=mask)
+    ds_out = em.sel2d(ds, lon=0, lat=4, mask=mask, distances_name="distance")
     assert ds_out.lon == 3
     assert ds_out.lat == 7
 
-    ds_outcf = em.sel2dcf(ds, longitude=0, latitude=4, mask=mask)
+    ds_outcf = em.sel2dcf(ds, longitude=0, latitude=4, mask=mask, distances_name="distance")
     assert ds_out == ds_outcf
 
     # if distance_name=None, no distance returned
