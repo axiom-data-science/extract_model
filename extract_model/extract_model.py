@@ -12,7 +12,8 @@ import numpy as np
 import xarray as xr
 import xoak  # noqa: F401
 
-from xarray import DataArray
+from dask.delayed import Delayed
+from xarray import DataArray, Dataset
 
 
 try:
@@ -371,7 +372,7 @@ def select(
 
 
 def sel2d(
-    var, mask: Optional[DataArray] = None, distances_name: str = "distance", **kwargs
+    var, mask: Optional[DataArray] = None, distances_name: Optional[str] = None, **kwargs
 ):
     """Find the value of the var at closest location to inputs, optionally respecting mask.
 
@@ -399,7 +400,7 @@ def sel2d(
     mask : DataArray, optional
         If input, mask is applied to lon/lat so that if requested lon/lat is on land, the nearest valid model point will be returned. Otherwise nan's will be returned. If requested lon/lat is outside domain but not on land, the nearest model output will be returned regardless.
     distances_name : str, optional
-        Provide a name in which to save the distances from xoak; there will be one per lon/lat location found. If None, distances won't be returned in object.
+        Provide a name in which to save the distances from xoak; there will be one value per lon/lat location found. If None, distances won't be returned in object.
 
     Returns
     -------
@@ -448,13 +449,13 @@ def sel2d(
 
     # 1D or 2D
     if lons.ndim == lats.ndim == 1:
-        dims = "loc"
+        dims = ("loc")
     elif lons.ndim == lats.ndim == 2:
         dims = ("loc_y", "loc_x")
     # else: Raise exception
 
     # create Dataset
-    ds_to_find = xr.Dataset({"lat_to_find": (dims, lats), "lon_to_find": (dims, lons)})
+    ds_to_find = xr.Dataset({"lat_to_find": (dims, lats, {"standard_name": "latitude"}), "lon_to_find": (dims, lons, {"standard_name": "longitude"})})
 
     if mask is not None:
 
@@ -486,20 +487,44 @@ def sel2d(
 
     # perform selection
     output = var.xoak.sel(
-        {latname: ds_to_find.lat_to_find, lonname: ds_to_find.lon_to_find},
-        distances_name=distances_name,
+        {latname: ds_to_find.lat_to_find, lonname: ds_to_find.lon_to_find}
     )
+    # # this version is for the updates in xoak
+    # output = var.xoak.sel(
+    #     {latname: ds_to_find.lat_to_find, lonname: ds_to_find.lon_to_find},
+    #     distances_name=distances_name,
+    # )
 
-    # distances between input points and nearest points
-    # distances = var.xoak._index.query(np.array([*zip(lats,lons)]))['distances'][:,0]
-    # import pdb; pdb.set_trace()
+    if distances_name is not None:
+        # only calculate distances this way (outside of xoak itself) if not doing 2D since we just need distances
+        # right now for OMSA and don't want a separate soln from xoak for this problem
+        if ds_to_find.lat_to_find.ndim > 1:
+            with xr.set_options(keep_attrs=True):
+                return output.sel(**kwargs)
+
+        
+        # distances between input points and nearest points - this won'tbe needed with new version of xoak once merged
+        # * 6371 to convert from radians to km
+        index = var.xoak._index
+        if isinstance(index, tuple):
+            index = index[0]
+        distances = index.query(np.array([*zip(lats,lons)]))['distances'][:,0] * 6371
+        if isinstance(distances, Delayed):
+            # import pdb; pdb.set_trace()
+            distances = distances.compute()
+        if not isinstance(output, Dataset):
+            output = output.to_dataset()
+        attrs = {"units": "km"}
+        indexer_dim = ds_to_find.lat_to_find.dims
+        indexer_shape = ds_to_find.lat_to_find.shape
+        output[distances_name] = xr.Variable(indexer_dim, distances.reshape(indexer_shape), attrs)
 
     with xr.set_options(keep_attrs=True):
         return output.sel(**kwargs)
 
 
 def sel2dcf(
-    var, mask: Optional[DataArray] = None, distances_name: str = "distance", **kwargs
+    var, mask: Optional[DataArray] = None, distances_name: Optional[str] = None, **kwargs
 ):
     """Find nearest value(s) on 2D horizontal grid using cf-xarray names.
 

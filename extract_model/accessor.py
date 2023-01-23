@@ -232,6 +232,9 @@ class emDataArrayAccessor:
         To return 2D pairs of points, in this case a 3x3 array of points:
         >>> da.em.interp2d([-96, -97, -96.5], [26.5, 27, 26.5], locstream=False)
         """
+        
+        # for now need to change to a dataset
+        varname = self.da.name
 
         import hashlib
 
@@ -254,7 +257,7 @@ class emDataArrayAccessor:
         if hashenc in self.weights_map:
             weights = self.weights_map[hashenc]
             da, _ = em.select(
-                self.da,
+                self.da.to_dataset(),
                 longitude=lons,
                 latitude=lats,
                 locstream=locstream,
@@ -268,7 +271,7 @@ class emDataArrayAccessor:
             )
         else:
             da, weights = em.select(
-                self.da,
+                self.da.to_dataset(),
                 longitude=lons,
                 latitude=lats,
                 locstream=locstream,
@@ -282,7 +285,7 @@ class emDataArrayAccessor:
             )
             self.weights_map[hashenc] = weights
 
-        return da
+        return da[varname]
 
     def sub_bbox(self, bbox, drop=True, dask_array_chunks=True):
         """Subset DataArray in space defined by bbox.
