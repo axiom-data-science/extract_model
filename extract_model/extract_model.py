@@ -5,7 +5,7 @@ Main file for this code. The main code is in `select`, and the rest is to help w
 import warnings
 
 from numbers import Number
-from typing import Optional
+from typing import Optional, Sequence, Tuple, Union
 
 import cf_xarray  # noqa: F401
 import numpy as np
@@ -33,14 +33,14 @@ except ImportError:  # pragma: no cover
 
 
 def interp_multi_dim(
-    da,
-    da_out=None,
-    T=None,
-    Z=None,
-    iT=None,
-    iZ=None,
-    extrap_method=None,
-    locstream=False,
+    da: DataArray,
+    da_out: Optional[DataArray] = None,
+    T: Optional[Union[str, list]] = None,
+    Z: Optional[Union[str, list]] = None,
+    iT: Optional[Union[int, list]] = None,
+    iZ: Optional[Union[int, list]] = None,
+    extrap_method: Optional[str] = None,
+    locstream: bool = False,
     weights=None,
 ):
     """Interpolate input DataArray to output DataArray using xESMF.
@@ -455,7 +455,7 @@ def sel2d(
 
     # 1D or 2D
     if lons.ndim == lats.ndim == 1:
-        dims = "loc"
+        dims = ("loc",)
     elif lons.ndim == lats.ndim == 2:
         dims = ("loc_y", "loc_x")
     # else: Raise exception
