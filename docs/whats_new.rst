@@ -1,6 +1,10 @@
 :mod:`What's New`
 ----------------------------
 
+v1.1.4 (January 27, 2023)
+=========================
+* fixed docs to run fully
+
 v1.1.3 (January 23, 2023)
 =========================
 * Updated the docs so that the notebooks are compiled with `myst-nb`.

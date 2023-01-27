@@ -18,7 +18,7 @@ import sys
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 # see https://pypi.org/project/setuptools-scm/ for details
-from pkg_resources import get_distribution
+from importlib.metadata import version as imversion
 
 
 print("python exec:", sys.executable)
@@ -35,7 +35,7 @@ project = "extract_model"
 copyright = "2022-2023, Kristen Thyng"
 author = "Kristen Thyng"
 
-release = get_distribution("extract_model").version
+release = imversion("extract_model")
 # for example take major/minor
 version = ".".join(release.split(".")[:2])
 
@@ -91,7 +91,13 @@ templates_path = ["_templates"]
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ["_build", "**.ipynb_checkpoints", "Thumbs.db", ".DS_Store", "_old_docs"]
+exclude_patterns = [
+    "_build",
+    "**.ipynb_checkpoints",
+    "Thumbs.db",
+    ".DS_Store",
+    "_old_docs",
+]
 
 
 # -- Options for HTML output -------------------------------------------------
