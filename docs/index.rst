@@ -25,7 +25,7 @@ To install from PyPI:
    :caption: Examples and demos
 
    models.ipynb
-   unstructured_subsetting.md
+   unstructured_subsetting.ipynb
    ts_work.ipynb
    api
 
