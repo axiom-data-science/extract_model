@@ -115,6 +115,11 @@ html_title = "extract_model documentation"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 
+# https://myst-nb.readthedocs.io/en/v0.13.0/use/execute.html#execution-timeout
+# had this message:
+# WARNING: 'execution_timeout' is deprecated for 'nb_execution_timeout' [mystnb.config]
+# WARNING: 'execution_allow_errors' is deprecated for 'nb_execution_allow_errors' [mystnb.config]
+nb_execution_timeout = 180  # seconds.
 
 # -- nbsphinx specific options ----------------------------------------------
 # this allows notebooks to be run even if they produce errors.

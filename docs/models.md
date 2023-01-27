@@ -6,7 +6,7 @@ jupytext:
     format_version: 0.13
     jupytext_version: 1.14.4
 kernelspec:
-  display_name: Python 3.9.13 ('extract_model')
+  display_name: Python 3.8.10 ('extract_model_docs')
   language: python
   name: python3
 ---
@@ -180,7 +180,7 @@ dacheck = ds.cf[varname].cf.isel(isel)
 fig, axes = plt.subplots(1, 2, figsize=(15,5))
 
 dacheck.cmo.cfplot(ax=axes[0], x='longitude', y='latitude')
-axes[0].scatter(da_out.cf['longitude'], da_out.cf['latitude'], s=50, c=da_out,
+axes[0].scatter(da_out.cf['longitude'], da_out.cf['latitude'], s=50, c=da_out, 
            vmin=dacheck.min().values, vmax=dacheck.max().values, cmap=cmap, edgecolors='k')
 
 # make smaller area of model to show
@@ -188,12 +188,12 @@ axes[0].scatter(da_out.cf['longitude'], da_out.cf['latitude'], s=50, c=da_out,
 dacheck_min = dacheck.em.sub_bbox([-91.52, 28.49, -91.49, 28.525], drop=True)
 dacheck_min.cmo.cfplot(ax=axes[1], x='longitude', y='latitude')
 # interpolation
-axes[1].scatter(da_out.cf['longitude'], da_out.cf['latitude'], s=50, c=da_out,
-           vmin=dacheck_min.min().values, vmax=dacheck_min.max().values,
+axes[1].scatter(da_out.cf['longitude'], da_out.cf['latitude'], s=50, c=da_out, 
+           vmin=dacheck_min.min().values, vmax=dacheck_min.max().values, 
                 cmap=cmap, edgecolors='k')
 # selection
-axes[1].scatter(da_sel.cf['longitude'], da_sel.cf['latitude'], s=50, c=da_sel.cf[varname],
-           vmin=dacheck_min.min().values, vmax=dacheck_min.max().values,
+axes[1].scatter(da_sel.cf['longitude'], da_sel.cf['latitude'], s=50, c=da_sel.cf[varname], 
+           vmin=dacheck_min.min().values, vmax=dacheck_min.max().values, 
                 cmap=cmap, edgecolors='k', marker='s')
 ```
 
@@ -252,7 +252,7 @@ cmap = ds.cf[varname].cmo.seq
 dacheck = ds.cf[varname].cf.isel(isel)
 fig, ax = plt.subplots(1,1)
 dacheck.cmo.cfplot(ax=ax, x='longitude', y='latitude')
-ax.scatter(da_out.cf['longitude'], da_out.cf['latitude'], s=50, c=da_out,
+ax.scatter(da_out.cf['longitude'], da_out.cf['latitude'], s=50, c=da_out, 
            vmin=dacheck.min().values, vmax=dacheck.max().values, cmap=cmap, edgecolors='k')
 ```
 
@@ -266,8 +266,8 @@ Interpolate to unstructured pairs of lon/lat locations instead of grids of lon/l
 varname = zeta
 
 # sel
-# this creates 12 pairs of lon/lat points that
-# align with grid points so we can check the
+# this creates 12 pairs of lon/lat points that 
+# align with grid points so we can check the 
 # interpolation
 longitude = ds.cf[varname].cf['longitude'].isel(eta_rho=60, xi_rho=slice(None,None,10))
 latitude = ds.cf[varname].cf['latitude'].isel(eta_rho=60, xi_rho=slice(None,None,10))
@@ -286,7 +286,7 @@ da_check = ds.cf[varname].cf.isel(isel).cf.sel(sel)
 assert np.allclose(da_out, da_check, equal_nan=True)
 ```
 
-It is not currently possible to interpolate in depth with both more than one time and location.
+It is not currently possible to interpolate in depth with both more than one time and location. 
 
 This cell is commented out because it purposefully returns an error:
 > NotImplementedError: Currently it is not possible to interpolate in depth with more than 1 other (time) dimension.
@@ -349,17 +349,17 @@ da_out.cmo.cfplot(ax=axes[1], x='longitude', y='latitude')
 # url = ['http://tds.hycom.org/thredds/dodsC/GLBy0.08/latest']
 # ds = xr.open_mfdataset(url, preprocess=em.preprocess, drop_variables='tau')
 # ds.isel(time=slice(0,2)).sel(lat=slice(-20, 30), lon=slice(140,190)).to_netcdf('hycom.nc')
-ds = xr.open_mfdataset('hycom.nc', preprocess=em.preprocess)
+# ds = xr.open_mfdataset('hycom.nc', preprocess=em.preprocess)
+
+url = 'http://tds.hycom.org/thredds/dodsC/GLBy0.08/latest'
+ds = xr.open_dataset(url, drop_variables='tau')["water_u"].isel(time=slice(0,2), depth=0).sel(lat=slice(-20, 30), lon=slice(140,190))
+ds = em.preprocess(ds)
+ds = ds.load()
+ds
 ```
 
 ```{code-cell} ipython3
 ds.cf
-```
-
-Variable to use
-
-```{code-cell} ipython3
-u = 'eastward_sea_water_velocity'
 ```
 
 ### grid point
@@ -367,22 +367,21 @@ u = 'eastward_sea_water_velocity'
 ```{code-cell} ipython3
 :tags: []
 
-varname = u
 
 # sel
-longitude = float(ds.cf[varname].cf['X'][100])
-latitude = float(ds.cf[varname].cf['Y'][150])
+longitude = float(ds.cf['X'][100])
+latitude = float(ds.cf['Y'][150])
 sel = dict(longitude=longitude, latitude=latitude)
 
 # isel
-iZ = 0
+iZ = None
 iT = None
-isel = dict(Z=iZ)
+# isel = dict(Z=iZ)
 
-da_out = ds.cf[varname].em.interp2d(longitude, latitude, iT=iT, iZ=iZ)
+da_out = ds.em.interp2d(longitude, latitude, iT=iT, iZ=iZ)
 
 # check
-da_check = ds.cf[varname].cf.sel(sel).cf.isel(isel)
+da_check = ds.cf.sel(sel)#.cf.isel(isel)
 
 assert np.allclose(da_out, da_check)
 ```
@@ -394,7 +393,6 @@ assert np.allclose(da_out, da_check)
 #### inside domain
 
 ```{code-cell} ipython3
-varname = u
 
 # sel
 longitude = 155
@@ -402,18 +400,18 @@ latitude = 5
 sel = dict(longitude=longitude, latitude=latitude)
 
 # isel
-iZ = 0
+iZ = None
 iT = 0
-isel = dict(Z=iZ, T=iT)
+isel = dict(T=iT)
 
-da_out = ds.cf[varname].em.interp2d(longitude, latitude, iT=iT, iZ=iZ)
+da_out = ds.em.interp2d(longitude, latitude, iT=iT, iZ=iZ)
 
 # plot
 cmap = cmo.delta
-dacheck = ds.cf[varname].cf.isel(isel)
+dacheck = ds.cf.isel(isel)
 fig, ax = plt.subplots(1,1)
 dacheck.cmo.plot(ax=ax)
-ax.scatter(da_out.cf['longitude'], da_out.cf['latitude'], s=50, c=da_out,
+ax.scatter(da_out.cf['longitude'], da_out.cf['latitude'], s=50, c=da_out, 
            vmin=dacheck.min().values, vmax=dacheck.max().values, cmap=cmap, edgecolors='k')
 ```
 
@@ -427,19 +425,17 @@ This purposefully raises an error so is commented out:
 > ValueError: Longitude outside of available domain. Use extrap=True to extrapolate.
 
 ```{code-cell} ipython3
-# varname = u
-
 # # sel
 # longitude = -166
 # latitude = 48
 # sel = dict(longitude=longitude, latitude=latitude)
 
 # # isel
-# iZ = 0
+# iZ = None
 # iT = 0
-# isel = dict(Z=iZ, T=iT)
+# isel = dict(T=iT)
 
-# da_out = ds.cf[varname].em.interp2d(longitude, latitude, iT=iT, iZ=iZ, extrap=False)
+# da_out = ds.em.interp2d(longitude, latitude, iT=iT, iZ=iZ, extrap=False)
 
 # da_out = em.select(**kwargs)
 # da_out
@@ -448,7 +444,6 @@ This purposefully raises an error so is commented out:
 Extrapolate
 
 ```{code-cell} ipython3
-varname = u
 
 # sel
 longitude = 139
@@ -456,18 +451,18 @@ latitude = 0
 sel = dict(longitude=longitude, latitude=latitude)
 
 # isel
-iZ = 0
+iZ = None
 iT = 0
-isel = dict(Z=iZ, T=iT)
+isel = dict(T=iT)
 
-da_out = ds.cf[varname].em.interp2d(longitude, latitude, iT=iT, iZ=iZ, extrap=True)
+da_out = ds.em.interp2d(longitude, latitude, iT=iT, iZ=iZ, extrap=True)
 
 # plot
 cmap = cmo.delta
-dacheck = ds.cf[varname].cf.isel(isel)
+dacheck = ds.cf.isel(isel)
 fig, ax = plt.subplots(1,1)
 dacheck.cmo.plot(ax=ax)
-ax.scatter(da_out.cf['longitude'], da_out.cf['latitude'], s=50, c=da_out,
+ax.scatter(da_out.cf['longitude'], da_out.cf['latitude'], s=50, c=da_out, 
            vmin=dacheck.min().values, vmax=dacheck.max().values, cmap=cmap, edgecolors='k')
 
 ax.set_xlim(138,190)
@@ -480,26 +475,25 @@ Unstructured pairs of lon/lat locations instead of grids of lon/lat locations, u
 ```{code-cell} ipython3
 :tags: []
 
-varname = u
 
 # sel
-# this creates 12 pairs of lon/lat points that
-# align with grid points so we can check the
+# this creates 12 pairs of lon/lat points that 
+# align with grid points so we can check the 
 # interpolation
-longitude = ds.cf[varname].cf['X'][::40].values
-latitude = ds.cf[varname].cf['Y'][::80].values
+longitude = ds.cf['X'][::40].values
+latitude = ds.cf['Y'][::80].values
 # selecting individual lon/lat locations with advanced xarray indexing
 sel = dict(longitude=xr.DataArray(longitude, dims="pts"), latitude=xr.DataArray(latitude, dims="pts"))
 
 # isel
-iZ = 0
+iZ = None
 iT = 0
-isel = dict(Z=iZ, T=iT)
+isel = dict(T=iT)
 
-da_out = ds.cf[varname].em.interp2d(longitude, latitude, iT=iT, iZ=iZ, locstream=True)
+da_out = ds.em.interp2d(longitude, latitude, iT=iT, iZ=iZ, locstream=True)
 
 # check
-da_check = ds.cf[varname].cf.isel(isel).cf.sel(sel)
+da_check = ds.cf.isel(isel).cf.sel(sel)
 
 assert np.allclose(da_out, da_check, equal_nan=True)
 ```
@@ -507,22 +501,21 @@ assert np.allclose(da_out, da_check, equal_nan=True)
 ### grid of known locations
 
 ```{code-cell} ipython3
-varname = u
 
 # sel
-longitude = ds.cf[varname].cf['X'][100::500]
-latitude = ds.cf[varname].cf['Y'][100::500]
+longitude = ds.cf['X'][100::500]
+latitude = ds.cf['Y'][100::500]
 sel = dict(longitude=longitude, latitude=latitude)
 
 # isel
-iZ = 0
+iZ = None
 iT = None
-isel = dict(Z=iZ)
+# isel = dict(Z=iZ)
 
-da_out = ds.cf[varname].em.interp2d(longitude, latitude, iT=iT, iZ=iZ, locstream=False)
+da_out = ds.em.interp2d(longitude, latitude, iT=iT, iZ=iZ, locstream=False)
 
 # check
-da_check = ds.cf[varname].cf.sel(sel).cf.isel(isel)
+da_check = ds.cf.sel(sel)#.cf.isel(isel)
 
 assert np.allclose(da_out, da_check)
 ```
@@ -530,26 +523,25 @@ assert np.allclose(da_out, da_check)
 ### grid of new locations
 
 ```{code-cell} ipython3
-varname = u
 
 # sel
-longitude = np.linspace(ds.cf[varname].cf['X'].min(), ds.cf[varname].cf['X'].max(), 30)
-latitude = np.linspace(ds.cf[varname].cf['Y'].min(), ds.cf[varname].cf['Y'].max(), 30)
+longitude = np.linspace(ds.cf['X'].min(), ds.cf['X'].max(), 30)
+latitude = np.linspace(ds.cf['Y'].min(), ds.cf['Y'].max(), 30)
 sel = dict(longitude=longitude, latitude=latitude)
 
 # isel
-iZ = 0
+iZ = None
 iT = 0
-isel = dict(Z=iZ, T=iT)
+isel = dict(T=iT)
 
-da_out = ds.cf[varname].em.interp2d(longitude, latitude, iT=iT, iZ=iZ, locstream=False)
-# kwargs = dict(da=ds[varname], longitude=longitude, latitude=latitude, iT=T, iZ=Z)
+da_out = ds.em.interp2d(longitude, latitude, iT=iT, iZ=iZ, locstream=False)
+# kwargs = dict(da, longitude=longitude, latitude=latitude, iT=T, iZ=Z)
 
 # da_out = em.select(**kwargs)
 
 # plot
 cmap = cmo.delta
-dacheck = ds.cf[varname].cf.isel(isel)
+dacheck = ds.cf.isel(isel)
 
 fig, axes = plt.subplots(1,2, figsize=(10,4))
 dacheck.cmo.plot(ax=axes[0])
@@ -571,6 +563,8 @@ except OSError:
     url = [today.strftime('https://opendap.co-ops.nos.noaa.gov/thredds/dodsC/NOAA/LOOFS/MODELS/%Y/%m/%d/glofs.loofs.fields.nowcast.%Y%m%d.t00z.nc'),
            today.strftime('https://opendap.co-ops.nos.noaa.gov/thredds/dodsC/NOAA/LOOFS/MODELS/%Y/%m/%d/glofs.loofs.fields.nowcast.%Y%m%d.t06z.nc')]
     ds = xr.open_mfdataset(url, preprocess=em.preprocess)
+
+ds = ds["zeta"].isel(time=slice(0,2)).load()
 ds
 ```
 
@@ -578,23 +572,15 @@ ds
 ds.cf
 ```
 
-Variables to use
-
-```{code-cell} ipython3
-zeta = 'sea_surface_elevation'
-temp = 'sea_water_temperature'
-```
-
 ### grid point
 
 ```{code-cell} ipython3
-# %%time
-varname = zeta
+%%time
 
 # Set up a single lon/lat location
 j, i = 10, 10
-longitude = float(ds.cf[varname].cf['longitude'][j,i])
-latitude = float(ds.cf[varname].cf['latitude'][j,i])
+longitude = float(ds.cf['longitude'][j,i])
+latitude = float(ds.cf['latitude'][j,i])
 
 # Select-by-index a time index and no vertical index (zeta has none)
 # also lon/lat by index
@@ -602,10 +588,10 @@ Z = None
 iT = 0
 isel = dict(T=iT, X=i, Y=j)
 
-da_out = ds.cf[varname].em.interp2d(longitude, latitude, iT=iT, iZ=Z)
+da_out = ds.em.interp2d(longitude, latitude, iT=iT, iZ=Z)
 
 # check work
-da_check = ds.cf[varname].cf.isel(isel)
+da_check = ds.cf.isel(isel)
 
 assert np.allclose(da_out, da_check)
 ```
@@ -621,7 +607,6 @@ This is faster the second time the regridder is used — it is saved by the `ext
 #### inside domain
 
 ```{code-cell} ipython3
-varname = zeta
 
 # sel
 longitude = -78.0
@@ -629,17 +614,17 @@ latitude = 43.6
 
 # isel
 iZ = None
-iT = 10
+iT = 1
 isel = dict(T=iT)
 
-da_out = ds.cf[varname].em.interp2d(longitude, latitude, iT=iT, iZ=iZ)
+da_out = ds.em.interp2d(longitude, latitude, iT=iT, iZ=iZ)
 
 # plot
-cmap = ds.cf[varname].cmo.seq
-dacheck = ds.cf[varname].cf.isel(isel)
+cmap = ds.cmo.seq
+dacheck = ds.cf.isel(isel)
 fig, ax = plt.subplots(1,1)
 dacheck.cmo.cfplot(ax=ax, x='longitude', y='latitude')
-ax.scatter(da_out.cf['longitude'], da_out.cf['latitude'], s=50, c=da_out,
+ax.scatter(da_out.cf['longitude'], da_out.cf['latitude'], s=50, c=da_out, 
            vmin=dacheck.min().values, vmax=dacheck.max().values, cmap=cmap, edgecolors='k')
 ```
 
@@ -650,14 +635,13 @@ Unstructured pairs of lon/lat locations instead of grids of lon/lat locations, u
 ```{code-cell} ipython3
 :tags: []
 
-varname = zeta
 
 # sel
-# this creates 12 pairs of lon/lat points that
-# align with grid points so we can check the
+# this creates 12 pairs of lon/lat points that 
+# align with grid points so we can check the 
 # interpolation
-longitude = ds.cf[varname].cf['longitude'].cf.isel(Y=20, X=slice(None, None, 10))
-latitude = ds.cf[varname].cf['latitude'].cf.isel(Y=20, X=slice(None, None, 10))
+longitude = ds.cf['longitude'].cf.isel(Y=20, X=slice(None, None, 10))
+latitude = ds.cf['latitude'].cf.isel(Y=20, X=slice(None, None, 10))
 sel = dict(X=longitude.cf['X'], Y=longitude.cf['Y'])
 
 # isel
@@ -665,10 +649,10 @@ iZ = None
 iT = 0
 isel = dict(T=iT)
 
-da_out = ds.cf[varname].em.interp2d(longitude, latitude, iT=iT, iZ=iZ, locstream=True)
+da_out = ds.em.interp2d(longitude, latitude, iT=iT, iZ=iZ, locstream=True)
 
 # check
-da_check = ds.cf[varname].cf.isel(isel).cf.sel(sel)
+da_check = ds.cf.isel(isel).cf.sel(sel)
 
 assert np.allclose(da_out, da_check, equal_nan=True)
 ```
@@ -676,24 +660,27 @@ assert np.allclose(da_out, da_check, equal_nan=True)
 ### grid of new locations
 
 ```{code-cell} ipython3
-varname = zeta
 
 # sel
-longitude = np.linspace(ds.cf[varname].cf['longitude'].min(), ds.cf[varname].cf['longitude'].max(), 15)
-latitude = np.linspace(ds.cf[varname].cf['latitude'].min(), ds.cf[varname].cf['latitude'].max(), 15)
+longitude = np.linspace(ds.cf['longitude'].min(), ds.cf['longitude'].max(), 15)
+latitude = np.linspace(ds.cf['latitude'].min(), ds.cf['latitude'].max(), 15)
 
 # isel
 iZ = None
-iT = 10
+iT = 1
 isel = dict(T=iT)
 
-da_out = ds.cf[varname].em.interp2d(longitude, latitude, iT=iT, iZ=iZ, locstream=False, extrap=False, extrap_val=np.nan)
+da_out = ds.em.interp2d(longitude, latitude, iT=iT, iZ=iZ, locstream=False, extrap=False, extrap_val=np.nan)
 
 # plot
 cmap = cmo.delta
-dacheck = ds.cf[varname].cf.isel(isel)
+dacheck = ds.cf.isel(isel)
 
 fig, axes = plt.subplots(1,2, figsize=(10,4))
 dacheck.cmo.cfplot(ax=axes[0], x='longitude', y='latitude')
 da_out.cmo.cfplot(ax=axes[1], x='longitude', y='latitude')
+```
+
+```{code-cell} ipython3
+
 ```
