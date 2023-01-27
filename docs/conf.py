@@ -18,7 +18,7 @@ import sys
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 # see https://pypi.org/project/setuptools-scm/ for details
-from pkg_resources import get_distribution
+from importlib.metadata import version as imversion
 
 
 print("python exec:", sys.executable)
@@ -32,10 +32,10 @@ import extract_model  # isort:skip
 # -- Project information -----------------------------------------------------
 
 project = "extract_model"
-copyright = "2022, Kristen Thyng"
+copyright = "2022-2023, Kristen Thyng"
 author = "Kristen Thyng"
 
-release = get_distribution("extract_model").version
+release = imversion("extract_model")
 # for example take major/minor
 version = ".".join(release.split(".")[:2])
 
@@ -85,13 +85,22 @@ nb_custom_formats = {
 #     "xoak",
 # ]
 
+# https://myst-nb.readthedocs.io/en/v0.9.0/use/execute.html
+jupyter_execute_notebooks = "off"
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ["_build", "**.ipynb_checkpoints", "Thumbs.db", ".DS_Store"]
+exclude_patterns = [
+    "_build",
+    "**.ipynb_checkpoints",
+    "Thumbs.db",
+    ".DS_Store",
+    "_old_docs",
+]
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -109,6 +118,11 @@ html_title = "extract_model documentation"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 
+# https://myst-nb.readthedocs.io/en/v0.13.0/use/execute.html#execution-timeout
+# had this message:
+# WARNING: 'execution_timeout' is deprecated for 'nb_execution_timeout' [mystnb.config]
+# WARNING: 'execution_allow_errors' is deprecated for 'nb_execution_allow_errors' [mystnb.config]
+nb_execution_timeout = 180  # seconds.
 
 # -- nbsphinx specific options ----------------------------------------------
 # this allows notebooks to be run even if they produce errors.
