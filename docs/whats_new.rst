@@ -4,6 +4,7 @@
 v1.1.4 (January 27, 2023)
 =========================
 * fixed docs to run fully
+* had to switch back to pre-compiled notebooks to get docs to fully work
 
 v1.1.3 (January 23, 2023)
 =========================

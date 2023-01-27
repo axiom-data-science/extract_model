@@ -13,20 +13,20 @@ Installation
 
 To install from conda-forge:
 
-  >>> conda install -c conda-forge ocean-model-skill-assessor
+  >>> conda install -c conda-forge extract_model
 
 To install from PyPI:
 
-  >>> pip install cf-pandas
+  >>> pip install extract_model
 
 .. toctree::
    :maxdepth: 2
    :hidden:
    :caption: Examples and demos
 
-   models.md
+   models.ipynb
    unstructured_subsetting.md
-   ts_work.md
+   ts_work.ipynb
    api
 
 .. toctree::
