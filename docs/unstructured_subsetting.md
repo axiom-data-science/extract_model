@@ -80,7 +80,7 @@ def plot_unstructured_variable(ds, varname, triangulation_varname='nv', xvarname
     return fig, ax
 ```
 
-### Lake Erie Operational Forecast System (LEOFS) FVCOM
+## Lake Erie Operational Forecast System (LEOFS) FVCOM
 
 Initialize the dataset object, but use our engine so that we can load FVCOM data into an xarray Dataset.
 
@@ -154,7 +154,7 @@ Now that we have subsetted the data to a region of interest we can write that da
 ds_ss.to_netcdf('/tmp/fvcom-subset.nc')
 ```
 
-### Northern Golf of Mexico Operational Forecast System (NGOFS2) FVCOM
+## Northern Golf of Mexico Operational Forecast System (NGOFS2) FVCOM
 
 ```{code-cell} ipython3
 url = 'https://www.ncei.noaa.gov/thredds/dodsC/model-ngofs2-files/2022/07/nos.ngofs2.fields.n006.20220725.t03z.nc'

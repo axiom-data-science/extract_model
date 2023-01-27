@@ -468,8 +468,8 @@ def order(da):
     Does not consider previously-selected dimensions that are kept on as coordinates but
     cannot be transposed anymore. This is accomplished with `.reset_coords(drop=True)`.
 
-    Example usage
-    -------------
+    Examples
+    --------
     >>> em.order(da)
     """
 

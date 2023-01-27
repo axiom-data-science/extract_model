@@ -32,7 +32,7 @@ import extract_model  # isort:skip
 # -- Project information -----------------------------------------------------
 
 project = "extract_model"
-copyright = "2022, Kristen Thyng"
+copyright = "2022-2023, Kristen Thyng"
 author = "Kristen Thyng"
 
 release = get_distribution("extract_model").version
@@ -91,7 +91,7 @@ templates_path = ["_templates"]
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ["_build", "**.ipynb_checkpoints", "Thumbs.db", ".DS_Store"]
+exclude_patterns = ["_build", "**.ipynb_checkpoints", "Thumbs.db", ".DS_Store", "_old_docs"]
 
 
 # -- Options for HTML output -------------------------------------------------
