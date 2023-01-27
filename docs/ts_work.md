@@ -42,20 +42,18 @@ xr.set_options(display_expand_attrs=False)
 
 # Structured: CIOFS: ROMS Cook Inlet model
 # get some model output locally
-loc1 = glob('nos.ciofs.*.nc')
-
+# loc1 = glob('nos.ciofs.*.nc')
+# ds1 = xr.open_mfdataset([loc1], drop_variables="ocean_time", preprocess=em.preprocess).sel(time=slice("2022-03-01T07", "2022-03-01T08"))
+loc1 = "https://www.ncei.noaa.gov/thredds/dodsC/model-ciofs-agg/Aggregated_CIOFS_Fields_Forecast_best.ncd"
+ds1 = xr.open_dataset(loc1, drop_variables="ocean_time")
+ds1 = em.preprocess(ds1, kwargs={"interp_vertical": False})
+ds1 = ds1.sel(time=slice("2022-03-01T07", "2022-03-01T08"))
+ds1
 
 # # Unstructured: CREOFS: SELFE Columbia River model
 # today = pd.Timestamp.today()
 # loc2 = [today.strftime('https://opendap.co-ops.nos.noaa.gov/thredds/dodsC/NOAA/CREOFS/MODELS/%Y/%m/%d/nos.creofs.fields.n000.%Y%m%d.t03z.nc'),
 #         today.strftime('https://opendap.co-ops.nos.noaa.gov/thredds/dodsC/NOAA/CREOFS/MODELS/%Y/%m/%d/nos.creofs.fields.n001.%Y%m%d.t03z.nc')]
-```
-
-```{code-cell} ipython3
-:tags: []
-
-ds1 = xr.open_mfdataset(loc1, preprocess=em.preprocess)
-ds1
 ```
 
 ## Demo code
