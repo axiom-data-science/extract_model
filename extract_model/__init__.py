@@ -13,7 +13,7 @@ from .utils import filter, order, preprocess, sub_bbox, sub_grid  # noqa: F401
 
 
 try:
-    __version__ = version("package-name")
+    __version__ = version("extract_model")
 except PackageNotFoundError:
     # package is not installed
     pass
