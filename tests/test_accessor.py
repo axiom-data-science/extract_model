@@ -36,16 +36,17 @@ def test_2dsel():
     inputs = {
         da.cf["longitude"].name: lon_comp,
         da.cf["latitude"].name: lat_comp,
-        "distances_name": "distance",
+        # "distances_name": "distance",
     }
-    da_sel2d = da.em.sel2d(**inputs)
+    da_sel2d, kwargs_out_sel2d_acc_check = da.em.sel2d(**inputs, return_info=True)
     da_check = da.cf.isel(X=i, Y=j)
+    da_sel2d_check = da_sel2d[varname]
 
     # checks that the resultant model output is the same
-    assert np.allclose(da_sel2d[varname].squeeze(), da_check)
+    assert np.allclose(da_sel2d_check.squeeze(), da_check)
 
-    da_test = da.em.sel2dcf(
-        longitude=lon_comp, latitude=lat_comp, distances_name="distance"
+    da_test, kwargs_out = da.em.sel2dcf(
+        longitude=lon_comp, latitude=lat_comp, return_info=True, #distances_name="distance"
     )
     assert np.allclose(da_sel2d[varname], da_test[varname])
-    assert np.allclose(da_sel2d["distance"], da_test["distance"])
+    assert np.allclose(kwargs_out_sel2d_acc_check["distance"], kwargs_out["distance"])
