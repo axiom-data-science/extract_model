@@ -9,7 +9,9 @@ from typing import List, Mapping, NewType, Optional, Tuple
 import dask
 import numpy as np
 import xarray as xr
+
 from sklearn.neighbors import BallTree
+
 from extract_model.grids.triangular_mesh import UnstructuredGridSubset
 from extract_model.model_type import ModelType
 
@@ -482,10 +484,15 @@ def order(da):
     )
 
 
-def tree_query(lon_coords: xr.DataArray, lat_coords: xr.DataArray, 
-               lons_to_find: np.array, lats_to_find: np.array, k: int = 3) -> Tuple[np.array]:
+def tree_query(
+    lon_coords: xr.DataArray,
+    lat_coords: xr.DataArray,
+    lons_to_find: np.array,
+    lats_to_find: np.array,
+    k: int = 3,
+) -> Tuple[np.array]:
     """Set up and query BallTree for k nearest points
-    
+
     Uses haversine for the metric because we are dealing with lon/lat coordinates.
 
     Parameters
@@ -505,38 +512,40 @@ def tree_query(lon_coords: xr.DataArray, lat_coords: xr.DataArray,
     -------
     Tuple[np.array]
         distances, (iys, ixs) 2D indices for coordinates
-    
+
     Notes
     -----
     Reference: https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.BallTree.html
     """
-    
+
     # create tree
     coords = [lon_coords, lat_coords]
     X = np.stack([np.ravel(c) for c in coords]).T
-    tree = BallTree(np.deg2rad(X), metric='haversine')
+    tree = BallTree(np.deg2rad(X), metric="haversine")
 
     # set up coordinates we want to search for
     coords_to_find = [lons_to_find, lats_to_find]
     X_to_find = np.stack([np.ravel(c) for c in coords_to_find]).T
-    
+
     # query tree
     distances, inds = tree.query(np.deg2rad(X_to_find), k=k)
-    
+
     # convert flat indies to 2D indices
     iys, ixs = np.unravel_index(inds, lon_coords.shape)
-    
+
     return distances, (iys, ixs)
 
 
-def calc_barycentric(x: np.array, y: np.array, xs: np.array, ys: np.array) -> xr.DataArray:
+def calc_barycentric(
+    x: np.array, y: np.array, xs: np.array, ys: np.array
+) -> xr.DataArray:
     """Calculate barycentric weights for npts
-    
+
     Parameters
     ----------
-    x 
+    x
         npts x 1 vector of x locations, can be in lon or projection coordinates.
-    y 
+    y
         npts x 1 vector of y locations, can be in lat or projection coordinates.
     xs
         npts x 3 array of triangle x vertices with which to calculate the barycentric weights for each of npts
@@ -550,19 +559,32 @@ def calc_barycentric(x: np.array, y: np.array, xs: np.array, ys: np.array) -> xr
     """
     # barycentric weights
     # npts x 1 (vectors)
-    L1 = ( (ys[:,1] - ys[:,2])*(x[:] - xs[:,2]) + (xs[:,2] - xs[:,1])*(y[:] - ys[:,2]) )/ \
-        ( (ys[:,1] - ys[:,2])*(xs[:,0] - xs[:,2]) + (xs[:,2] - xs[:,1])*(ys[:,0] - ys[:,2]) )
-    L2 = ( (ys[:,2] - ys[:,0])*(x[:] - xs[:,2]) + (xs[:,0] - xs[:,2])*(y[:] - ys[:,2]) )/ \
-        ( (ys[:,1] - ys[:,2])*(xs[:,0] - xs[:,2]) + (xs[:,2] - xs[:,1])*(ys[:,0] - ys[:,2]))
+    L1 = (
+        (ys[:, 1] - ys[:, 2]) * (x[:] - xs[:, 2])
+        + (xs[:, 2] - xs[:, 1]) * (y[:] - ys[:, 2])
+    ) / (
+        (ys[:, 1] - ys[:, 2]) * (xs[:, 0] - xs[:, 2])
+        + (xs[:, 2] - xs[:, 1]) * (ys[:, 0] - ys[:, 2])
+    )
+    L2 = (
+        (ys[:, 2] - ys[:, 0]) * (x[:] - xs[:, 2])
+        + (xs[:, 0] - xs[:, 2]) * (y[:] - ys[:, 2])
+    ) / (
+        (ys[:, 1] - ys[:, 2]) * (xs[:, 0] - xs[:, 2])
+        + (xs[:, 2] - xs[:, 1]) * (ys[:, 0] - ys[:, 2])
+    )
     L3 = 1 - L1 - L2
 
-    lam = xr.DataArray(dims=("npts","triangle"), data=np.vstack((L1, L2, L3)).T)
-    
+    lam = xr.DataArray(dims=("npts", "triangle"), data=np.vstack((L1, L2, L3)).T)
+
     return lam
 
 
 def interp_with_barycentric(da, ixs, iys, lam):
-    vector = da.cf.isel(X=xr.DataArray(ixs, dims=("npts","triangle")), Y=xr.DataArray(iys, dims=("npts","triangle")))
+    vector = da.cf.isel(
+        X=xr.DataArray(ixs, dims=("npts", "triangle")),
+        Y=xr.DataArray(iys, dims=("npts", "triangle")),
+    )
     with xr.set_options(keep_attrs=True):
         da = xr.dot(vector, lam, dims=("triangle"))
 
@@ -576,7 +598,7 @@ def interp_with_barycentric(da, ixs, iys, lam):
 
             # add vertical coords into da
             da = da.assign_coords({zkey: da_vert})
-            
+
     # add "X" axis to npts
     da["npts"] = ("npts", da.npts.values, {"axis": "X"})
 

@@ -7,8 +7,7 @@ import numpy as np
 import pytest
 import xarray as xr
 
-from extract_model import utils
-from extract_model import preprocessing
+from extract_model import preprocessing, utils
 from extract_model.grids.triangular_mesh import UnstructuredGridSubset
 
 

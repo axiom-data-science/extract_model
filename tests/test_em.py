@@ -65,7 +65,9 @@ def test_hor_interp_no_xesmf():
     XESMF_AVAILABLE = em.extract_model.XESMF_AVAILABLE
     em.extract_model.XESMF_AVAILABLE = False
     with pytest.raises(ModuleNotFoundError):
-        em.select(da, longitude=longitude, latitude=latitude, T=0.5, horizontal_interp=True)
+        em.select(
+            da, longitude=longitude, latitude=latitude, T=0.5, horizontal_interp=True
+        )
     em.extract_model.XESMF_AVAILABLE = XESMF_AVAILABLE
 
 
@@ -95,7 +97,7 @@ def test_sel2d(model):
         inputs = {
             da.cf["longitude"].name: lon_comp,
             da.cf["latitude"].name: lat_comp,
-            "return_info": True
+            "return_info": True,
         }
         da_sel2d, kwargs_out = em.sel2d(da, **inputs)
         da_check = da.cf.isel(X=i, Y=j)
@@ -369,9 +371,7 @@ def test_sel2d_simple_2D():
     assert ds_out.lon == 3
     assert ds_out.lat == 7
 
-    ds_outcf = em.sel2dcf(
-        ds, longitude=0, latitude=4, mask=mask
-    )
+    ds_outcf = em.sel2dcf(ds, longitude=0, latitude=4, mask=mask)
     assert ds_out.coords == ds_outcf.coords
 
     # if distance_name=None, no distance returned

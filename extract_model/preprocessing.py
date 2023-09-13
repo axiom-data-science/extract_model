@@ -1,14 +1,20 @@
 """Preprocessing-related functions for model output."""
 
 
+from typing import Optional
+
 import numpy as np
 import xarray as xr
-from typing import Optional
-from .utils import order, guess_model_type
+
 from extract_model.model_type import ModelType
 
+from .utils import guess_model_type, order
 
-def preprocess_roms(ds, grid=None,):
+
+def preprocess_roms(
+    ds,
+    grid=None,
+):
     """Preprocess ROMS model output for use with cf-xarray.
 
     Also fixes any other known issues with model output.
@@ -24,7 +30,7 @@ def preprocess_roms(ds, grid=None,):
     -------
     Same Dataset but with some metadata added and/or altered.
     """
-    
+
     rename = {}
     if "eta_u" in ds.dims:
         rename["eta_u"] = "eta_rho"
@@ -35,7 +41,6 @@ def preprocess_roms(ds, grid=None,):
     if "eta_psi" in ds.dims:
         rename["eta_psi"] = "eta_v"
     ds = ds.rename(rename)
-
 
     # add axes attributes for dimensions
     dims = [dim for dim in ds.dims if dim.startswith("s_")]
@@ -125,7 +130,9 @@ def preprocess_roms(ds, grid=None,):
         # }
 
         ds.coords["z_rho"] = order(ds["z_rho"])
-        ds.coords["z_rho_u"] = grid.interp(ds.z_rho.chunk({ds.z_rho.cf["X"].name: -1}), "X")
+        ds.coords["z_rho_u"] = grid.interp(
+            ds.z_rho.chunk({ds.z_rho.cf["X"].name: -1}), "X"
+        )
         ds.coords["z_rho_u"].attrs = {
             "long_name": "depth of U-points on vertical RHO grid",
             "time": "ocean_time",
@@ -133,7 +140,9 @@ def preprocess_roms(ds, grid=None,):
             "units": "m",
         }
 
-        ds.coords["z_rho_v"] = grid.interp(ds.z_rho.chunk({ds.z_rho.cf["Y"].name: -1}), "Y")
+        ds.coords["z_rho_v"] = grid.interp(
+            ds.z_rho.chunk({ds.z_rho.cf["Y"].name: -1}), "Y"
+        )
         ds.coords["z_rho_v"].attrs = {
             "long_name": "depth of V-points on vertical RHO grid",
             "time": "ocean_time",
@@ -141,18 +150,20 @@ def preprocess_roms(ds, grid=None,):
             "units": "m",
         }
 
-        ds.coords["z_rho_psi"] = grid.interp(ds.z_rho_u.chunk({ds.z_rho_u.cf["Y"].name: -1}), "Y")
+        ds.coords["z_rho_psi"] = grid.interp(
+            ds.z_rho_u.chunk({ds.z_rho_u.cf["Y"].name: -1}), "Y"
+        )
         ds.coords["z_rho_psi"].attrs = {
             "long_name": "depth of PSI-points on vertical RHO grid",
             "time": "ocean_time",
             "field": "z_rho_psi, scalar, series",
             "units": "m",
         }
-        
-        # will use this to update coordinate encoding
-        name_dict.update({"filler1": "z_rho_u", "filler2": "z_rho_v", "filler3": "z_rho_psi"})#, "None": "z_w_u", "None": "z_w_v", "None": "z_w_psi"})
-        
 
+        # will use this to update coordinate encoding
+        name_dict.update(
+            {"filler1": "z_rho_u", "filler2": "z_rho_v", "filler3": "z_rho_psi"}
+        )  # , "None": "z_w_u", "None": "z_w_v", "None": "z_w_psi"})
 
     # fix attrs
     # for zname in ["z_rho", "z_w"]:
@@ -160,9 +171,7 @@ def preprocess_roms(ds, grid=None,):
         if zname in ds:
             ds[
                 zname
-            ].attrs = (
-                {}
-            )  # coord inherits from one of the vars going into calculation
+            ].attrs = {}  # coord inherits from one of the vars going into calculation
             ds[zname].attrs["positive"] = "up"
             ds[zname].attrs["units"] = "m"
             ds[zname] = order(ds[zname])
@@ -224,6 +233,7 @@ def preprocess_roms(ds, grid=None,):
 def preprocess_roms_grid(ds):
     # use xgcm
     from xgcm import Grid
+
     coords = {
         "X": {"center": "xi_rho", "inner": "xi_u"},
         "Y": {"center": "eta_rho", "inner": "eta_v"},
