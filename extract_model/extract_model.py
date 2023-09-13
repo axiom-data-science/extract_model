@@ -68,8 +68,7 @@ def interp_multi_dim(
         raise ModuleNotFoundError(  # pragma: no cover
             "xESMF is not available so horizontal interpolation in 2D cannot be performed."
         )
-    
-    da = da.chunk({"eta_rho": -1, "xi_rho": -1})
+    da = da.chunk({da.cf["Y"].name: -1, da.cf["X"].name: -1})
 
     # set up regridder, use weights if available
     regridder = xe.Regridder(
@@ -187,7 +186,7 @@ def select(
     iZ=None,
     extrap=False,
     extrap_val=None,
-    horizontal_interp: bool = True,
+    horizontal_interp: bool = False,
     horizontal_interp_code: str = "xesmf",
     use_projection: bool = True,
     triangulation = None,
@@ -239,7 +238,7 @@ def select(
         If `extrap==False`, values outside domain will be returned as 0,
         or as `extrap_value` if input.
     horizontal_interp: bool
-        True to interpolate, False to find nearest neighbor with sel2d.
+        True to interpolate, False to find nearest neighbor with sel2d. Defaults to False.
     horizontal_interp_code: str
         Default "xesmf" to use package ``xESMF`` for horizontal interpolation, which is probably better if you need to interpolate to many points. To use ``xESMF`` you have install it as an optional dependency. Input "tree" to use BallTree to find nearest 3 neighbors and interpolate using barycentric coordinates. This has been tested for interpolating to 3 locations so far. Input "delaunay" to use a delaunay triangulation to find the nearest triangle points and interpolate the same as with "tree" using barycentric coordinates. This should be faster when you have more points to interpolate to, especially if you save and reuse the triangulation.
     use_projection: bool
@@ -482,7 +481,7 @@ def select(
         print("time: ", start_time-end_time)
     # nearest neighbor instead
     elif not horizontal_interp and longitude is not None and latitude is not None:
-        da, k_out = da.em.sel2dcf(longitude=longitude, latitude=latitude, mask=mask, use_xoak=use_xoak, ) 
+        da, k_out = da.em.sel2dcf(longitude=longitude, latitude=latitude, mask=mask, use_xoak=use_xoak, return_info=True) 
         kwargs_out["distances"] = k_out["distances"]
         kwargs_out.update(k_out)
     else:
@@ -823,37 +822,48 @@ def sel2d(
         distances, (iys, ixs) = tree_query(var[lonname], var[latname], lons, lats, k=k)
         
         # sort mask such that active elements are preferentially to the left in a 2D array
-        if mask.values[iys,ixs].sum() == 0:
+        if mask is not None and mask.values[iys,ixs].sum() == 0:
             raise ValueError("all found values are masked!")
 
-        isorted_mask = np.argsort(-mask.values[iys,ixs], axis=-1)
-        # sort the ixs and iys according to this sorting so that if there are unmasked indices, 
-        # they are leftmost also, and we will use the leftmost values.
-        ixs_brought_along = np.take_along_axis(ixs, isorted_mask, axis=1)
-        iys_brought_along = np.take_along_axis(iys, isorted_mask, axis=1)
-        distances_brought_along = np.take_along_axis(distances, isorted_mask, axis=1)
-        ixs0 = ixs_brought_along[:,0]
-        iys0 = iys_brought_along[:,0]
-        distances0 = distances_brought_along[:,0]
+        if mask is not None:
+            isorted_mask = np.argsort(-mask.values[iys,ixs], axis=-1)
+            # sort the ixs and iys according to this sorting so that if there are unmasked indices, 
+            # they are leftmost also, and we will use the leftmost values.
+            ixs_brought_along = np.take_along_axis(ixs, isorted_mask, axis=1)
+            iys_brought_along = np.take_along_axis(iys, isorted_mask, axis=1)
+            distances_brought_along = np.take_along_axis(distances, isorted_mask, axis=1)
+            ixs0 = ixs_brought_along[:,0]
+            iys0 = iys_brought_along[:,0]
+            distances0 = distances_brought_along[:,0]
 
-        # ipoint = 0
-        # # if inds[0] is masked, check the next until finding one that isn't mask
-        # # if no mask provided, just take first point
-        # if mask is not None:
-        #     def is_masked(iy, ix):
-        #         return int(mask[iy, ix]) == 0
+            # ipoint = 0
+            # # if inds[0] is masked, check the next until finding one that isn't mask
+            # # if no mask provided, just take first point
+            # if mask is not None:
+            #     def is_masked(iy, ix):
+            #         return int(mask[iy, ix]) == 0
+                
+            #     while is_masked(iys[ipoint], ixs[ipoint]):
+            #         ipoint += 1
+
+            kwargs[var.cf["Y"].name], kwargs[var.cf["X"].name] = iys0, ixs0
             
-        #     while is_masked(iys[ipoint], ixs[ipoint]):
-        #         ipoint += 1
-
-        kwargs[var.cf["Y"].name], kwargs[var.cf["X"].name] = iys0, ixs0
+            dims = ("npts",)  
+            var_out = var.cf.isel(X=xr.DataArray(ixs0, dims=dims), Y=xr.DataArray(iys0, dims=dims))
+            # add "X" axis to npts
+            var_out["npts"] = ("npts", var_out.npts.values, {"axis": "X"})
+            
+            kwargs["distances"] = distances0* 6371
         
-        dims = ("npts",)  
-        var_out = var.cf.isel(X=xr.DataArray(ixs0, dims=dims), Y=xr.DataArray(iys0, dims=dims))
-        # add "X" axis to npts
-        var_out["npts"] = ("npts", var_out.npts.values, {"axis": "X"})
-        
-        kwargs["distances"] = distances0* 6371
+        else:
+            kwargs[var.cf["Y"].name], kwargs[var.cf["X"].name] = iys[0], ixs[0]
+            
+            dims = ("npts",)  
+            var_out = var.cf.isel(X=xr.DataArray(ixs[0], dims=dims), Y=xr.DataArray(iys[0], dims=dims))
+            # add "X" axis to npts
+            var_out["npts"] = ("npts", var_out.npts.values, {"axis": "X"})
+            
+            kwargs["distances"] = distances * 6371
 
         with xr.set_options(keep_attrs=True):
             if return_info:

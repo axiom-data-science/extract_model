@@ -49,4 +49,4 @@ def test_2dsel():
         longitude=lon_comp, latitude=lat_comp, return_info=True, #distances_name="distance"
     )
     assert np.allclose(da_sel2d[varname], da_test[varname])
-    assert np.allclose(kwargs_out_sel2d_acc_check["distance"], kwargs_out["distance"])
+    assert np.allclose(kwargs_out_sel2d_acc_check["distances"], kwargs_out["distances"])

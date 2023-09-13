@@ -262,28 +262,34 @@ class emDataArrayAccessor:
                 latitude=lats,
                 locstream=locstream,
                 weights=weights,
+                horizontal_interp=True,
+                horizontal_interp_code="xesmf",
                 iT=iT,
                 T=T,
                 iZ=iZ,
                 Z=Z,
                 extrap=extrap,
                 extrap_val=extrap_val,
+                return_info=True,
             )
         else:
-            da, weights = em.select(
+            da, kwargs_out = em.select(
                 self.da.to_dataset(),
                 longitude=lons,
                 latitude=lats,
                 locstream=locstream,
                 weights=weights,
+                horizontal_interp=True,
+                horizontal_interp_code="xesmf",
                 iT=iT,
                 T=T,
                 iZ=iZ,
                 Z=Z,
                 extrap=extrap,
                 extrap_val=extrap_val,
+                return_info=True,
             )
-            self.weights_map[hashenc] = weights
+            self.weights_map[hashenc] = kwargs_out["weights"]
 
         return da[varname]
 
