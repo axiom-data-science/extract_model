@@ -27,12 +27,12 @@ def test_T_interp_no_xesmf():
 
     url = Path(__file__).parent / "data/test_roms.nc"
     ds = xr.open_dataset(url)
-    da_out, _ = em.select(da=ds["zeta"], T=0.5)
+    da_out = em.select(da=ds["zeta"], T=0.5)
     assert np.allclose(da_out[0, 0], -0.12584045)
 
     XESMF_AVAILABLE = em.extract_model.XESMF_AVAILABLE
     em.extract_model.XESMF_AVAILABLE = False
-    da_out, _ = em.select(da=ds["zeta"], T=0.5)
+    da_out = em.select(da=ds["zeta"], T=0.5)
     assert np.allclose(da_out[0, 0], -0.12584045)
     em.extract_model.XESMF_AVAILABLE = XESMF_AVAILABLE
 
@@ -42,7 +42,7 @@ def test_Z_interp():
 
     url = Path(__file__).parent / "data/test_hycom.nc"
     ds = xr.open_dataset(url)
-    da_out, _ = em.select(da=ds["water_u"], Z=1.0)
+    da_out = em.select(da=ds["water_u"], Z=1.0, vertical_interp=True)
     assert np.allclose(da_out[-1, -1], -0.1365)
 
 
@@ -65,7 +65,9 @@ def test_hor_interp_no_xesmf():
     XESMF_AVAILABLE = em.extract_model.XESMF_AVAILABLE
     em.extract_model.XESMF_AVAILABLE = False
     with pytest.raises(ModuleNotFoundError):
-        em.select(da, longitude=longitude, latitude=latitude, T=0.5)
+        em.select(
+            da, longitude=longitude, latitude=latitude, T=0.5, horizontal_interp=True
+        )
     em.extract_model.XESMF_AVAILABLE = XESMF_AVAILABLE
 
 
@@ -95,14 +97,14 @@ def test_sel2d(model):
         inputs = {
             da.cf["longitude"].name: lon_comp,
             da.cf["latitude"].name: lat_comp,
-            "distances_name": "distance",
+            "return_info": True,
         }
-        da_sel2d = em.sel2d(da, **inputs)
+        da_sel2d, kwargs_out = em.sel2d(da, **inputs)
         da_check = da.cf.isel(X=i, Y=j)
 
         assert np.allclose(da_sel2d[varname].squeeze(), da_check)
         # 6371 is radius of earth in km
-        assert np.allclose(da_sel2d["distance"], np.deg2rad(dlat) * 6371)
+        assert np.allclose(kwargs_out["distances"], np.deg2rad(dlat) * 6371)
 
 
 @pytest.mark.parametrize("model", models, ids=lambda x: x["name"])
@@ -356,24 +358,22 @@ def test_sel2d_simple_2D():
     )
 
     # check distance when ran with exact grid point
-    ds_out = em.sel2d(ds, lon=0, lat=4, distances_name="distance")
-    assert np.allclose(ds_out["distance"], 0)
+    ds_out, kwargs_out = em.sel2d(ds, lon=0, lat=4, return_info=True)
+    assert np.allclose(kwargs_out["distances"], 0)
 
     # check that alternative function call returns exact results
-    ds_outcf = em.sel2dcf(ds, longitude=0, latitude=4, distances_name="distance")
-    assert ds_out == ds_outcf
+    ds_outcf = em.sel2dcf(ds, longitude=0, latitude=4)
+    assert ds_out.coords == ds_outcf.coords
 
     # use mask leaving one valid point to check behavior with mask
     mask = (ds.cf["longitude"] == 3).astype(int)
-    ds_out = em.sel2d(ds, lon=0, lat=4, mask=mask, distances_name="distance")
+    ds_out = em.sel2d(ds, lon=0, lat=4, mask=mask)
     assert ds_out.lon == 3
     assert ds_out.lat == 7
 
-    ds_outcf = em.sel2dcf(
-        ds, longitude=0, latitude=4, mask=mask, distances_name="distance"
-    )
-    assert ds_out == ds_outcf
+    ds_outcf = em.sel2dcf(ds, longitude=0, latitude=4, mask=mask)
+    assert ds_out.coords == ds_outcf.coords
 
     # if distance_name=None, no distance returned
-    ds_out = em.sel2d(ds, lon=0, lat=4, distances_name=None)
-    assert "distance" not in ds_out.variables
+    ds_out = em.sel2d(ds, lon=0, lat=4)
+    assert "distances" not in ds_out.variables

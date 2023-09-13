@@ -1,6 +1,11 @@
 :mod:`What's New`
 -----------------
 
+v1.2.0 (September 13, 2023)
+===========================
+* Improvements to interpolation
+
+
 v1.1.4 (January 27, 2023)
 =========================
 * fixed docs to run fully

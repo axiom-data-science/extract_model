@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 import xarray as xr
 
-from extract_model import utils
+from extract_model import preprocessing, utils
 from extract_model.grids.triangular_mesh import UnstructuredGridSubset
 
 
@@ -222,7 +222,7 @@ def test_fvcom_preload(real_fvcom):
 
 
 def test_fvcom_preprocess(real_fvcom):
-    ds = utils.preprocess(real_fvcom)
+    ds = preprocessing.preprocess(real_fvcom)
     assert ds is not None
 
 
@@ -310,7 +310,7 @@ def test_selfe_filter(selfe_data):
 
 
 def test_selfe_preprocess(selfe_data):
-    ds = utils.preprocess(selfe_data)
+    ds = preprocessing.preprocess(selfe_data)
     assert ds is not None
 
 

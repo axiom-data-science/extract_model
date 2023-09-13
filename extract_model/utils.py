@@ -10,6 +10,8 @@ import dask
 import numpy as np
 import xarray as xr
 
+from sklearn.neighbors import BallTree
+
 from extract_model.grids.triangular_mesh import UnstructuredGridSubset
 from extract_model.model_type import ModelType
 
@@ -482,276 +484,125 @@ def order(da):
     )
 
 
-def preprocess_roms(ds, interp_vertical: bool = True):
-    """Preprocess ROMS model output for use with cf-xarray.
+def tree_query(
+    lon_coords: xr.DataArray,
+    lat_coords: xr.DataArray,
+    lons_to_find: np.array,
+    lats_to_find: np.array,
+    k: int = 3,
+) -> Tuple[np.array]:
+    """Set up and query BallTree for k nearest points
 
-    Also fixes any other known issues with model output.
-
-    Parameters
-    ----------
-    ds: xarray Dataset
-
-    interp_vertical=True
-
-    Returns
-    -------
-    Same Dataset but with some metadata added and/or altered.
-    """
-
-    # add axes attributes for dimensions
-    dims = [dim for dim in ds.dims if dim.startswith("s_")]
-    for dim in dims:
-        ds[dim].attrs["axis"] = "Z"
-
-    if "ocean_time" in ds.keys():
-        ds.ocean_time.attrs["axis"] = "T"
-        ds.ocean_time.attrs["standard_name"] = "time"
-    elif "time" in ds.keys():
-        ds.time.attrs["axis"] = "T"
-        ds.time.attrs["standard_name"] = "time"
-
-    dims = [dim for dim in ds.dims if dim.startswith("xi_")]
-    # need to also make this a coordinate to add attributes
-    for dim in dims:
-        ds[dim] = (dim, np.arange(ds.sizes[dim]), {"axis": "X"})
-
-    dims = [dim for dim in ds.dims if dim.startswith("eta_")]
-    for dim in dims:
-        ds[dim] = (dim, np.arange(ds.sizes[dim]), {"axis": "Y"})
-
-    # Fix standard_name for s_rho/s_w
-    if "Vtransform" in ds.data_vars and "s_rho" in ds.coords:
-        cond1 = (
-            ds["Vtransform"] == 1
-            and ds["s_rho"].attrs["standard_name"] == "ocean_s_coordinate"
-        )
-        cond2 = (
-            ds["Vtransform"] == 2
-            and ds["s_rho"].attrs["standard_name"] == "ocean_s_coordinate"
-        )
-        if cond1:
-            ds["s_rho"].attrs["standard_name"] = "ocean_s_coordinate_g1"
-        elif cond2:
-            ds["s_rho"].attrs["standard_name"] = "ocean_s_coordinate_g2"
-
-        cond1 = (
-            ds["Vtransform"] == 1
-            and ds["s_w"].attrs["standard_name"] == "ocean_s_coordinate"
-        )
-        cond2 = (
-            ds["Vtransform"] == 2
-            and ds["s_w"].attrs["standard_name"] == "ocean_s_coordinate"
-        )
-        if cond1:
-            ds["s_w"].attrs["standard_name"] = "ocean_s_coordinate_g1"
-        elif cond2:
-            ds["s_w"].attrs["standard_name"] = "ocean_s_coordinate_g2"
-
-    # calculate vertical coord
-    if interp_vertical:
-        name_dict = {}
-        if "s_rho" in ds.dims:
-            name_dict["s_rho"] = "z_rho"
-            if "positive" in ds.s_rho.attrs:
-                ds.s_rho.attrs.pop("positive")
-        if "s_w" in ds.dims:
-            name_dict["s_w"] = "z_w"
-            if "positive" in ds.s_w.attrs:
-                ds.s_w.attrs.pop("positive")
-        ds.cf.decode_vertical_coords(outnames=name_dict)
-
-        # fix attrs
-        for zname in ["z_rho", "z_w"]:  # name_dict.values():
-            if zname in ds:
-                ds[
-                    zname
-                ].attrs = (
-                    {}
-                )  # coord inherits from one of the vars going into calculation
-                ds[zname].attrs["positive"] = "up"
-                ds[zname].attrs["units"] = "m"
-                ds[zname] = order(ds[zname])
-
-        # replace s_rho with z_rho, etc, to make z_rho the vertical coord
-        for sname, zname in name_dict.items():
-            for var in ds.data_vars:
-                if ds[var].ndim == 4:
-                    if "coordinates" in ds[var].encoding:
-                        coords = ds[var].encoding["coordinates"]
-                        if sname in coords:  # replace if present
-                            coords = coords.replace(sname, zname)
-                        else:  # still add z_rho or z_w
-                            if zname in ds.coords and ds[zname].shape == ds[var].shape:
-                                coords += f" {zname}"
-                        ds[var].encoding["coordinates"] = coords
-
-    # # easier to remove "coordinates" attribute from any variables than add it to all
-    # for var in ds.data_vars:
-    #     if "coordinates" in ds[var].encoding:
-    #         del ds[var].encoding["coordinates"]
-
-    #     # add attribute "coordinates" to all variables with at least 2 dimensions
-    #     # and the dimensions have to be the regular types (time, Z, Y, X)
-    #     for var in ds.data_vars:
-    #         if ds[var].ndim >= 2 and (len(set(ds[var].dims) - set([ds[var].cf[axes].name for axes in ds[var].cf.axes])) == 0):
-    #             coords = ['time', 'vertical', 'latitude', 'longitude']
-    #             var_names = [ds[var].cf[coord].name for coord in coords if coord in ds[var].cf.coords.keys()]
-    #             coord_str = " ".join(var_names)
-    #             ds[var].attrs["coordinates"] = coord_str
-
-    # Add standard_names for typical ROMS variables
-    # should this not overwrite standard name if it already exists?
-    var_map = {
-        "zeta": "sea_surface_elevation",
-        "salt": "sea_water_practical_salinity",
-        "temp": "sea_water_temperature",
-    }
-    for var_name, standard_name in var_map.items():
-        if var_name in ds.data_vars and "standard_name" not in ds[var_name].attrs:
-            ds[var_name].attrs["standard_name"] = standard_name
-
-    # Fix calendar if wrong
-    attrs = ds[ds.cf["T"].name].attrs
-    if ("calendar" in attrs) and (attrs["calendar"] == "gregorian_proleptic"):
-        attrs["calendar"] = "proleptic_gregorian"
-        ds[ds.cf["T"].name].attrs = attrs
-
-    return ds
-
-
-def preprocess_fvcom(ds):
-    """Preprocess FVCOM model output."""
-    return ds
-
-
-def preprocess_selfe(ds):
-    """Preprocess SELFE model output."""
-    return ds
-
-
-def preprocess_hycom(ds):
-    """Preprocess HYCOM model output for use with cf-xarray.
-
-    Also fixes any other known issues with model output.
+    Uses haversine for the metric because we are dealing with lon/lat coordinates.
 
     Parameters
     ----------
-    ds: xarray Dataset
+    lon_coords : xr.DataArray
+        Longitude coordinates of grid you are searching for nearest points on.
+    lat_coords : xr.DataArray
+        Latitude coordinates of grid you are searching for nearest points on.
+    lons_to_find : np.array
+        Longitudes of points you are searching for nearest grid points to.
+    lats_to_find : np.array
+        Latitudes of points you are searching for nearest grid points to.
+    k : int, optional
+        Number of nearest points to return, by default 3
 
     Returns
     -------
-    Same Dataset but with some metadata added and/or altered.
+    Tuple[np.array]
+        distances, (iys, ixs) 2D indices for coordinates
+
+    Notes
+    -----
+    Reference: https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.BallTree.html
     """
 
-    if "time" in ds:
-        ds["time"].attrs["axis"] = "T"
+    # create tree
+    coords = [lon_coords, lat_coords]
+    X = np.stack([np.ravel(c) for c in coords]).T
+    tree = BallTree(np.deg2rad(X), metric="haversine")
 
-    return ds
+    # set up coordinates we want to search for
+    coords_to_find = [lons_to_find, lats_to_find]
+    X_to_find = np.stack([np.ravel(c) for c in coords_to_find]).T
+
+    # query tree
+    distances, inds = tree.query(np.deg2rad(X_to_find), k=k)
+
+    # convert flat indies to 2D indices
+    iys, ixs = np.unravel_index(inds, lon_coords.shape)
+
+    return distances, (iys, ixs)
 
 
-def preprocess_pom(ds, interp_vertical: bool = True):
-    """Preprocess POM model output for use with cf-xarray.
-
-    Also fixes any other known issues with model output.
+def calc_barycentric(
+    x: np.array, y: np.array, xs: np.array, ys: np.array
+) -> xr.DataArray:
+    """Calculate barycentric weights for npts
 
     Parameters
     ----------
-    ds : xr.Dataset
-        A dataset containing data described from POM output.
+    x
+        npts x 1 vector of x locations, can be in lon or projection coordinates.
+    y
+        npts x 1 vector of y locations, can be in lat or projection coordinates.
+    xs
+        npts x 3 array of triangle x vertices with which to calculate the barycentric weights for each of npts
+    ys
+        npts x 3 array of triangle y vertices with which to calculate the barycentric weights for each of npts
 
     Returns
     -------
-    xr.Dataset
-        Same Dataset but with some metadata added and/or altered.
+    xr.DataArray
+        Lambda, npts x 3 containing for each of npts the 3 barycentric weights to use for interpolation.
     """
-    # The longitude and latitude variables are not recognized as valid coordinates
-    if "longitude" not in ds.cf.coords:
-        if "longitude" not in ds.cf.standard_names:
-            raise ValueError("No variable describing longitude is available.")
+    # barycentric weights
+    # npts x 1 (vectors)
+    L1 = (
+        (ys[:, 1] - ys[:, 2]) * (x[:] - xs[:, 2])
+        + (xs[:, 2] - xs[:, 1]) * (y[:] - ys[:, 2])
+    ) / (
+        (ys[:, 1] - ys[:, 2]) * (xs[:, 0] - xs[:, 2])
+        + (xs[:, 2] - xs[:, 1]) * (ys[:, 0] - ys[:, 2])
+    )
+    L2 = (
+        (ys[:, 2] - ys[:, 0]) * (x[:] - xs[:, 2])
+        + (xs[:, 0] - xs[:, 2]) * (y[:] - ys[:, 2])
+    ) / (
+        (ys[:, 1] - ys[:, 2]) * (xs[:, 0] - xs[:, 2])
+        + (xs[:, 2] - xs[:, 1]) * (ys[:, 0] - ys[:, 2])
+    )
+    L3 = 1 - L1 - L2
 
-        if "latitude" not in ds.cf.standard_names:
-            raise ValueError("No variable describing latitude is available.")
+    lam = xr.DataArray(dims=("npts", "triangle"), data=np.vstack((L1, L2, L3)).T)
 
-        ds = ds.cf.set_coords(["latitude", "longitude"])
-
-    # need to also make this a coordinate to add attributes
-    ds["nx"] = ("nx", np.arange(ds.sizes["nx"]), {"axis": "X"})
-    ds["ny"] = ("ny", np.arange(ds.sizes["ny"]), {"axis": "Y"})
-
-    # need to add coordinates to each data variable too
-    for var in ds.data_vars:
-        if ds[var].ndim == 3:
-            ds[var].encoding["coordinates"] = "time lat lon"
-        elif ds[var].ndim == 4:
-            ds[var].encoding["coordinates"] = "time depth lat lon"
-
-    if interp_vertical:
-        ds.cf.decode_vertical_coords(outnames={"sigma": "z"})
-
-        # fix attrs
-        for zname in ["z"]:  # name_dict.values():
-            if zname in ds:
-                ds[
-                    zname
-                ].attrs = (
-                    {}
-                )  # coord inherits from one of the vars going into calculation
-                ds[zname].attrs["positive"] = "up"
-                ds[zname].attrs["units"] = "m"
-                ds[zname] = order(ds[zname])
-
-    # keep sigma from showing up as "vertical" in cf-xarray
-    for sname in ["sigma"]:  # name_dict.values():
-        if sname in ds:
-            del ds[sname].attrs["positive"]
-
-    return ds
+    return lam
 
 
-def preprocess_rtofs(ds):
-    """Preprocess RTOFS model output."""
+def interp_with_barycentric(da, ixs, iys, lam):
+    vector = da.cf.isel(
+        X=xr.DataArray(ixs, dims=("npts", "triangle")),
+        Y=xr.DataArray(iys, dims=("npts", "triangle")),
+    )
+    with xr.set_options(keep_attrs=True):
+        da = xr.dot(vector, lam, dims=("triangle"))
 
-    raise NotImplementedError
+    # get z coordinates to go with interpolated output if not available
+    if "vertical" in vector.cf.coords:
+        zkey = vector.cf["vertical"].name
 
+        # only need to interpolate z coordinates if they are not 1D
+        if vector[zkey].ndim > 1:
+            da_vert = xr.dot(vector[zkey], lam, dims=("triangle"))
 
-def preprocess(ds, model_type=None, kwargs=None):
-    """A preprocess function for reading in with xarray.
+            # add vertical coords into da
+            da = da.assign_coords({zkey: da_vert})
 
-    This tries to address known model shortcomings in a generic way so that
-    `cf-xarray` will work generally, including decoding vertical coordinates.
-    """
+    # add "X" axis to npts
+    da["npts"] = ("npts", da.npts.values, {"axis": "X"})
 
-    kwargs = kwargs or {}
-
-    # This is an internal attribute used by netCDF which xarray doesn't know or care about, but can
-    # be returned from THREDDS.
-    if "_NCProperties" in ds.attrs:
-        del ds.attrs["_NCProperties"]
-
-    # Preprocess for all models: if cf-xarray has not identifed axes Z but has identified coordinate vertical
-    # and the vertical coordinate is 1D, add `axis="Z"` to its attributes so it will also be recognized as
-    # the Z axes.
-    if "vertical" in ds.cf.coordinates and "Z" not in ds.cf.axes:
-        if ds.cf["vertical"].ndim == 1 and len(ds.cf.coordinates["vertical"]) == 1:
-            key = ds.cf.coordinates["vertical"][0]
-            ds[key].attrs["axis"] = "Z"
-
-    preprocess_map = {
-        "ROMS": preprocess_roms,
-        "FVCOM": preprocess_fvcom,
-        "SELFE": preprocess_selfe,
-        "HYCOM": preprocess_hycom,
-        "POM": preprocess_pom,
-        "RTOFS": preprocess_rtofs,
-    }
-
-    if model_type is None:
-        model_type = guess_model_type(ds)
-
-    if model_type in preprocess_map:
-        return preprocess_map[model_type](ds, **kwargs)
-
-    return ds
+    return da, vector.coords
 
 
 def guess_model_type(ds: xr.Dataset) -> Optional[ModelType]:
