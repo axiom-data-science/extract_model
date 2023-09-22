@@ -1,6 +1,10 @@
 :mod:`What's New`
 -----------------
 
+v1.2.1 (September 22, 2023)
+===========================
+* ROMS preprocessing checks for 3D instead of just 4D data variables now to update their coordinates to work better with cf-xarray. Also coordinates could say "x_rho" and "y_rho" instead of longitudes and latitudes in which case they are changed to say the coordinates
+
 v1.2.0 (September 13, 2023)
 ===========================
 * Improvements to interpolation
