@@ -63,6 +63,24 @@ def preprocess_roms(
     for dim in dims:
         ds[dim] = (dim, np.arange(ds.sizes[dim]), {"axis": "Y"})
 
+    # add attributes for lon/lat
+    lon_attrs = {
+        "standard_name": "longitude",
+        "units": "degree_east",
+        "field": "longitude",
+    }
+    lat_attrs = {
+        "standard_name": "latitude",
+        "units": "degree_north",
+        "field": "latitude",
+    }
+    coords = [coord for coord in ds.coords if coord.startswith("lon_")]
+    for coord in coords:
+        ds[coord].attrs = lon_attrs
+    coords = [coord for coord in ds.coords if coord.startswith("lat_")]
+    for coord in coords:
+        ds[coord].attrs = lat_attrs
+
     # Fix standard_name for s_rho/s_w
     if "Vtransform" in ds.data_vars and "s_rho" in ds.coords:
         cond1 = (
@@ -177,17 +195,60 @@ def preprocess_roms(
             ds[zname] = order(ds[zname])
 
     # replace s_rho with z_rho, etc, to make z_rho the vertical coord
-    for sname, zname in name_dict.items():
-        for var in ds.data_vars:
-            if ds[var].ndim == 4:
-                if "coordinates" in ds[var].encoding:
-                    coords = ds[var].encoding["coordinates"]
+    for var in ds.data_vars:
+        if ds[var].ndim >= 3:
+            if "coordinates" in ds[var].encoding:
+                coords = ds[var].encoding["coordinates"]
+                # update s's to z's
+                for sname, zname in name_dict.items():
                     if sname in coords:  # replace if present
                         coords = coords.replace(sname, zname)
                     else:  # still add z_rho or z_w
                         if zname in ds[var].coords and ds[zname].shape == ds[var].shape:
                             coords += f" {zname}"
-                    ds[var].encoding["coordinates"] = coords
+                # could have "x_rho" instead of "lon_rho", etc
+                if "x_" in coords:
+                    xcoord = [element for element in coords.split() if "x_" in element][
+                        0
+                    ]
+                    coords = coords.replace(xcoord, xcoord.replace("x", "lon"))
+                # could have "x_rho" instead of "lon_rho", etc
+                if "y_" in coords:
+                    ycoord = [element for element in coords.split() if "y_" in element][
+                        0
+                    ]
+                    coords = coords.replace(ycoord, ycoord.replace("y", "lat"))
+                ds[var].encoding["coordinates"] = coords
+            # same but coordinates not inside encoding. Do same processing
+            # but also move coordinates from attrs to encoding.
+            elif "coordinates" in ds[var].attrs:
+                coords_here = ds[var].attrs["coordinates"]
+                # update s's to z's
+                for sname, zname in name_dict.items():
+                    if sname in coords_here:  # replace if present
+                        coords_here = coords_here.replace(sname, zname)
+                    else:  # still add z_rho or z_w
+                        if zname in ds[var].coords and ds[zname].shape == ds[var].shape:
+                            coords_here += f" {zname}"
+                # could have "x_rho" instead of "lon_rho", etc
+                if "x_" in coords_here:
+                    xcoord = [
+                        element for element in coords_here.split() if "x_" in element
+                    ][0]
+                    coords_here = coords_here.replace(
+                        xcoord, xcoord.replace("x", "lon")
+                    )
+                # could have "x_rho" instead of "lon_rho", etc
+                if "y_" in coords_here:
+                    ycoord = [
+                        element for element in coords_here.split() if "y_" in element
+                    ][0]
+                    coords_here = coords_here.replace(
+                        ycoord, ycoord.replace("y", "lat")
+                    )
+                # move coords to encoding and delete from attrs
+                ds[var].encoding["coordinates"] = coords_here
+                del ds[var].attrs["coordinates"]
 
     # # easier to remove "coordinates" attribute from any variables than add it to all
     # for var in ds.data_vars:
