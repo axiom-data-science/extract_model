@@ -14,10 +14,13 @@ from .utils import guess_model_type, order
 def preprocess_roms(
     ds,
     grid=None,
+    find_depth_coords: bool = False,
 ):
     """Preprocess ROMS model output for use with cf-xarray.
 
     Also fixes any other known issues with model output.
+
+    Later switch this to use xroms directly.
 
     Parameters
     ----------
@@ -25,22 +28,26 @@ def preprocess_roms(
 
     grid: optional
         Input xgcm grid to have logic run to make Dataset lazily aware of 4D z_rho and z_w coords on u, v, and psi grids.
+    find_depth_coords : bool
+        If True, set up for using xgcm with Grid object and set up depth coordinate arrays, as well as associated metrics.
 
     Returns
     -------
     Same Dataset but with some metadata added and/or altered.
     """
 
-    rename = {}
-    if "eta_u" in ds.dims:
-        rename["eta_u"] = "eta_rho"
-    if "xi_v" in ds.dims:
-        rename["xi_v"] = "xi_rho"
-    if "xi_psi" in ds.dims:
-        rename["xi_psi"] = "xi_u"
-    if "eta_psi" in ds.dims:
-        rename["eta_psi"] = "eta_v"
-    ds = ds.rename(rename)
+    if find_depth_coords:
+
+        rename = {}
+        if "eta_u" in ds.dims:
+            rename["eta_u"] = "eta_rho"
+        if "xi_v" in ds.dims:
+            rename["xi_v"] = "xi_rho"
+        if "xi_psi" in ds.dims:
+            rename["xi_psi"] = "xi_u"
+        if "eta_psi" in ds.dims:
+            rename["eta_psi"] = "eta_v"
+        ds = ds.rename(rename)
 
     # add axes attributes for dimensions
     dims = [dim for dim in ds.dims if dim.startswith("s_")]
@@ -109,103 +116,140 @@ def preprocess_roms(
         elif cond2:
             ds["s_w"].attrs["standard_name"] = "ocean_s_coordinate_g2"
 
-    # create vertical coordinates z_rho and z_w
-    name_dict = {}
-    if "s_rho" in ds.dims:
-        name_dict["s_rho"] = "z_rho"
-        if "positive" in ds.s_rho.attrs:
-            ds.s_rho.attrs.pop("positive")
-    if "s_w" in ds.dims:
-        name_dict["s_w"] = "z_w"
-        if "positive" in ds.s_w.attrs:
-            ds.s_w.attrs.pop("positive")
-    ds.cf.decode_vertical_coords(outnames=name_dict)
+    if find_depth_coords:
+        # create vertical coordinates z_rho and z_w
+        name_dict = {}
+        if "s_rho" in ds.dims:
+            name_dict["s_rho"] = "z_rho"
+            if "positive" in ds.s_rho.attrs:
+                ds.s_rho.attrs.pop("positive")
+        if "s_w" in ds.dims:
+            name_dict["s_w"] = "z_w"
+            if "positive" in ds.s_w.attrs:
+                ds.s_w.attrs.pop("positive")
+        ds.cf.decode_vertical_coords(outnames=name_dict)
 
-    # expand Z coordinates to u and v grids
-    if grid is not None:
-        # necessary for interpolating u and v to depths
-        # ds.coords["z_w"] = order(ds["z_w"])
-        # ds.coords["z_w_u"] = grid.interp(ds.z_w.chunk({ds.z_w.cf["X"].name: -1}), "X")
-        # ds.coords["z_w_u"].attrs = {
-        #     "long_name": "depth of U-points on vertical W grid",
-        #     "time": "ocean_time",
-        #     "field": "z_w_u, scalar, series",
-        #     "units": "m",
-        # }
-        # ds.coords["z_w_v"] = grid.interp(ds.z_w.chunk({ds.z_w.cf["Y"].name: -1}), "Y")
-        # ds.coords["z_w_v"].attrs = {
-        #     "long_name": "depth of V-points on vertical W grid",
-        #     "time": "ocean_time",
-        #     "field": "z_w_v, scalar, series",
-        #     "units": "m",
-        # }
-        # ds.coords["z_w_psi"] = grid.interp(ds.z_w_u.chunk({ds.z_w_u.cf["Y"].name: -1}), "Y")
-        # ds.coords["z_w_psi"].attrs = {
-        #     "long_name": "depth of PSI-points on vertical W grid",
-        #     "time": "ocean_time",
-        #     "field": "z_w_psi, scalar, series",
-        #     "units": "m",
-        # }
+        # expand Z coordinates to u and v grids
+        if grid is not None:
+            # necessary for interpolating u and v to depths
+            # ds.coords["z_w"] = order(ds["z_w"])
+            # ds.coords["z_w_u"] = grid.interp(ds.z_w.chunk({ds.z_w.cf["X"].name: -1}), "X")
+            # ds.coords["z_w_u"].attrs = {
+            #     "long_name": "depth of U-points on vertical W grid",
+            #     "time": "ocean_time",
+            #     "field": "z_w_u, scalar, series",
+            #     "units": "m",
+            # }
+            # ds.coords["z_w_v"] = grid.interp(ds.z_w.chunk({ds.z_w.cf["Y"].name: -1}), "Y")
+            # ds.coords["z_w_v"].attrs = {
+            #     "long_name": "depth of V-points on vertical W grid",
+            #     "time": "ocean_time",
+            #     "field": "z_w_v, scalar, series",
+            #     "units": "m",
+            # }
+            # ds.coords["z_w_psi"] = grid.interp(ds.z_w_u.chunk({ds.z_w_u.cf["Y"].name: -1}), "Y")
+            # ds.coords["z_w_psi"].attrs = {
+            #     "long_name": "depth of PSI-points on vertical W grid",
+            #     "time": "ocean_time",
+            #     "field": "z_w_psi, scalar, series",
+            #     "units": "m",
+            # }
 
-        ds.coords["z_rho"] = order(ds["z_rho"])
-        ds.coords["z_rho_u"] = grid.interp(
-            ds.z_rho.chunk({ds.z_rho.cf["X"].name: -1}), "X"
-        )
-        ds.coords["z_rho_u"].attrs = {
-            "long_name": "depth of U-points on vertical RHO grid",
-            "time": "ocean_time",
-            "field": "z_rho_u, scalar, series",
-            "units": "m",
-        }
+            ds.coords["z_rho"] = order(ds["z_rho"])
+            ds.coords["z_rho_u"] = grid.interp(
+                ds.z_rho.chunk({ds.z_rho.cf["X"].name: -1}), "X"
+            )
+            ds.coords["z_rho_u"].attrs = {
+                "long_name": "depth of U-points on vertical RHO grid",
+                "time": "ocean_time",
+                "field": "z_rho_u, scalar, series",
+                "units": "m",
+            }
 
-        ds.coords["z_rho_v"] = grid.interp(
-            ds.z_rho.chunk({ds.z_rho.cf["Y"].name: -1}), "Y"
-        )
-        ds.coords["z_rho_v"].attrs = {
-            "long_name": "depth of V-points on vertical RHO grid",
-            "time": "ocean_time",
-            "field": "z_rho_v, scalar, series",
-            "units": "m",
-        }
+            ds.coords["z_rho_v"] = grid.interp(
+                ds.z_rho.chunk({ds.z_rho.cf["Y"].name: -1}), "Y"
+            )
+            ds.coords["z_rho_v"].attrs = {
+                "long_name": "depth of V-points on vertical RHO grid",
+                "time": "ocean_time",
+                "field": "z_rho_v, scalar, series",
+                "units": "m",
+            }
 
-        ds.coords["z_rho_psi"] = grid.interp(
-            ds.z_rho_u.chunk({ds.z_rho_u.cf["Y"].name: -1}), "Y"
-        )
-        ds.coords["z_rho_psi"].attrs = {
-            "long_name": "depth of PSI-points on vertical RHO grid",
-            "time": "ocean_time",
-            "field": "z_rho_psi, scalar, series",
-            "units": "m",
-        }
+            ds.coords["z_rho_psi"] = grid.interp(
+                ds.z_rho_u.chunk({ds.z_rho_u.cf["Y"].name: -1}), "Y"
+            )
+            ds.coords["z_rho_psi"].attrs = {
+                "long_name": "depth of PSI-points on vertical RHO grid",
+                "time": "ocean_time",
+                "field": "z_rho_psi, scalar, series",
+                "units": "m",
+            }
 
-        # will use this to update coordinate encoding
-        name_dict.update(
-            {"filler1": "z_rho_u", "filler2": "z_rho_v", "filler3": "z_rho_psi"}
-        )  # , "None": "z_w_u", "None": "z_w_v", "None": "z_w_psi"})
+            # will use this to update coordinate encoding
+            name_dict.update(
+                {"filler1": "z_rho_u", "filler2": "z_rho_v", "filler3": "z_rho_psi"}
+            )  # , "None": "z_w_u", "None": "z_w_v", "None": "z_w_psi"})
 
-    # fix attrs
-    # for zname in ["z_rho", "z_w"]:
-    for zname in [var for var in ds.coords if "z_rho" in var or "z_w" in var]:
-        if zname in ds:
-            ds[
-                zname
-            ].attrs = {}  # coord inherits from one of the vars going into calculation
-            ds[zname].attrs["positive"] = "up"
-            ds[zname].attrs["units"] = "m"
-            ds[zname] = order(ds[zname])
+        # fix attrs
+        # for zname in ["z_rho", "z_w"]:
+        for zname in [var for var in ds.coords if "z_rho" in var or "z_w" in var]:
+            if zname in ds:
+                ds[
+                    zname
+                ].attrs = (
+                    {}
+                )  # coord inherits from one of the vars going into calculation
+                ds[zname].attrs["positive"] = "up"
+                ds[zname].attrs["units"] = "m"
+                ds[zname] = order(ds[zname])
 
-    # replace s_rho with z_rho, etc, to make z_rho the vertical coord
+        # replace s_rho with z_rho, etc, to make z_rho the vertical coord
+        for var in ds.data_vars:
+            if ds[var].ndim >= 4:
+                if "coordinates" in ds[var].encoding:
+                    coords = ds[var].encoding["coordinates"]
+                    # update s's to z's
+                    for sname, zname in name_dict.items():
+                        if sname in coords:  # replace if present
+                            coords = coords.replace(sname, zname)
+                        else:  # still add z_rho or z_w
+                            if (
+                                zname in ds[var].coords
+                                and ds[zname].shape == ds[var].shape
+                            ):
+                                coords += f" {zname}"
+                    ds[var].encoding["coordinates"] = coords
+                # same but coordinates not inside encoding. Do same processing
+                # but also move coordinates from attrs to encoding.
+                elif "coordinates" in ds[var].attrs:
+                    coords_here = ds[var].attrs["coordinates"]
+                    # update s's to z's
+                    for sname, zname in name_dict.items():
+                        if sname in coords_here:  # replace if present
+                            coords_here = coords_here.replace(sname, zname)
+                        else:  # still add z_rho or z_w
+                            if (
+                                zname in ds[var].coords
+                                and ds[zname].shape == ds[var].shape
+                            ):
+                                coords_here += f" {zname}"
+                    # move coords to encoding and delete from attrs
+                    ds[var].encoding["coordinates"] = coords_here
+                    del ds[var].attrs["coordinates"]
+
+        if "s_rho" in ds.dims:
+            if "positive" in ds.s_rho.attrs:
+                ds.s_rho.attrs.pop("positive")
+        if "s_w" in ds.dims:
+            if "positive" in ds.s_w.attrs:
+                ds.s_w.attrs.pop("positive")
+
+    # could have "x_rho" instead of "lon_rho", etc
     for var in ds.data_vars:
         if ds[var].ndim >= 3:
             if "coordinates" in ds[var].encoding:
                 coords = ds[var].encoding["coordinates"]
-                # update s's to z's
-                for sname, zname in name_dict.items():
-                    if sname in coords:  # replace if present
-                        coords = coords.replace(sname, zname)
-                    else:  # still add z_rho or z_w
-                        if zname in ds[var].coords and ds[zname].shape == ds[var].shape:
-                            coords += f" {zname}"
                 # could have "x_rho" instead of "lon_rho", etc
                 if "x_" in coords:
                     xcoord = [element for element in coords.split() if "x_" in element][
@@ -223,13 +267,6 @@ def preprocess_roms(
             # but also move coordinates from attrs to encoding.
             elif "coordinates" in ds[var].attrs:
                 coords_here = ds[var].attrs["coordinates"]
-                # update s's to z's
-                for sname, zname in name_dict.items():
-                    if sname in coords_here:  # replace if present
-                        coords_here = coords_here.replace(sname, zname)
-                    else:  # still add z_rho or z_w
-                        if zname in ds[var].coords and ds[zname].shape == ds[var].shape:
-                            coords_here += f" {zname}"
                 # could have "x_rho" instead of "lon_rho", etc
                 if "x_" in coords_here:
                     xcoord = [
@@ -280,13 +317,6 @@ def preprocess_roms(
     if ("calendar" in attrs) and (attrs["calendar"] == "gregorian_proleptic"):
         attrs["calendar"] = "proleptic_gregorian"
         ds[ds.cf["T"].name].attrs = attrs
-
-    if "s_rho" in ds.dims:
-        if "positive" in ds.s_rho.attrs:
-            ds.s_rho.attrs.pop("positive")
-    if "s_w" in ds.dims:
-        if "positive" in ds.s_w.attrs:
-            ds.s_w.attrs.pop("positive")
 
     return ds
 
