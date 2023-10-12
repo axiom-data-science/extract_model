@@ -1,7 +1,12 @@
 :mod:`What's New`
 -----------------
 
-v1.2.2 (October 4, 2023)
+v1.3.0 (October 11, 2023)
+=========================
+* Incorporated `locstreamT` and `locstreamZ` to standardize the options available to user in `em.select()`.
+* added more tests by featuretype to cover more area
+
+v1.2.2 (October 5, 2023)
 ========================
 * Improved the processing of ROMS model output
 

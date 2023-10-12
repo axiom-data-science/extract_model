@@ -12,6 +12,7 @@ dependencies:
   - scikit-learn  # used by xoak for tree
   - xarray
   - xoak
+  - xroms
   - pytest
   - pytest-benchmark
   - pip:

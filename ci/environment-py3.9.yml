@@ -13,6 +13,7 @@ dependencies:
   - xarray
   - xesmf
   - xoak
+  - xroms
   - pytest
   - pytest-benchmark
   - pip:

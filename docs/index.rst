@@ -24,6 +24,7 @@ To install from PyPI:
    :hidden:
    :caption: Examples and demos
 
+   featuretypes.md
    models.ipynb
    unstructured_subsetting.ipynb
    ts_work.ipynb
