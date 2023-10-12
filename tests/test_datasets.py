@@ -452,20 +452,21 @@ def test_grid():
 
     if em.extract_model.XESMF_AVAILABLE:
         dsactual, out_kwargs = em.select(ds[key_variable], **select_kwargs)
-    else:
-        with pytest.raises(ModuleNotFoundError):
-            dsactual, out_kwargs = em.select(ds[key_variable], **select_kwargs)
 
     if hasattr(dsactual, "chunks"):
         dsactual = dsactual.load()
 
-    expname = f"tests/test_results/{featuretype}_{key_variable}_horinterp_{horizontal_interp_code}.nc"
-    # # previously saved with:
-    # dsactual.to_netcdf(expname)
-    dsexpected = xr.open_dataset(expname)
-    dsexpected = dsexpected.assign_coords(
-        {"s_rho": dsexpected["s_rho"], "ocean_time": dsexpected["ocean_time"]}
-    )[key_variable]
-    # this isn't working in CI so changing to array comparison
-    # assert dsexpected.equals(dsactual.astype(dsexpected.dtype))
-    assert np.allclose(dsexpected.values, dsactual.values)
+        expname = f"tests/test_results/{featuretype}_{key_variable}_horinterp_{horizontal_interp_code}.nc"
+        # # previously saved with:
+        # dsactual.to_netcdf(expname)
+        dsexpected = xr.open_dataset(expname)
+        dsexpected = dsexpected.assign_coords(
+            {"s_rho": dsexpected["s_rho"], "ocean_time": dsexpected["ocean_time"]}
+        )[key_variable]
+        # this isn't working in CI so changing to array comparison
+        # assert dsexpected.equals(dsactual.astype(dsexpected.dtype))
+        assert np.allclose(dsexpected.values, dsactual.values)
+
+    else:
+        with pytest.raises(ModuleNotFoundError):
+            dsactual, out_kwargs = em.select(ds[key_variable], **select_kwargs)
