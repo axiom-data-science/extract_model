@@ -12,10 +12,11 @@ dependencies:
   - scikit-learn  # used by xoak for tree
   - xarray
   - xoak
-  - xroms
+  # - xroms
   - pytest
   - pytest-benchmark
   - pip:
+    - xroms >=0.5.3
     - codecov
     - pytest-cov
     - coverage[toml]

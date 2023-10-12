@@ -121,7 +121,7 @@ def test_sub_bbox(model):
         & (ds.cf["longitude"] < bbox[2])
         & (bbox[1] < ds.cf["latitude"])
         & (ds.cf["latitude"] < bbox[3])
-    )
+    ).load()
     da_compare = da.where(box, drop=True)
     ds_compare = ds.where(box, drop=True)
 
