@@ -6,6 +6,7 @@ from unittest import TestCase
 
 import numpy as np
 import pandas as pd
+import pytest
 import xarray as xr
 import xroms
 
@@ -449,7 +450,12 @@ def test_grid():
         return_info=True,
     )
 
-    dsactual, out_kwargs = em.select(ds[key_variable], **select_kwargs)
+    if em.extract_model.XESMF_AVAILABLE:
+        dsactual, out_kwargs = em.select(ds[key_variable], **select_kwargs)
+    else:
+        with pytest.raises(ValueError):
+            dsactual, out_kwargs = em.select(ds[key_variable], **select_kwargs)
+
     if hasattr(dsactual, "chunks"):
         dsactual = dsactual.load()
 
