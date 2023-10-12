@@ -54,8 +54,6 @@ def make_test_datasets():
         }
     )
     dds["profile"] = df
-    
-    
 
     ## surface drifter ##
     example_loc1 = ds.sel(eta_rho=20, xi_rho=10).isel(s_rho=-1)
@@ -69,9 +67,7 @@ def make_test_datasets():
     )
     npts = len(times)
 
-    lons = np.linspace(
-        float(example_loc1.lon_rho), float(example_loc2.lon_rho), npts
-    )
+    lons = np.linspace(float(example_loc1.lon_rho), float(example_loc2.lon_rho), npts)
     lats = [float(example_loc1.lat_rho)] * npts
     depths = [0] * npts
 
@@ -94,7 +90,6 @@ def make_test_datasets():
     df["temperature"] = temp
     df["salinity"] = salt
     dds["trajectory"] = df
-
 
     ## CTD transect ##
     example_loc1 = ds.sel(eta_rho=20, xi_rho=10)
@@ -213,8 +208,6 @@ def make_test_datasets():
     dsd["temp"] = (("date_time", "depths"), temp.T)
     dsd["salt"] = (("date_time", "depths"), salt.T)
     dds["timeSeriesProfile"] = dsd
-
-
 
     # HF Radar
     example_area = ds.sel(eta_rho=slice(20, 25), xi_rho=slice(10, 15)).isel(
