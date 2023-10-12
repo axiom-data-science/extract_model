@@ -453,8 +453,8 @@ def test_grid():
     if em.extract_model.XESMF_AVAILABLE:
         dsactual, out_kwargs = em.select(ds[key_variable], **select_kwargs)
 
-    if hasattr(dsactual, "chunks"):
-        dsactual = dsactual.load()
+        if hasattr(dsactual, "chunks"):
+            dsactual = dsactual.load()
 
         expname = f"tests/test_results/{featuretype}_{key_variable}_horinterp_{horizontal_interp_code}.nc"
         # # previously saved with:
