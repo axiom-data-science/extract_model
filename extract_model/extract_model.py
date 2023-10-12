@@ -81,9 +81,24 @@ def interp_multi_dim(
         ignore_degenerate=True,
         weights=weights,
     )
-
     # do regridding
     da_int = regridder(da, keep_attrs=True)
+    # fill in coords
+    if "longitude" in da_out.cf and "longitude" not in da_int.cf:
+        if da_out.cf["longitude"].ndim == 1:
+            da_int = da_int.assign_coords(
+                {
+                    da_out.cf["longitude"].name: da_out.cf["longitude"],
+                    da_out.cf["latitude"].name: da_out.cf["latitude"],
+                }
+            )
+        elif da_out.cf["longitude"].ndim == 2:
+            da_int[da_out.cf["longitude"].name] = regridder(
+                da.cf["longitude"], keep_attrs=True
+            )
+            da_int[da_out.cf["latitude"].name] = regridder(
+                da.cf["latitude"], keep_attrs=True
+            )
     if weights is None:
         weights = regridder.weights
 
@@ -171,6 +186,8 @@ def make_output_ds(longitude, latitude, locstream=False):
                 ),
             }
         )
+        ds_out["X"].attrs["axis"] = "X"
+        ds_out["Y"].attrs["axis"] = "Y"
     else:
         raise IndexError(f"{latitude.ndim}D latitude/longitude arrays not supported.")
 
@@ -196,6 +213,9 @@ def select(
     vertical_interp: bool = False,
     xgcm_grid=None,
     locstream=False,
+    locstreamT=False,
+    locstreamZ=False,
+    new_dim="npts",
     weights=None,
     make_time_series=False,
     return_info: bool = False,
@@ -260,6 +280,12 @@ def select(
 
         * False: 2D array of points with 1 dimension the lons and the other dimension the lats.
         * True: lons/lats as unstructured coordinate pairs (in xESMF language, LocStream).
+    locstreamT: boolean, optional
+        If False, interpolate in time dimension independently of horizontal points. If True, use advanced indexing/interpolation in xarray to interpolate times to each horizontal locstream point. If this is True, locstream must be True.
+    locstreamZ: boolean, optional
+        If False, interpolate in depth dimension independently of horizontal points. If True, use advanced indexing after depth interpolation select depths to match each horizontal locstream point. If this is True, locstream must be True and locstreamT must be True.
+    new_dim : str
+        This is the name of the new dimension created if we are interpolating to a new set of points that are not a grid.
     weights: xESMF netCDF file path, DataArray, optional
         If a weights file or array exists you can pass it as an argument here and it will
         be re-used.
@@ -334,6 +360,15 @@ def select(
                 "Use extrap=True to extrapolate."
             )
 
+    if locstreamT:
+        if not locstream:
+            raise ValueError("if `locstreamT` is True, `locstream` must also be True.")
+    if locstreamZ:
+        if not locstream or not locstreamT:
+            raise ValueError(
+                "if `locstreamZ` is True, `locstream` and `locstreamT` must also be True."
+            )
+
     # Perform interpolation
     if horizontal_interp:
 
@@ -404,9 +439,15 @@ def select(
                 xs, ys = proj(xs, ys)
                 x, y = proj(longitude, latitude)
 
-            lam = calc_barycentric(x, y, xs, ys)
+            # import pdb; pdb.set_trace()
+            # lam = calc_barycentric(x, y, xs.reshape((10,9,3)), ys.reshape((10,9,3)))
+            lam = calc_barycentric(x.flatten(), y.flatten(), xs, ys)
+            # lam = calc_barycentric(x, y, xs, ys)
             # interp_coords are the coords and indices that went into the interpolation
             da, interp_coords = interp_with_barycentric(da, ixs, iys, lam)
+            # import pdb; pdb.set_trace()
+            # if not locstream:
+            #     FIGURE OUT HOW TO RECONSTITUTE INTO GRID HERE
             kwargs_out["interp_coords"] = interp_coords
 
         elif horizontal_interp_code == "tree":
@@ -508,7 +549,7 @@ def select(
             )
 
         end_time = time()
-        print("time: ", start_time - end_time)
+        print("time: ", end_time - start_time)
     # nearest neighbor instead
     elif not horizontal_interp and longitude is not None and latitude is not None:
         da, k_out = da.em.sel2dcf(
@@ -529,7 +570,12 @@ def select(
 
     elif T is not None:
         with xr.set_options(keep_attrs=True):
-            da = da.cf.interp(T=T)
+            if locstreamT:
+                Tindexer = xr.DataArray(T, dims="npts", attrs=da.cf["T"].attrs)
+                da = da.cf.interp(T=Tindexer)
+                da = da.swap_dims({"npts": da.cf["T"].name})
+            else:
+                da = da.cf.interp(T=T)
 
     # Time and depth interpolation or iselection #
     if iZ is not None:
@@ -618,7 +664,7 @@ def select(
 
     # advanced indexing to select all assuming coherent time series
     # make sure len of each dimension matches
-    if make_time_series:
+    if locstreamZ:
 
         dims_to_index = [da.cf["T"].name]
         ntimes = len(da.cf["T"])

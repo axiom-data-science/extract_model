@@ -2,7 +2,7 @@ name: test-env-win
 channels:
   - conda-forge
 dependencies:
-  - python=3.8
+  - python=3.11
   - cf_xarray>=0.6
   - dask
   - netcdf4
@@ -12,9 +12,11 @@ dependencies:
   - scikit-learn  # used by xoak for tree
   - xarray
   - xoak
+  # - xroms
   - pytest
   - pytest-benchmark
   - pip:
+    - xroms >=0.5.3
     - codecov
     - pytest-cov
     - coverage[toml]

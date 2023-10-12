@@ -9,58 +9,80 @@ jobs:
       fail-fast: false
       matrix:
         os: ["macos-latest", "ubuntu-latest", "windows-latest"]
-        python-version: ["3.8", "3.9", "3.10"]
+        python-version: ["3.9", "3.10", "3.11"]
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Cache Linux/macOS (x86) Conda environment
-        if: ${{ runner.os != 'Windows' }}
-        uses: actions/cache@v3
-        env:
-          # Increase this value to reset cache if ci/environment.yml has not changed
-          CACHE_NUMBER: 0
-        with:
-          path: ~/conda_pkgs_dir
-          key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('ci/environment-py${{ matrix.python-version }}.yml') }}
+      # - name: Cache Linux/macOS (x86) Conda environment
+      #   if: ${{ runner.os != 'Windows' }}
+      #   uses: actions/cache@v3
+      #   env:
+      #     # Increase this value to reset cache if ci/environment.yml has not changed
+      #     CACHE_NUMBER: 0
+      #   with:
+      #     path: ~/conda_pkgs_dir
+      #     key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('ci/environment-py${{ matrix.python-version }}.yml') }}
 
-      - name: Cache Windows Conda environment
-        if: ${{ runner.os == 'Windows' }}
-        uses: actions/cache@v3
-        env:
-          # Increase this value to reset cache if ci/environment.yml has not changed
-          CACHE_NUMBER: 0
-        with:
-          path: ~/conda_pkgs_dir
-          key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('ci/environment-py${{ matrix.python-version }}-win.yml') }}
+      # - name: Cache Windows Conda environment
+      #   if: ${{ runner.os == 'Windows' }}
+      #   uses: actions/cache@v3
+      #   env:
+      #     # Increase this value to reset cache if ci/environment.yml has not changed
+      #     CACHE_NUMBER: 0
+      #   with:
+      #     path: ~/conda_pkgs_dir
+      #     key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('ci/environment-py${{ matrix.python-version }}-win.yml') }}
 
-      - name: Build and activate Linux/macOS Conda environment
+      - name: Setup Linux/macOS Micromamba Python ${{ matrix.python-version }}
         if: ${{ runner.os != 'Windows' }}
-        uses: conda-incubator/setup-miniconda@v2
+        uses: mamba-org/setup-micromamba@v1
         with:
-          miniforge-variant: Mambaforge
-          python-version: ${{ matrix.python-version }}
-          channels: conda-forge, defaults # These need to be specified to use mamba
-          channel-priority: true
+          init-shell: bash
+          create-args: >-
+            python=${{ matrix.python-version }} --channel conda-forge
           environment-file: ci/environment-py${{ matrix.python-version }}.yml
+          cache-environment: true
+          post-cleanup: 'all'
 
-          activate-environment: test-env-mac-unix
-          use-only-tar-bz2: true # IMPORTANT: This needs to be set for caching to work properly!
-
-      - name: Build and activate Windows Conda environment
+      - name: Setup Windows Micromamba Python ${{ matrix.python-version }}
         if: ${{ runner.os == 'Windows' }}
-        uses: conda-incubator/setup-miniconda@v2
+        uses: mamba-org/setup-micromamba@v1
         with:
-          miniforge-variant: Mambaforge
-          python-version: ${{ matrix.python-version }}
-          channels: conda-forge, defaults # These need to be specified to use mamba
-          channel-priority: true
+          init-shell: bash
+          create-args: >-
+            python=${{ matrix.python-version }} --channel conda-forge
           environment-file: ci/environment-py${{ matrix.python-version }}-win.yml
+          cache-environment: true
+          post-cleanup: 'all'
 
-          activate-environment: test-env-win
-          use-only-tar-bz2: true # IMPORTANT: This needs to be set for caching to work properly!
+      # - name: Build and activate Linux/macOS Conda environment
+      #   if: ${{ runner.os != 'Windows' }}
+      #   uses: conda-incubator/setup-miniconda@v2
+      #   with:
+      #     miniforge-variant: Mambaforge
+      #     python-version: ${{ matrix.python-version }}
+      #     channels: conda-forge, defaults # These need to be specified to use mamba
+      #     channel-priority: true
+      #     environment-file: ci/environment-py${{ matrix.python-version }}.yml
+
+      #     activate-environment: test-env-mac-unix
+      #     use-only-tar-bz2: true # IMPORTANT: This needs to be set for caching to work properly!
+
+      # - name: Build and activate Windows Conda environment
+      #   if: ${{ runner.os == 'Windows' }}
+      #   uses: conda-incubator/setup-miniconda@v2
+      #   with:
+      #     miniforge-variant: Mambaforge
+      #     python-version: ${{ matrix.python-version }}
+      #     channels: conda-forge, defaults # These need to be specified to use mamba
+      #     channel-priority: true
+      #     environment-file: ci/environment-py${{ matrix.python-version }}-win.yml
+
+      #     activate-environment: test-env-win
+      #     use-only-tar-bz2: true # IMPORTANT: This needs to be set for caching to work properly!
 
       - name: Install package in environment
         shell: bash -l {0}
