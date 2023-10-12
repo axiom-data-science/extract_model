@@ -453,7 +453,7 @@ def test_grid():
     if em.extract_model.XESMF_AVAILABLE:
         dsactual, out_kwargs = em.select(ds[key_variable], **select_kwargs)
     else:
-        with pytest.raises(ValueError):
+        with pytest.raises(ModuleNotFoundError):
             dsactual, out_kwargs = em.select(ds[key_variable], **select_kwargs)
 
     if hasattr(dsactual, "chunks"):
