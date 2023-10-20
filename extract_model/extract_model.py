@@ -174,6 +174,8 @@ def make_output_ds(longitude, latitude, locstream=False):
     elif latitude.ndim == 2:
         ds_out = xr.Dataset(
             {
+                "X": ("X", np.arange(longitude.shape[1]), {"axis": "X"}),
+                "Y": ("Y", np.arange(longitude.shape[0]), {"axis": "Y"}),
                 "lat": (
                     ["Y", "X"],
                     latitude,
@@ -186,8 +188,6 @@ def make_output_ds(longitude, latitude, locstream=False):
                 ),
             }
         )
-        ds_out["X"].attrs["axis"] = "X"
-        ds_out["Y"].attrs["axis"] = "Y"
     else:
         raise IndexError(f"{latitude.ndim}D latitude/longitude arrays not supported.")
 
@@ -392,7 +392,7 @@ def select(
                 weights=weights,
             )
             kwargs_out["weights"] = weights
-
+            kwargs_out["interp_coords"] = {}
         elif horizontal_interp_code == "delaunay":
 
             # This might be faster for interpolation between a few points and many points
