@@ -174,6 +174,8 @@ def make_output_ds(longitude, latitude, locstream=False):
     elif latitude.ndim == 2:
         ds_out = xr.Dataset(
             {
+                "X": ("X", np.arange(longitude.shape[1]), {"axis": "X"}),
+                "Y": ("Y", np.arange(longitude.shape[0]), {"axis": "Y"}),
                 "lat": (
                     ["Y", "X"],
                     latitude,
@@ -186,8 +188,6 @@ def make_output_ds(longitude, latitude, locstream=False):
                 ),
             }
         )
-        ds_out["X"].attrs["axis"] = "X"
-        ds_out["Y"].attrs["axis"] = "Y"
     else:
         raise IndexError(f"{latitude.ndim}D latitude/longitude arrays not supported.")
 
@@ -392,7 +392,11 @@ def select(
                 weights=weights,
             )
             kwargs_out["weights"] = weights
-
+            kwargs_out["interp_coords"] = {}
+        elif not XESMF_AVAILABLE and horizontal_interp_code == "xesmf":
+            raise ModuleNotFoundError(
+                "xESMF is not available so horizontal interpolation in 2D cannot be performed."
+            )
         elif horizontal_interp_code == "delaunay":
 
             # This might be faster for interpolation between a few points and many points
@@ -542,11 +546,8 @@ def select(
             # interp_coords are the coords and indices that went into the interpolation
             da, interp_coords = interp_with_barycentric(da, ixs, iys, lam)
             kwargs_out["interp_coords"] = interp_coords
-
         else:
-            raise ModuleNotFoundError(
-                "xESMF is not available so horizontal interpolation in 2D cannot be performed."
-            )
+            raise RuntimeError("Horizontal interpolation cannot be run.")
 
         end_time = time()
         print("time: ", end_time - start_time)
