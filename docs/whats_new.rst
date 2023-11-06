@@ -1,6 +1,10 @@
 :mod:`What's New`
 -----------------
 
+v1.4.0 (November 6, 2023)
+=========================
+* small changes so that using xESMF as horizontal interpolator works
+
 v1.3.0 (October 11, 2023)
 =========================
 * Incorporated `locstreamT` and `locstreamZ` to standardize the options available to user in `em.select()`.
