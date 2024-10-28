@@ -899,8 +899,9 @@ def sel2d(
     else:
 
         # make sure the mask matches
-        msg = f"Mask {mask.name} dimensions do not match horizontal var {var.name} dimensions. mask dims: {mask.dims}, var dims: {var.dims}"
-        assert len(set(mask.dims) - set(var.dims)) == 0, msg
+        if mask is not None:
+            msg = f"Mask {mask.name} dimensions do not match horizontal var {var.name} dimensions. mask dims: {mask.dims}, var dims: {var.dims}"
+            assert len(set(mask.dims) - set(var.dims)) == 0, msg
 
         # currently lons, lats 1D only
 
