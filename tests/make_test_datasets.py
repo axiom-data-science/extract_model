@@ -63,7 +63,7 @@ def make_test_datasets():
     times = pd.date_range(
         str(example_loc.ocean_time.values[0]),
         str(example_loc.ocean_time.values[1]),
-        freq="1H",
+        freq="1h",
     )
     npts = len(times)
 

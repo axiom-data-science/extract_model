@@ -65,8 +65,8 @@ def test_fvcom_subset(real_fvcom, preload):
     subsetter = UnstructuredGridSubset()
     ds = subsetter.subset(real_fvcom, bbox, "fvcom", preload=preload)
     assert ds is not None
-    assert ds.dims["node"] == 1833
-    assert ds.dims["nele"] == 3392
+    assert ds.sizes["node"] == 1833
+    assert ds.sizes["nele"] == 3392
     # Check a node variable
     np.testing.assert_allclose(
         ds["x"][:10],
@@ -95,8 +95,8 @@ def test_fvcom_subset_accessor(real_fvcom):
     bbox = (276.4, 41.5, 277.4, 42.1)
     ds = real_fvcom.em.sub_bbox(bbox)
     assert ds is not None
-    assert ds.dims["node"] == 1833
-    assert ds.dims["nele"] == 3392
+    assert ds.sizes["node"] == 1833
+    assert ds.sizes["nele"] == 3392
     # Check a node variable
     np.testing.assert_allclose(
         ds["x"][:10],
@@ -121,8 +121,8 @@ def test_fvcom_subset_accessor(real_fvcom):
 
     ds = real_fvcom.em.sub_bbox(bbox, model_type="FVCOM")
     assert ds is not None
-    assert ds.dims["node"] == 1833
-    assert ds.dims["nele"] == 3392
+    assert ds.sizes["node"] == 1833
+    assert ds.sizes["nele"] == 3392
 
 
 @pytest.mark.parametrize("preload", [False, True], ids=lambda x: f"preload={x}")
@@ -130,8 +130,8 @@ def test_fvcom_sub_grid_accessor(real_fvcom, preload):
     bbox = (276.4, 41.5, 277.4, 42.1)
     ds = real_fvcom.em.sub_grid(bbox=bbox, preload=preload)
     assert ds is not None
-    assert ds.dims["node"] == 1833
-    assert ds.dims["nele"] == 3392
+    assert ds.sizes["node"] == 1833
+    assert ds.sizes["nele"] == 3392
     # Check a node variable
     np.testing.assert_allclose(
         ds["x"][:10],
@@ -156,8 +156,8 @@ def test_fvcom_sub_grid_accessor(real_fvcom, preload):
 
     ds = real_fvcom.em.sub_grid(bbox=bbox, model_type="FVCOM", preload=preload)
     assert ds is not None
-    assert ds.dims["node"] == 1833
-    assert ds.dims["nele"] == 3392
+    assert ds.sizes["node"] == 1833
+    assert ds.sizes["nele"] == 3392
 
 
 def test_fvcom_filter(real_fvcom):

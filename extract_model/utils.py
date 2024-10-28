@@ -586,7 +586,7 @@ def interp_with_barycentric(da, ixs, iys, lam):
         Y=xr.DataArray(iys, dims=("npts", "triangle")),
     )
     with xr.set_options(keep_attrs=True):
-        da = xr.dot(vector, lam, dims=("triangle"))
+        da = xr.dot(vector, lam, dim=("triangle"))
 
     # get z coordinates to go with interpolated output if not available
     if "vertical" in vector.cf.coords:
@@ -594,7 +594,7 @@ def interp_with_barycentric(da, ixs, iys, lam):
 
         # only need to interpolate z coordinates if they are not 1D
         if vector[zkey].ndim > 1:
-            da_vert = xr.dot(vector[zkey], lam, dims=("triangle"))
+            da_vert = xr.dot(vector[zkey], lam, dim=("triangle"))
 
             # add vertical coords into da
             da = da.assign_coords({zkey: da_vert})
