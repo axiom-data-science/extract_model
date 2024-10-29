@@ -2,18 +2,18 @@ name: extract_model
 channels:
   - conda-forge
 dependencies:
-  - python>=3.8,<3.11
+  - python=3.10
   # Required for full project functionality (dont remove)
   - pytest
   - pytest-benchmark
   # Examples (remove and add as needed)
   - cf_xarray
   - cmocean
-  - dask <=2022.05.0 # for xESMF, https://github.com/axiom-data-science/extract_model/issues/49
+  - dask #<=2022.05.0 # for xESMF, https://github.com/axiom-data-science/extract_model/issues/49
   - extract_model
   - matplotlib
   - netcdf4
-  - numpy <1.24  # https://github.com/numba/numba/issues/8615#issuecomment-1360792615
+  - numpy #<1.24  # https://github.com/numba/numba/issues/8615#issuecomment-1360792615
   - numba  # required by xesmf
   - pip
   - pooch

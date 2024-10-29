@@ -143,7 +143,7 @@ def test_naive_sub_bbox(model):
     ds = xr.open_mfdataset([pth], preprocess=em.preprocess)
     ds_out = ds.em.sub_grid(bbox=bbox, naive=True)
     for dim, value in model["naive_subbox"].items():
-        assert ds_out.dims[dim] == value
+        assert ds_out.sizes[dim] == value
 
 
 @pytest.mark.parametrize("model", models, ids=lambda x: x["name"])

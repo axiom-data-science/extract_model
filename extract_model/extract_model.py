@@ -281,9 +281,9 @@ def select(
         * False: 2D array of points with 1 dimension the lons and the other dimension the lats.
         * True: lons/lats as unstructured coordinate pairs (in xESMF language, LocStream).
     locstreamT: boolean, optional
-        If False, interpolate in time dimension independently of horizontal points. If True, use advanced indexing/interpolation in xarray to interpolate times to each horizontal locstream point. If this is True, locstream must be True.
+        If False, interpolate in time dimension independently of horizontal points. If True, use advanced indexing/interpolation in xarray to interpolate times to each horizontal locstream point.
     locstreamZ: boolean, optional
-        If False, interpolate in depth dimension independently of horizontal points. If True, use advanced indexing after depth interpolation select depths to match each horizontal locstream point. If this is True, locstream must be True and locstreamT must be True.
+        If False, interpolate in depth dimension independently of horizontal points. If True, use advanced indexing after depth interpolation select depths to match each horizontal locstream point.
     new_dim : str
         This is the name of the new dimension created if we are interpolating to a new set of points that are not a grid.
     weights: xESMF netCDF file path, DataArray, optional
@@ -360,14 +360,15 @@ def select(
                 "Use extrap=True to extrapolate."
             )
 
-    if locstreamT:
-        if not locstream:
-            raise ValueError("if `locstreamT` is True, `locstream` must also be True.")
-    if locstreamZ:
-        if not locstream or not locstreamT:
-            raise ValueError(
-                "if `locstreamZ` is True, `locstream` and `locstreamT` must also be True."
-            )
+    # these are only true if interpolating in those directions too — need to fix them
+    # if locstreamT:
+    #     if not locstream:
+    #         raise ValueError("if `locstreamT` is True, `locstream` must also be True.")
+    # if locstreamZ:
+    #     if not locstream or not locstreamT:
+    #         raise ValueError(
+    #             "if `locstreamZ` is True, `locstream` and `locstreamT` must also be True."
+    #         )
 
     # Perform interpolation
     if horizontal_interp:
@@ -443,13 +444,12 @@ def select(
                 xs, ys = proj(xs, ys)
                 x, y = proj(longitude, latitude)
 
-            # import pdb; pdb.set_trace()
             # lam = calc_barycentric(x, y, xs.reshape((10,9,3)), ys.reshape((10,9,3)))
             lam = calc_barycentric(x.flatten(), y.flatten(), xs, ys)
             # lam = calc_barycentric(x, y, xs, ys)
             # interp_coords are the coords and indices that went into the interpolation
             da, interp_coords = interp_with_barycentric(da, ixs, iys, lam)
-            # import pdb; pdb.set_trace()
+
             # if not locstream:
             #     FIGURE OUT HOW TO RECONSTITUTE INTO GRID HERE
             kwargs_out["interp_coords"] = interp_coords
@@ -665,6 +665,7 @@ def select(
 
     # advanced indexing to select all assuming coherent time series
     # make sure len of each dimension matches
+
     if locstreamZ:
 
         dims_to_index = [da.cf["T"].name]
@@ -697,9 +698,12 @@ def sel2d(
     mask: Optional[DataArray] = None,
     use_xoak: bool = True,
     return_info: bool = False,
+    k: Optional[int] = None,
     **kwargs,
 ):
     """Find the value of the var at closest location to inputs, optionally respecting mask.
+
+    Note: I don't think this function selects for time or depth, only for horizontal coordinates. If you need to select for time or depth, use `select` instead.
 
     This is meant to mimic `xarray` `.sel()` in API and idea, except that the horizontal selection is done for 2D coordinates instead of 1D coordinates, since `xarray` cannot yet handle 2D coordinates. This wraps `xoak`.
 
@@ -728,10 +732,12 @@ def sel2d(
         If True, use xoak to find nearest 1 point. If False, use BallTree directly to find distances and nearest 4 points.
     return_info: bool
         If True, return a dict of extra information that depends on what processes were run.
+    k: int, optional
+        For not xoak — number of nearest neighbors to find. Default is either 1 or 50 depending on if a mask is input, but can be overridden by user with this input.
 
     Returns
     -------
-    An xarray object of the same type as input as var which is selected in horizontal coordinates to input locations and, in input, to time and vertical selections. If not selected, other dimensions are brought along. Other items returned in kwargs include:
+    An xarray object of the same type as input as var which is selected in horizontal coordinates to input locations and, if input, to time and vertical selections. If not selected, other dimensions are brought along. Other items returned in kwargs include:
 
     * distances: the distances from the requested points to the returned nearest points
 
@@ -809,7 +815,6 @@ def sel2d(
                 mask = mask.load()
 
             # Assume mask is 2D — but not true for wetting/drying
-            # import pdb; pdb.set_trace()
             # find indices representing mask
             eta, xi = np.where(mask.values)
 
@@ -898,16 +903,22 @@ def sel2d(
 
     else:
 
+        # make sure the mask matches
+        if mask is not None:
+            # import pdb; pdb.set_trace()
+            msg = f"Mask {mask.name} dimensions do not match horizontal var {var.name} dimensions. mask dims: {mask.dims}, var dims: {var.dims}"
+            assert len(set(mask.dims) - set(var.dims)) == 0, msg
+
         # currently lons, lats 1D only
 
         # if no mask, assume user just wants 1 nearest point to each input lons/lats pair
         # probably should expand this later to be more generic
         if mask is None:
-            k = 1
+            k = k or 1
         # if user inputs mask, use it to only return the nearest point that is active
         # so, find nearest 30 points to have options
         else:
-            k = 30
+            k = k or 50
 
         distances, (iys, ixs) = tree_query(var[lonname], var[latname], lons, lats, k=k)
 
@@ -916,7 +927,7 @@ def sel2d(
             raise ValueError("all found values are masked!")
 
         if mask is not None:
-            isorted_mask = np.argsort(-mask.values[iys, ixs], axis=-1)
+            isorted_mask = np.argsort(-mask.values[iys, ixs], axis=-1, kind="mergesort")
             # sort the ixs and iys according to this sorting so that if there are unmasked indices,
             # they are leftmost also, and we will use the leftmost values.
             ixs_brought_along = np.take_along_axis(ixs, isorted_mask, axis=1)

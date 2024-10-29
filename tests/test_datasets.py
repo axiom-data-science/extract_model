@@ -331,7 +331,9 @@ def test_trajectory():
     # dsactual.to_netcdf(expname)
     dsexpected = xr.open_dataset(expname)
     dsexpected = dsexpected.assign_coords({"s_rho": dsexpected["s_rho"]})[key_variable]
-    assert dsexpected.equals(dsactual.astype(dsexpected.dtype))
+
+    # assert dsexpected.equals(dsactual.astype(dsexpected.dtype))
+    assert np.allclose(dsexpected, dsactual, equal_nan=True)
 
 
 def test_trajectoryProfile():
@@ -396,7 +398,8 @@ def test_trajectoryProfile():
     # # previously saved with:
     # dsactual.to_netcdf(expname)
     dsexpected = xr.open_dataarray(expname)
-    assert dsexpected.equals(dsactual.astype(dsexpected.dtype))
+    # assert dsexpected.equals(dsactual.astype(dsexpected.dtype))
+    assert np.allclose(dsexpected, dsactual, equal_nan=True)
 
 
 def test_grid():

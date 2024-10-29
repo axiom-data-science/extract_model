@@ -1,6 +1,10 @@
 :mod:`What's New`
 -----------------
 
+v1.4.1 (October 25, 2024)
+=========================
+* Small changes so horizontal coordinate search works more consistently with past.
+
 v1.4.0 (November 6, 2023)
 =========================
 * small changes so that using xESMF as horizontal interpolator works

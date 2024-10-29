@@ -7,6 +7,8 @@ from importlib.metadata import PackageNotFoundError, version
 import cf_xarray as cfxr  # noqa: F401
 
 import extract_model.accessor  # noqa: F401
+import extract_model.preprocessing  # noqa: F401
+import extract_model.utils  # noqa: F401
 
 from .extract_model import sel2d, sel2dcf, select, selZ  # noqa: F401
 from .preprocessing import preprocess
