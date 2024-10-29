@@ -196,10 +196,10 @@ def test_fvcom_subset_scalars(real_fvcom, preload):
     ds = real_fvcom.assign(variables={"example": xvar})
     ds_ss = ds.em.sub_grid(bbox=bbox, preload=preload)
     assert ds_ss is not None
-    assert ds_ss.dims["node"] == 1833
-    assert ds_ss.dims["nele"] == 3392
+    assert ds_ss.sizes["node"] == 1833
+    assert ds_ss.sizes["nele"] == 3392
     assert "example" in ds_ss.variables
-    assert len(ds_ss["example"].dims) < 1
+    assert len(ds_ss["example"].sizes) < 1
 
 
 @pytest.mark.parametrize("preload", [False, True], ids=lambda x: f"preload={x}")
@@ -230,8 +230,8 @@ def test_selfe_sub_bbox_accessor(selfe_data):
     bbox = (-123.8, 46.2, -123.6, 46.3)
     ds_ss = selfe_data.em.sub_bbox(bbox=bbox)
     assert ds_ss is not None
-    assert ds_ss.dims["node"] == 4273
-    assert ds_ss.dims["nele"] == 8178
+    assert ds_ss.sizes["node"] == 4273
+    assert ds_ss.sizes["nele"] == 8178
     np.testing.assert_allclose(
         ds_ss["x"][:10],
         np.array(
@@ -257,8 +257,8 @@ def test_selfe_sub_grid_accessor(selfe_data, preload):
     bbox = (-123.8, 46.2, -123.6, 46.3)
     ds_ss = selfe_data.em.sub_grid(bbox=bbox, preload=preload)
     assert ds_ss is not None
-    assert ds_ss.dims["node"] == 4273
-    assert ds_ss.dims["nele"] == 8178
+    assert ds_ss.sizes["node"] == 4273
+    assert ds_ss.sizes["nele"] == 8178
     np.testing.assert_allclose(
         ds_ss["x"][:10],
         np.array(
@@ -286,10 +286,10 @@ def test_selfe_subset_scalars(selfe_data, preload):
     bbox = (-123.8, 46.2, -123.6, 46.3)
     ds_ss = ds.em.sub_grid(bbox=bbox, preload=preload)
     assert ds_ss is not None
-    assert ds_ss.dims["node"] == 4273
-    assert ds_ss.dims["nele"] == 8178
+    assert ds_ss.sizes["node"] == 4273
+    assert ds_ss.sizes["nele"] == 8178
     assert "example" in ds_ss.variables
-    assert len(ds_ss["example"].dims) < 1
+    assert len(ds_ss["example"].sizes) < 1
 
 
 def test_selfe_preload(selfe_data: xr.Dataset):

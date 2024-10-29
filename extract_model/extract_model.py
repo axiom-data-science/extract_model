@@ -698,9 +698,12 @@ def sel2d(
     mask: Optional[DataArray] = None,
     use_xoak: bool = True,
     return_info: bool = False,
+    k: Optional[int] = None,
     **kwargs,
 ):
     """Find the value of the var at closest location to inputs, optionally respecting mask.
+
+    Note: I don't think this function selects for time or depth, only for horizontal coordinates. If you need to select for time or depth, use `select` instead.
 
     This is meant to mimic `xarray` `.sel()` in API and idea, except that the horizontal selection is done for 2D coordinates instead of 1D coordinates, since `xarray` cannot yet handle 2D coordinates. This wraps `xoak`.
 
@@ -729,10 +732,12 @@ def sel2d(
         If True, use xoak to find nearest 1 point. If False, use BallTree directly to find distances and nearest 4 points.
     return_info: bool
         If True, return a dict of extra information that depends on what processes were run.
+    k: int, optional
+        For not xoak — number of nearest neighbors to find. Default is either 1 or 50 depending on if a mask is input, but can be overridden by user with this input.
 
     Returns
     -------
-    An xarray object of the same type as input as var which is selected in horizontal coordinates to input locations and, in input, to time and vertical selections. If not selected, other dimensions are brought along. Other items returned in kwargs include:
+    An xarray object of the same type as input as var which is selected in horizontal coordinates to input locations and, if input, to time and vertical selections. If not selected, other dimensions are brought along. Other items returned in kwargs include:
 
     * distances: the distances from the requested points to the returned nearest points
 
@@ -900,6 +905,7 @@ def sel2d(
 
         # make sure the mask matches
         if mask is not None:
+            # import pdb; pdb.set_trace()
             msg = f"Mask {mask.name} dimensions do not match horizontal var {var.name} dimensions. mask dims: {mask.dims}, var dims: {var.dims}"
             assert len(set(mask.dims) - set(var.dims)) == 0, msg
 
@@ -908,11 +914,11 @@ def sel2d(
         # if no mask, assume user just wants 1 nearest point to each input lons/lats pair
         # probably should expand this later to be more generic
         if mask is None:
-            k = 1
+            k = k or 1
         # if user inputs mask, use it to only return the nearest point that is active
         # so, find nearest 30 points to have options
         else:
-            k = 50
+            k = k or 50
 
         distances, (iys, ixs) = tree_query(var[lonname], var[latname], lons, lats, k=k)
 

@@ -1,8 +1,8 @@
-name: test-env-win
+name: test-env-mac-unix
 channels:
   - conda-forge
 dependencies:
-  - python=3.9
+  - python=3.12
   - cf_xarray>=0.6
   - dask
   - netcdf4
@@ -11,6 +11,7 @@ dependencies:
   - requests
   - scikit-learn  # used by xoak for tree
   - xarray
+  - xesmf
   - xoak
   # - xroms
   - pytest
