@@ -140,7 +140,7 @@ def filter(
     to_merge.append(ds.filter_by_attrs(standard_name=f_standard_names))
 
     # Combine
-    return xr.merge(to_merge, compat='no_conflicts')
+    return xr.merge(to_merge, compat="no_conflicts")
 
 
 def naive_subbox(ds: xr.Dataset, bbox: BBoxType, dask_array_chunks: bool = False):

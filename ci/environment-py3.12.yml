@@ -6,7 +6,7 @@ dependencies:
   - cf_xarray
   - dask
   - netcdf4
-  - numpy 
+  - numpy
   - pip
   - requests
   - scikit-learn

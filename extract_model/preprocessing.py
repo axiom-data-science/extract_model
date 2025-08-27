@@ -1,8 +1,9 @@
 """Preprocessing-related functions for model output."""
 
 
-from typing import Optional
 import warnings
+
+from typing import Optional
 
 import numpy as np
 import xarray as xr

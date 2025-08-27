@@ -617,7 +617,11 @@ def select(
                     with warnings.catch_warnings():
                         warnings.simplefilter("ignore")
                         da = xgcm_grid.transform(
-                            da, "Z", np.array(Z), target_data=da.cf["vertical"], method="linear"
+                            da,
+                            "Z",
+                            np.array(Z),
+                            target_data=da.cf["vertical"],
+                            method="linear",
                         )
                     da[zkey].attrs = z_attrs
                     da = order(da)  # reorder dimensions to convention
@@ -625,7 +629,7 @@ def select(
                     da_calcs = {}
                     for data_var in da.data_vars:
                         if "s_rho" in da.dims:
-                            dause = da[data_var].chunk({"s_rho": -1})#.copy()
+                            dause = da[data_var].chunk({"s_rho": -1})  # .copy()
                         else:
                             dause = da[data_var]
                         with warnings.catch_warnings():
