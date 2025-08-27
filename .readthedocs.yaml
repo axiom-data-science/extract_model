@@ -12,10 +12,10 @@ build:
 # uncomment to build from this exact version of package
 # the downside is the version listed in the docs will be a dev version
 # if uncommenting this, comment out installing pypi version of package in docs/env file
-# python:
-#   install:
-#     - method: pip
-#       path: ./
+python:
+  install:
+    - method: pip
+      path: ./
 
 conda:
     environment: docs/environment.yml
