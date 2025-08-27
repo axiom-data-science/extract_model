@@ -2,6 +2,7 @@
 
 
 from typing import Optional
+import warnings
 
 import numpy as np
 import xarray as xr
@@ -156,35 +157,37 @@ def preprocess_roms(
             # }
 
             ds.coords["z_rho"] = order(ds["z_rho"])
-            ds.coords["z_rho_u"] = grid.interp(
-                ds.z_rho.chunk({ds.z_rho.cf["X"].name: -1}), "X"
-            )
-            ds.coords["z_rho_u"].attrs = {
-                "long_name": "depth of U-points on vertical RHO grid",
-                "time": "ocean_time",
-                "field": "z_rho_u, scalar, series",
-                "units": "m",
-            }
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                ds.coords["z_rho_u"] = grid.interp(
+                    ds.z_rho.chunk({ds.z_rho.cf["X"].name: -1}), "X"
+                )
+                ds.coords["z_rho_u"].attrs = {
+                    "long_name": "depth of U-points on vertical RHO grid",
+                    "time": "ocean_time",
+                    "field": "z_rho_u, scalar, series",
+                    "units": "m",
+                }
 
-            ds.coords["z_rho_v"] = grid.interp(
-                ds.z_rho.chunk({ds.z_rho.cf["Y"].name: -1}), "Y"
-            )
-            ds.coords["z_rho_v"].attrs = {
-                "long_name": "depth of V-points on vertical RHO grid",
-                "time": "ocean_time",
-                "field": "z_rho_v, scalar, series",
-                "units": "m",
-            }
+                ds.coords["z_rho_v"] = grid.interp(
+                    ds.z_rho.chunk({ds.z_rho.cf["Y"].name: -1}), "Y"
+                )
+                ds.coords["z_rho_v"].attrs = {
+                    "long_name": "depth of V-points on vertical RHO grid",
+                    "time": "ocean_time",
+                    "field": "z_rho_v, scalar, series",
+                    "units": "m",
+                }
 
-            ds.coords["z_rho_psi"] = grid.interp(
-                ds.z_rho_u.chunk({ds.z_rho_u.cf["Y"].name: -1}), "Y"
-            )
-            ds.coords["z_rho_psi"].attrs = {
-                "long_name": "depth of PSI-points on vertical RHO grid",
-                "time": "ocean_time",
-                "field": "z_rho_psi, scalar, series",
-                "units": "m",
-            }
+                ds.coords["z_rho_psi"] = grid.interp(
+                    ds.z_rho_u.chunk({ds.z_rho_u.cf["Y"].name: -1}), "Y"
+                )
+                ds.coords["z_rho_psi"].attrs = {
+                    "long_name": "depth of PSI-points on vertical RHO grid",
+                    "time": "ocean_time",
+                    "field": "z_rho_psi, scalar, series",
+                    "units": "m",
+                }
 
             # will use this to update coordinate encoding
             name_dict.update(
@@ -330,7 +333,9 @@ def preprocess_roms_grid(ds):
         "Y": {"center": "eta_rho", "inner": "eta_v"},
         "Z": {"center": "s_rho", "outer": "s_w"},
     }
-    grid = Grid(ds, coords=coords, periodic=False)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        grid = Grid(ds, coords=coords, periodic=False)
     return grid
 
 

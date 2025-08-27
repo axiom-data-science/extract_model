@@ -1,22 +1,23 @@
-name: test-env-win
+name: test-env-extract-model
 channels:
   - conda-forge
 dependencies:
-  - python=3.10
+  - python=3.13
   - cf_xarray>=0.6
   - dask
   - netcdf4
   - numpy #<1.24  # https://github.com/numba/numba/issues/8615#issuecomment-1360792615
   - pip
   - requests
-  - scikit-learn  # used by xoak for tree
+  - scikit-learn
   - xarray
+  - xesmf
   - xoak
   # - xroms
   - pytest
   - pytest-benchmark
   - pip:
-    - xroms >=0.5.3
+    - xroms >=0.6.2
     - codecov
     - pytest-cov
     - coverage[toml]

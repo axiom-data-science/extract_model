@@ -613,11 +613,34 @@ def select(
                 z_attrs = da.cf["vertical"].attrs
                 z_attrs.update({"axis": "Z"})
                 zkey = da.cf["vertical"].name
-                da = xgcm_grid.transform(
-                    da, "Z", np.array(Z), target_data=da.cf["vertical"], method="linear"
-                )
-                da[zkey].attrs = z_attrs
-                da = order(da)  # reorder dimensions to convention
+                if isinstance(da, xr.DataArray):
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore")
+                        da = xgcm_grid.transform(
+                            da, "Z", np.array(Z), target_data=da.cf["vertical"], method="linear"
+                        )
+                    da[zkey].attrs = z_attrs
+                    da = order(da)  # reorder dimensions to convention
+                elif isinstance(da, xr.Dataset):
+                    da_calcs = {}
+                    for data_var in da.data_vars:
+                        if "s_rho" in da.dims:
+                            dause = da[data_var].chunk({"s_rho": -1})#.copy()
+                        else:
+                            dause = da[data_var]
+                        with warnings.catch_warnings():
+                            warnings.simplefilter("ignore")
+                            da_calcs[data_var] = xgcm_grid.transform(
+                                dause,
+                                "Z",
+                                np.array(Z),
+                                target_data=dause.cf["vertical"],
+                                method="linear",
+                            )
+                        da_calcs[data_var][zkey].attrs = z_attrs
+                    for data_var in da_calcs.keys():
+                        da[data_var] = da_calcs[data_var]
+                    da = order(da)  # reorder dimensions to convention
 
             # # if the vertical coord is greater than 1D, can only do restricted interpolation
             # # at the moment
@@ -902,11 +925,10 @@ def sel2d(
                 return output
 
     else:
-
         # make sure the mask matches
         if mask is not None:
-            # import pdb; pdb.set_trace()
-            msg = f"Mask {mask.name} dimensions do not match horizontal var {var.name} dimensions. mask dims: {mask.dims}, var dims: {var.dims}"
+            msg = f"Mask {mask.name} dimensions do not match horizontal Dataset/DataArray dimensions. mask dims: {mask.dims}, var dims: {var.dims}"
+            # msg = f"Mask {mask.name} dimensions do not match horizontal var {var.name} dimensions. mask dims: {mask.dims}, var dims: {var.dims}"
             assert len(set(mask.dims) - set(var.dims)) == 0, msg
 
         # currently lons, lats 1D only
