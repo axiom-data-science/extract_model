@@ -140,7 +140,7 @@ def filter(
     to_merge.append(ds.filter_by_attrs(standard_name=f_standard_names))
 
     # Combine
-    return xr.merge(to_merge)
+    return xr.merge(to_merge, compat="no_conflicts")
 
 
 def naive_subbox(ds: xr.Dataset, bbox: BBoxType, dask_array_chunks: bool = False):
@@ -354,7 +354,7 @@ def sub_grid(
             subs = sub_bbox(ds[varname], bbox, other=-500, drop=False)
 
             # index
-            i_xi_rho = int((subs != -500).sum(dim="xi_rho").argmax())
+            i_xi_rho = int(np.argmax((subs != -500).sum(dim="xi_rho").values))
             xi_rho_bool = subs.isel(eta_rho=i_xi_rho) != -500
             if "T" in subs.cf.axes:
                 xi_rho_bool = xi_rho_bool.cf.isel(T=0)
@@ -362,7 +362,7 @@ def sub_grid(
                 xi_rho_bool = xi_rho_bool.cf.isel(Z=0)
             xi_rho = np.arange(ds.lon_rho.shape[1])[xi_rho_bool]
 
-            i_eta_rho = int((subs != -500).sum(dim="eta_rho").argmax())
+            i_eta_rho = int(np.argmax((subs != -500).sum(dim="eta_rho").values))
             eta_rho_bool = subs.isel(xi_rho=i_eta_rho) != -500
             if "T" in subs.cf.axes:
                 eta_rho_bool = eta_rho_bool.cf.isel(T=0)

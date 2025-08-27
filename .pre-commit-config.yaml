@@ -1,7 +1,7 @@
 repos:
 
 - repo: https://github.com/econchick/interrogate
-  rev: 1.2.0
+  rev: 1.6.0
   hooks:
     - id: interrogate
       exclude: ^(docs|setup.py|tests)

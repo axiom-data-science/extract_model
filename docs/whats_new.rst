@@ -1,6 +1,12 @@
 :mod:`What's New`
 -----------------
 
+v1.4.2 (August 27, 2025)
+========================
+* update Python test versions
+* update dependencies
+* some fixes in `extract_model` to keep things working with `ocean-model-skill-assessor`
+
 v1.4.1 (October 25, 2024)
 =========================
 * Small changes so horizontal coordinate search works more consistently with past.
