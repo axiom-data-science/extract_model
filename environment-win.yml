@@ -18,7 +18,7 @@ dependencies:
   - pip
   - pooch
   - requests
-  # - scikit-learn  # used by xoak for tree
+  - scikit-learn  # used by xoak for tree
   - xarray
   - xcmocean
   # - xoak

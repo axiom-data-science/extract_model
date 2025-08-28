@@ -9,7 +9,7 @@ dependencies:
   - numpy
   - pip
   - requests
-  # - scikit-learn
+  - scikit-learn
   - xarray
   # - xoak
   - pytest
