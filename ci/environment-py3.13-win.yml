@@ -9,9 +9,9 @@ dependencies:
   - numpy #<1.24  # https://github.com/numba/numba/issues/8615#issuecomment-1360792615
   - pip
   - requests
-  - scikit-learn
+  # - scikit-learn
   - xarray
-  - xoak
+  # - xoak
   # - xroms
   - pytest
   - pytest-benchmark

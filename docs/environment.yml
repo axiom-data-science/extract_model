@@ -15,11 +15,11 @@ dependencies:
    - pip
    - pooch
    - requests
-   - scikit-learn  # used by xoak for tree
+  #  - scikit-learn  # used by xoak for tree
    - xarray
    - xcmocean
    - xesmf  # don't install if on windows
-   - xoak
+  #  - xoak
    # These are needed for the docs themselves
    - furo
    - jupytext

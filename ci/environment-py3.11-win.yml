@@ -9,9 +9,9 @@ dependencies:
   - numpy
   - pip
   - requests
-  - scikit-learn
+  # - scikit-learn
   - xarray
-  - xoak
+  # - xoak
   - pytest
   - pytest-benchmark
   - pip:
