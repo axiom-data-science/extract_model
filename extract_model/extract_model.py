@@ -10,7 +10,6 @@ from typing import Optional, Sequence, Tuple, Union
 import cf_xarray  # noqa: F401
 import numpy as np
 import xarray as xr
-import xoak  # noqa: F401
 
 from dask.delayed import Delayed
 from xarray import DataArray, Dataset
@@ -819,6 +818,7 @@ def sel2d(
         lons, lats = np.array(lons), np.array(lats)
 
     if use_xoak:
+        import xoak  # noqa: F401
 
         # 1D or 2D
         if lons.ndim == lats.ndim == 1:

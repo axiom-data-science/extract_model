@@ -2,7 +2,7 @@ name: extract_model
 channels:
   - conda-forge
 dependencies:
-  - python>=3.7,<3.10
+  - python>=3.7
   # Required for full project functionality (dont remove)
   - pytest
   - pytest-benchmark
@@ -21,6 +21,6 @@ dependencies:
   - scikit-learn  # used by xoak for tree
   - xarray
   - xcmocean
-  - xoak
+  # - xoak
   # - pip:  # install from github to get recent PRs I contributed
   #   - git@github.com:xarray-contrib/cf-xarray.git

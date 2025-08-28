@@ -11,7 +11,7 @@ dependencies:
   - requests
   - scikit-learn
   - xarray
-  - xoak
+  # - xoak
   - pytest
   - pytest-benchmark
   - pip:
